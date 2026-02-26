@@ -1,0 +1,285 @@
+.testimonials-section {
+  padding: 100px 20px;
+  background: linear-gradient(180deg, var(--pure-white) 0%, var(--off-white) 100%);
+}
+
+.testimonials-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.testimonials-content {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 60px;
+  align-items: start;
+}
+
+.testimonial-main {
+  position: relative;
+  background: var(--pure-white);
+  border-radius: 24px;
+  padding: 48px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-gray);
+}
+
+.quote-icon {
+  color: var(--primary-red);
+  opacity: 0.2;
+  margin-bottom: 24px;
+}
+
+.testimonial-slider {
+  overflow: hidden;
+}
+
+.testimonial-slide {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.testimonial-item {
+  min-width: 100%;
+  padding: 0 4px;
+}
+
+.testimonial-quote {
+  font-size: 1.25rem;
+  line-height: 1.8;
+  color: var(--text-dark);
+  margin-bottom: 32px;
+  font-style: italic;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.author-avatar {
+  width: 56px;
+  height: 56px;
+  background: var(--primary-navy);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.author-info h4 {
+  color: var(--primary-navy);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.author-info span {
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.rating {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.star {
+  color: #fbbf24;
+}
+
+.salary-comparison {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--off-white);
+  border-radius: 16px;
+}
+
+.salary-box {
+  flex: 1;
+  text-align: center;
+}
+
+.salary-box.before {
+  opacity: 0.6;
+}
+
+.salary-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.salary-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary-navy);
+}
+
+.salary-box.after .salary-value {
+  color: var(--primary-red);
+}
+
+.salary-arrow {
+  font-size: 1.5rem;
+  color: var(--primary-red);
+  font-weight: 700;
+}
+
+.slider-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.slider-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--border-gray);
+  background: transparent;
+  color: var(--text-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.slider-btn:hover {
+  border-color: var(--primary-navy);
+  color: var(--primary-navy);
+  background: var(--off-white);
+}
+
+.slider-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border-gray);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.dot.active {
+  background: var(--primary-red);
+  width: 32px;
+  border-radius: 5px;
+}
+
+.video-testimonials h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-navy);
+  margin-bottom: 24px;
+}
+
+.video-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.video-card {
+  background: var(--pure-white);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-gray);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.video-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.video-thumbnail {
+  height: 140px;
+  background: linear-gradient(135deg, var(--primary-navy), #1e3a5f);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn {
+  width: 56px;
+  height: 56px;
+  background: var(--primary-red);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+}
+
+.video-card:hover .play-btn {
+  transform: scale(1.1);
+  box-shadow: 0 10px 30px rgba(230, 0, 35, 0.4);
+}
+
+.video-duration {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.video-card p {
+  padding: 16px;
+  font-weight: 600;
+  color: var(--primary-navy);
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .testimonials-content {
+    grid-template-columns: 1fr;
+  }
+
+  .testimonial-main {
+    padding: 32px;
+  }
+
+  .testimonial-quote {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .salary-comparison {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .salary-arrow {
+    transform: rotate(90deg);
+  }
+}

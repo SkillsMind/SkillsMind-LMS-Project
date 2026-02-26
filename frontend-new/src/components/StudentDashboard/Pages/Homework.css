@@ -1,0 +1,554 @@
+/* ===================================
+   Homework Page - Clean White Design
+   =================================== */
+
+.homework-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 32px;
+  background-color: #ffffff;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color: #111827;
+}
+
+/* Header Section */
+.homework-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header-content h1 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
+}
+
+.header-content p {
+  color: #6b7280;
+  font-size: 15px;
+  margin: 0;
+}
+
+.new-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #111827;
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-task-btn:hover {
+  background-color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.new-task-btn span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Stats Bar */
+.stats-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  transition: all 0.2s ease;
+}
+
+.stat-pill:hover {
+  background-color: #f3f4f6;
+}
+
+.stat-pill.pending {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.stat-pill.submitted {
+  background-color: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.stat-pill.graded {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.stat-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Filter Toolbar */
+.filter-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  background-color: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  background-color: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: capitalize;
+}
+
+.filter-tab:hover {
+  color: #374151;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.filter-tab.active {
+  background-color: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.count-badge {
+  background-color: #e5e7eb;
+  color: #374151;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-tab.active .count-badge {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: #d1d5db;
+  color: #374151;
+  background-color: #f9fafb;
+}
+
+/* Homework List */
+.homework-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Homework Row */
+.homework-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  gap: 20px;
+}
+
+.homework-row:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transform: translateX(4px);
+}
+
+.homework-row.submitted {
+  background-color: #fafafa;
+}
+
+.homework-row.graded {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+/* Left Section */
+.row-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon {
+  width: 44px;
+  height: 44px;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.homework-row.pending .file-icon {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.homework-row.submitted .file-icon {
+  background-color: #f0f9ff;
+  color: #0284c7;
+}
+
+.homework-row.graded .file-icon {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.homework-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.title-row h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grade-badge {
+  background-color: #111827;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.course-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.course-code {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.course-name {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.feedback-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.feedback-preview svg {
+  flex-shrink: 0;
+}
+
+/* Center Section */
+.row-center {
+  min-width: 140px;
+}
+
+.due-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6b7280;
+}
+
+.due-info svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.due-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.due-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.due-time {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Right Section */
+.row-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.attachment-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn.submit {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.action-btn.submit:hover {
+  background-color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.view {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.action-btn.view:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.menu-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-btn:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #6b7280;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background-color: #f3f4f6;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: #9ca3af;
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  font-size: 15px;
+  margin: 0;
+  color: #6b7280;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .homework-page {
+    padding: 24px 20px;
+  }
+
+  .homework-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .new-task-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats-bar {
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    flex: 1;
+    min-width: 100px;
+    justify-content: center;
+  }
+
+  .filter-toolbar {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .filter-tabs {
+    overflow-x: auto;
+    padding: 4px;
+  }
+
+  .filter-tab {
+    white-space: nowrap;
+  }
+
+  .homework-row {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .row-left {
+    width: 100%;
+  }
+
+  .row-center {
+    order: 3;
+    width: 100%;
+    padding-left: 60px;
+  }
+
+  .row-right {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .title-row {
+    flex-wrap: wrap;
+  }
+
+  .course-line {
+    flex-wrap: wrap;
+  }
+
+  .row-right {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+  }
+}

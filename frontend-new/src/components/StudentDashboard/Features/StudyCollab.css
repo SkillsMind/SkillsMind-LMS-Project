@@ -1,0 +1,238 @@
+.collab-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.find-partners {
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid #E5E7EB;
+}
+
+.search-box-large {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #F3F4F6;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  color: #6B7280;
+}
+
+.search-box-large input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 15px;
+  outline: none;
+  color: #1F2937;
+}
+
+.buddies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.buddy-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.3s;
+}
+
+.buddy-card:hover {
+  border-color: #DC2626;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.buddy-avatar-large {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  position: relative;
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.status-dot.online { background: #10B981; }
+.status-dot.studying { background: #F59E0B; }
+.status-dot.offline { background: #9CA3AF; }
+
+.buddy-info {
+  flex: 1;
+}
+
+.buddy-info h4 {
+  font-weight: 700;
+  color: #000B29;
+  margin-bottom: 4px;
+}
+
+.buddy-info p {
+  font-size: 13px;
+  color: #6B7280;
+  margin-bottom: 6px;
+}
+
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 20px;
+}
+
+.buddy-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.icon-btn:hover {
+  background: #DC2626;
+  color: white;
+  border-color: #DC2626;
+}
+
+.study-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.study-rooms h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000B29;
+}
+
+.room-card {
+  background: linear-gradient(135deg, #000B29 0%, #1E3A8A 100%);
+  padding: 24px;
+  border-radius: 16px;
+  color: white;
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.live-badge {
+  background: #DC2626;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  animation: pulse 2s infinite;
+}
+
+.room-count {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.room-card h4 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.room-card p {
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.join-room-btn {
+  width: 100%;
+  padding: 12px;
+  background: #DC2626;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.join-room-btn:hover {
+  background: #B91C1C;
+  transform: translateY(-2px);
+}
+
+.upcoming-sessions {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #E5E7EB;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #F9FAFB;
+  border-radius: 10px;
+  margin-top: 12px;
+  color: #6B7280;
+}
+
+.session-item p {
+  font-weight: 600;
+  color: #000B29;
+  margin-bottom: 4px;
+}
+
+.session-item span {
+  font-size: 13px;
+}
+
+@media (max-width: 968px) {
+  .collab-grid {
+    grid-template-columns: 1fr;
+  }
+}

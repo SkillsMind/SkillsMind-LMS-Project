@@ -1,0 +1,305 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* --- 1. GLOBAL & WRAPPER SETTINGS --- */
+.sm-final-portal {
+    width: 100%;
+    min-height: 100vh;
+    background: #ffffff;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    overflow-x: hidden; 
+}
+
+/* --- 2. MAIN LAYOUT --- */
+.sm-main-wrapper {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    min-height: 100vh;
+    background: #0f172a; 
+}
+
+/* --- 3. FORM COLUMN (LEFT SIDE) --- */
+.sm-form-column {
+    background: #f8fafc; /* Subtle grey background for the whole column */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the white form box */
+    justify-content: flex-start;
+    padding: 80px 40px;
+    z-index: 10;
+    position: relative;
+}
+
+/* UPDATED: SHARP WHITE FORM BOX */
+.sm-form-box-sharp { 
+    width: 100%; 
+    max-width: 500px;
+    background: #ffffff;
+    padding: 40px;
+    padding-left: 60px; /* Space from left as requested */
+    border-radius: 0px; /* Sharp look - no radius */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+/* UPDATED: MINIMAL ICON-ONLY BACK BUTTON */
+.sm-back-arrow-container {
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 20px;
+}
+
+.sm-icon-only-back {
+    background: #001529;
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px; /* Sharp-ish corners */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 16px;
+}
+
+.sm-icon-only-back:hover {
+    background: #002140;
+    transform: translateX(-3px);
+}
+
+/* HEADING & BADGE */
+.sm-main-heading { 
+    font-size: 44px;
+    font-weight: 900; 
+    color: #0f172a; 
+    margin-bottom: 10px; 
+    letter-spacing: -1.5px; 
+    line-height: 1.1;
+}
+.sm-intro span { color: #dc2626; }
+
+.sm-course-badge {
+    background: #fff1f2;
+    padding: 15px;
+    border-left: 5px solid #dc2626;
+    border-radius: 4px;
+    margin-bottom: 35px;
+}
+
+/* JOURNEY MAP */
+.sm-journey-map-v2 {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 35px;
+    flex-wrap: wrap;
+}
+.sm-map-step { display: flex; align-items: center; gap: 10px; }
+.sm-map-dot {
+    width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9;
+    color: #94a3b8; font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+}
+.sm-map-step.active .sm-map-dot { background: #dc2626; color: white; }
+.sm-map-label { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; }
+.sm-map-connector { width: 30px; height: 2px; background: #f1f5f9; }
+
+/* FORM ELEMENTS */
+.sm-sharp-form-v11 { display: flex; flex-direction: column; gap: 20px; }
+.sm-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.sm-input-field label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.sm-input-field input {
+    width: 100%; padding: 14px; background: #f8fafc; border: 2px solid #e2e8f0;
+    border-radius: 8px; font-weight: 600; transition: 0.3s; box-sizing: border-box;
+}
+.sm-input-field input:focus { border-color: #dc2626; background: white; outline: none; }
+
+.sm-gender-group { display: flex; gap: 10px; }
+.sm-gender-card { flex: 1; position: relative; cursor: pointer; }
+.sm-gender-card input { position: absolute; opacity: 0; }
+.sm-gender-box {
+    padding: 13px; background: #f8fafc; border: 2px solid #e2e8f0;
+    border-radius: 8px; text-align: center; font-size: 11px; font-weight: 800; color: #64748b;
+}
+.sm-gender-card input:checked + .sm-gender-box { background: #0f172a; color: white; border-color: #0f172a; }
+
+.sm-upload-btn-custom {
+    display: block; padding: 13px; background: #f8fafc; border: 2px dashed #cbd5e1;
+    border-radius: 8px; text-align: center; font-size: 11px; font-weight: 800; color: #dc2626; cursor: pointer;
+}
+
+/* --- FIXED CHECKBOX & TERMS SECTION --- */
+.sm-terms-wrapper {
+    margin-top: 5px;
+    padding: 5px 0;
+}
+
+.sm-terms-label {
+    display: flex;
+    align-items: flex-start; /* Aligns checkbox with the first line of text */
+    gap: 12px;
+    cursor: pointer;
+    text-align: left; /* Strict left alignment */
+}
+
+.sm-custom-checkbox {
+    width: 16px !important;  /* Fixed size - not too big */
+    height: 16px !important;
+    margin-top: 2px !important; /* Centers with text line */
+    cursor: pointer;
+    flex-shrink: 0; /* Prevents checkbox from shrinking */
+}
+
+.sm-terms-text {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.sm-decent-btn.brand-blue-btn {
+    width: 100%; padding: 18px; 
+    background: #001529;
+    color: white; border: none;
+    border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; 
+    display: flex; justify-content: center; align-items: center; gap: 12px; 
+    box-shadow: 0 10px 20px rgba(0, 21, 41, 0.2); transition: 0.4s;
+}
+
+/* --- 4. VISUAL COLUMN (REAL-TIME STATS) --- */
+.sm-visual-column.premium-bg {
+    position: relative;
+    background: #0f172a; 
+    overflow-y: auto; /* Allows scrolling if content is too tall on small screens */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Pulled up to reduce navbar gap */
+    padding: 60px 40px; /* Adjusted top padding */
+}
+
+.sm-bg-image-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15;
+    z-index: 1;
+}
+
+.sm-stats-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Slightly reduced gap to fit more on screen */
+}
+
+.sm-stats-heading {
+    color: white; font-size: 22px; font-weight: 800; text-align: center;
+    margin-bottom: 5px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9;
+}
+
+/* UPDATED: FULL WHITE STATS CARDS */
+.sm-premium-card-white {
+    background: #ffffff !important;
+    padding: 22px; border-radius: 12px; display: flex;
+    align-items: center; gap: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    border: 1px solid #ffffff; transition: 0.3s;
+    position: relative; /* For live indicator positioning */
+}
+
+.sm-graph-container-white {
+    background: #ffffff !important; 
+    padding: 15px; border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2); border: 1px solid #ffffff; margin: 5px 0;
+}
+
+.sm-graph-wrapper {
+    width: 100%;
+    height: 120px; /* Defined height to prevent layout shifts */
+}
+
+.graph-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px;
+}
+
+.sm-premium-card-white.mini { padding: 18px; flex-direction: column; text-align: center; gap: 10px; }
+
+.card-icon {
+    width: 55px; height: 55px; border-radius: 12px;
+    display: flex; justify-content: center; align-items: center; font-size: 24px;
+}
+.card-icon.blue { background: #e0f2fe; color: #0284c7; }
+.card-icon.green { background: #f0fdf4; color: #16a34a; }
+.card-icon.orange { background: #fff7ed; color: #ea580c; }
+.card-icon.rocket { background: #fef2f2; color: #dc2626; }
+
+.card-content h3 { font-size: 32px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: -1px; }
+.card-content h4 { font-size: 24px; font-weight: 900; color: #0f172a; margin: 0; }
+.card-content p { font-size: 13px; font-weight: 700; color: #64748b; margin: 0; text-transform: uppercase; }
+
+.sm-live-indicator {
+    position: absolute; top: 15px; right: 20px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 900; color: #16a34a;
+}
+
+.sm-ping {
+    width: 8px; height: 8px; background: #16a34a; border-radius: 50%;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+.sm-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+.sm-trust-text-premium {
+    text-align: center; color: rgba(255, 255, 255, 0.6); font-size: 14px; line-height: 1.6;
+    margin-top: 5px; padding: 0 20px;
+}
+.sm-trust-text-premium strong { color: #ffffff; }
+
+/* --- 5. MOBILE RESPONSIVE --- */
+@media (max-width: 1100px) {
+    .sm-main-wrapper { display: flex; flex-direction: column; }
+    
+    .sm-form-column { 
+        order: 1; 
+        padding: 40px 20px; 
+    }
+
+    .sm-form-box-sharp {
+        padding: 30px 20px;
+        max-width: 100%;
+    }
+
+    .sm-visual-column { 
+        order: 2; 
+        padding: 60px 20px; 
+        align-items: center;
+    }
+
+    .sm-stats-container { max-width: 500px; }
+    
+    .sm-back-arrow-container { max-width: 100%; }
+
+    .sm-main-heading { font-size: 32px; text-align: center; }
+
+    .sm-input-row { grid-template-columns: 1fr; }
+
+    .sm-intro { text-align: center; }
+
+    .sm-journey-map-v2 { justify-content: center; }
+}
+
+@media (max-width: 480px) {
+    .sm-stats-grid { grid-template-columns: 1fr; }
+    .card-content h3 { font-size: 26px; }
+    .sm-stats-heading { font-size: 18px; }
+    .sm-main-heading { font-size: 28px; }
+}

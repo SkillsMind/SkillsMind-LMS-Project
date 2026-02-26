@@ -1,0 +1,328 @@
+/* Box Sizing Fix - Ye sabse zaroori hai */
+.sm-step-container, 
+.sm-step-container * {
+    box-sizing: border-box;
+}
+
+.sm-admin-container {
+    padding: 20px;
+    max-width: 1200px; /* Table ke liye width thodi barha di hai */
+    margin: 0 auto;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Admin Top Header */
+.sm-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.sm-admin-header h2 {
+    color: #1e293b;
+    margin: 0;
+}
+
+.sm-header-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.sm-header-actions button {
+    padding: 10px 20px;
+    border: 1px solid #e31e24;
+    background: transparent;
+    color: #e31e24;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sm-header-actions button.btn-active {
+    background: #e31e24;
+    color: white;
+}
+
+/* Manage Courses Table Styling */
+.sm-table-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+.sm-course-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.sm-course-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 2px solid #eee;
+}
+
+.sm-course-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f1f1;
+    vertical-align: middle;
+}
+
+.sm-row-img {
+    width: 60px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.row-hidden {
+    opacity: 0.6;
+    background: #fafafa;
+}
+
+/* Action Buttons in Table */
+.sm-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.sm-actions button {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.sm-actions button:hover {
+    background: #e2e8f0;
+}
+
+.sm-actions button.del-btn {
+    color: #ef4444;
+}
+
+.sm-actions button.del-btn:hover {
+    background: #fee2e2;
+}
+
+/* Stepper Navigation */
+.sm-step-navbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 50px;
+    border: 1px solid #eee;
+    overflow-x: auto;
+}
+
+.sm-step-navbar button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 40px;
+    white-space: nowrap;
+}
+
+.sm-step-navbar button.active {
+    background: #e31e24;
+    color: white;
+}
+
+.sm-step-navbar button.done {
+    color: #2ecc71;
+}
+
+/* Step Content Card */
+.sm-step-content-card {
+    background: #ffffff;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    min-height: 500px;
+}
+
+.sm-step-body h3 {
+    font-size: 22px;
+    margin-bottom: 30px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sm-input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+input, textarea, select {
+    padding: 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    background: #fafafa;
+    width: 100%;
+    font-size: 15px;
+}
+
+textarea {
+    height: 120px;
+    resize: none;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #e31e24;
+    outline: none;
+    background: #fff;
+}
+
+/* Media Section */
+.sm-media-upload-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sm-file-upload-box {
+    border: 2px dashed #e0e0e0;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    background: #fafafa;
+    cursor: pointer;
+}
+
+.sm-file-upload-box:hover {
+    border-color: #e31e24;
+}
+
+/* Syllabus Section */
+.sm-week-module {
+    background: #fdfdfd;
+    border: 1px solid #f0f0f0;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.sm-week-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.sm-week-tag {
+    background: #e31e24;
+    color: white;
+    padding: 6px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.sm-lesson-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.sm-add-lesson-btn, .sm-add-week-btn {
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.sm-add-week-btn {
+    width: 100%;
+    padding: 15px;
+    border: 2px dashed #e31e24;
+    color: #e31e24;
+    background: none;
+    border-radius: 12px;
+}
+
+.sm-add-week-btn:hover {
+    background: #fee2e2;
+}
+
+/* Footer Nav */
+.sm-step-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.sm-btn-next, .sm-btn-publish {
+    background: #e31e24;
+    color: white;
+    padding: 14px 35px;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.sm-btn-back {
+    background: #f0f0f0;
+    color: #555;
+    padding: 14px 35px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* Animations */
+.animate-slide {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toast Customization */
+.react-hot-toast {
+    border-left: 5px solid #e31e24 !important;
+    border-radius: 12px !important;
+}
+
+@media (max-width: 768px) {
+    .sm-input-row, .sm-media-upload-section, .sm-admin-header {
+        flex-direction: column;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}

@@ -1,0 +1,112 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { FaRobot, FaPaperPlane, FaTimes, FaMinus } from 'react-icons/fa';
+import axios from 'axios';
+import './SkillsMindBot.css';
+
+const SkillsMindBot = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [message, setMessage] = useState('');
+    const [chat, setChat] = useState([
+        { role: 'ai', text: 'Assalam-o-Alaikum! Main SkillsMind AI Assistant hoon. Main aapki kya madad kar sakta hoon?' }
+    ]);
+    const [isTyping, setIsTyping] = useState(false);
+    const chatEndRef = useRef(null);
+
+    const scrollToBottom = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [chat]);
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!message.trim()) return;
+
+        const studentName = localStorage.getItem('studentName') || 'Student';
+        const userMsg = message;
+        
+        setChat(prev => [...prev, { role: 'user', text: userMsg }]);
+        setMessage('');
+        setIsTyping(true);
+
+        try {
+            const res = await axios.post('http://localhost:5000/api/ai/chat', {
+                message: userMsg,
+                studentName: studentName
+            });
+
+            if (res.data && res.data.answer) {
+                setChat(prev => [...prev, { role: 'ai', text: res.data.answer }]);
+            }
+        } catch (error) {
+            console.error("Chat Error:", error);
+            setChat(prev => [...prev, { role: 'ai', text: "Server se rabta nahi ho pa raha. Please check karein ke backend chal raha hai." }]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    return (
+        <div className={`sm-bot-wrapper ${isOpen ? 'active' : ''}`}>
+            {!isOpen && (
+                <button className="sm-bot-toggle" onClick={() => setIsOpen(true)}>
+                    <FaRobot size={25} />
+                    <span className="sm-pulse"></span>
+                </button>
+            )}
+
+            {isOpen && (
+                <div className={`sm-chat-container ${isMinimized ? 'minimized' : ''}`}>
+                    <div className="sm-chat-header">
+                        <div className="sm-header-info">
+                            <div className="sm-bot-avatar">SM</div>
+                            <div>
+                                <h3>SkillsMind AI</h3>
+                                <p>Online | Virtual Assistant</p>
+                            </div>
+                        </div>
+                        <div className="sm-header-actions">
+                            <button onClick={() => setIsMinimized(!isMinimized)}><FaMinus /></button>
+                            <button onClick={() => setIsOpen(false)}><FaTimes /></button>
+                        </div>
+                    </div>
+
+                    {!isMinimized && (
+                        <>
+                            <div className="sm-chat-messages">
+                                {chat.map((msg, index) => (
+                                    <div key={index} className={`sm-message ${msg.role}`}>
+                                        <div className="sm-message-bubble">{msg.text}</div>
+                                    </div>
+                                ))}
+                                {isTyping && (
+                                    <div className="sm-message ai">
+                                        <div className="sm-typing-indicator">
+                                            <span></span><span></span><span></span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={chatEndRef} />
+                            </div>
+
+                            <form className="sm-chat-input" onSubmit={handleSendMessage}>
+                                <input 
+                                    type="text" 
+                                    placeholder="SkillsMind ke baare mein poochein..." 
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                />
+                                <button type="submit"><FaPaperPlane /></button>
+                            </form>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default SkillsMindBot;

@@ -1,0 +1,130 @@
+/* --- Desktop Basics --- */
+.sticky-sidebar {
+  position: fixed;
+  left: 0;
+  top: 35%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 3000;
+}
+
+.sidebar-item { position: relative; display: flex; align-items: center; }
+
+.icon-box {
+  width: 45px;
+  height: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+  z-index: 2;
+}
+
+.yellow-bg { background-color: #333; }
+.orange-bg { background-color: #FF8A00; }
+.light-orange-bg { background-color: #FFA500; }
+.red-bg { background-color: #E30613; }
+
+/* Desktop Hover */
+@media screen and (min-width: 769px) {
+  .info-item:hover .hover-content { left: 45px; opacity: 1; }
+  .mobile-info-card { display: none; }
+}
+
+.hover-content {
+  position: absolute;
+  left: -200px;
+  background: #333;
+  color: white;
+  padding: 10px 15px;
+  font-weight: bold;
+  font-size: 14px;
+  transition: 0.4s ease;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* --- Mobile Unique Styles --- */
+.sidebar-blur-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 11, 41, 0.7);
+  backdrop-filter: blur(8px); /* Hero text ko hide karne ke liye */
+  z-index: 2500;
+}
+
+@media screen and (max-width: 768px) {
+  .sticky-sidebar { left: 20px; bottom: 20px; top: auto; }
+  .desktop-only { display: none; }
+  
+  .mobile-toggle-btn {
+    display: flex;
+    width: 60px;
+    height: 60px;
+    background-color: #E30613;
+    color: white;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    font-size: 26px;
+    z-index: 3001;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+  }
+
+  .sidebar-items-wrapper {
+    position: absolute;
+    bottom: 75px;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+  }
+
+  .mobile-open .sidebar-items-wrapper { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .icon-box { border-radius: 50%; width: 50px; height: 50px; }
+
+  /* Unique Info Card */
+  .mobile-info-card {
+    position: absolute;
+    left: 65px;
+    bottom: 0;
+    width: 220px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s ease-out;
+    color: #000B29;
+  }
+
+  .mobile-info-card h4 { margin: 0 0 5px; color: #E30613; font-size: 16px; }
+  .mobile-info-card p { margin: 0 0 10px; font-size: 14px; font-weight: 500; }
+  .action-link { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 5px; 
+    color: #000B29; 
+    text-decoration: none; 
+    font-weight: bold;
+    border-top: 1px solid #eee;
+    padding-top: 5px;
+    width: 100%;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}

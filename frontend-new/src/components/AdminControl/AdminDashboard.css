@@ -1,0 +1,677 @@
+/* ============================================
+   SKILLSMIND ADMIN DASHBOARD - COMPLETE CSS
+   ============================================ */
+
+/* Clean Hide for everything else */
+body.admin-view-active nav, 
+body.admin-view-active footer, 
+body.admin-view-active .ContactSidebar, 
+body.admin-view-active #ContactSidebar {
+  display: none !important;
+}
+
+.sm-dashboard-root {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0; left: 0;
+  background: #f8fafc;
+  z-index: 99999;
+}
+
+/* SIDEBAR FIX - SCROLLABLE */
+.sm-sidebar {
+  width: 280px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px 20px;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Scrollbar styling for sidebar */
+.sm-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sm-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sm-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.sm-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.sm-logo { 
+  width: 50px; 
+  margin-bottom: 30px; 
+  display: block; 
+  flex-shrink: 0;
+}
+
+.sm-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: visible;
+}
+
+/* These Buttons MUST show now */
+.sm-tab-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  text-align: left !important;
+  transition: all 0.3s ease !important;
+  flex-shrink: 0;
+}
+
+.sm-tab-btn:hover, .sm-tab-btn.active {
+  background: #e30613 !important; /* SkillsMind Red */
+  color: white !important;
+}
+
+.sm-logout {
+  background: transparent;
+  border: 1px solid #e30613;
+  color: #e30613;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.sm-logout:hover {
+  background: #e30613;
+  color: white;
+}
+
+/* MAIN CONTENT */
+.sm-main { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  overflow-y: auto; 
+  overflow-x: hidden;
+}
+
+.sm-top-bar {
+  background: white;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.sm-search-box {
+  background: #f1f5f9;
+  padding: 10px 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 400px;
+}
+.sm-search-box input { 
+  border: none; 
+  background: none; 
+  outline: none; 
+  width: 100%; 
+  font-size: 14px;
+  color: #475569;
+}
+
+.sm-admin-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sm-page-content { 
+  padding: 40px; 
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sm-content-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 30px; 
+}
+
+.sm-content-header h2 {
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* EXCEL & PDF BUTTONS */
+.sm-export-btns { display: flex; gap: 15px; }
+.btn-excel { 
+  background: #10b981; 
+  border: none; 
+  padding: 10px 20px; 
+  color: white; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-weight: 600; 
+  transition: all 0.3s ease;
+}
+.btn-excel:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+.btn-pdf { 
+  background: #6366f1; 
+  border: none; 
+  padding: 10px 20px; 
+  color: white; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-weight: 600; 
+  transition: all 0.3s ease;
+}
+.btn-pdf:hover {
+  background: #4f46e5;
+  transform: translateY(-2px);
+}
+
+/* TABLE CARD */
+.sm-data-card { 
+  background: white; 
+  border-radius: 15px; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+  overflow: hidden; 
+}
+.sm-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+}
+.sm-table th { 
+  background: #f8fafc; 
+  padding: 15px 20px; 
+  text-align: left; 
+  color: #64748b; 
+  font-size: 13px; 
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sm-table td { 
+  padding: 15px 20px; 
+  border-bottom: 1px solid #f1f5f9; 
+  color: #475569;
+}
+
+.info-cell { 
+  display: flex; 
+  flex-direction: column; 
+}
+.info-cell strong { 
+  color: #1e293b; 
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.info-cell span { 
+  font-size: 12px; 
+  color: #64748b; 
+}
+
+.badge { 
+  background: #e0f2fe; 
+  color: #0369a1; 
+  padding: 4px 12px; 
+  border-radius: 5px; 
+  font-size: 11px; 
+  font-weight: 700; 
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-course {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 12px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.action-btns { 
+  display: flex; 
+  gap: 8px; 
+}
+.btn-approve { 
+  background: #f0fdf4; 
+  color: #16a34a; 
+  border: none; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  transition: all 0.3s ease;
+}
+.btn-approve:hover {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-reject { 
+  background: #fef2f2; 
+  color: #dc2626; 
+  border: none; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  transition: all 0.3s ease;
+}
+.btn-reject:hover {
+  background: #dc2626;
+  color: white;
+}
+
+.status-msg { 
+  text-align: center; 
+  padding: 50px; 
+  color: #94a3b8; 
+  font-size: 16px;
+}
+
+/* Custom Professional Modal */
+.sm-modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+.sm-modal-content {
+  background: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  width: 90%; 
+  max-width: 450px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  animation: smPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.sm-modal-icon { 
+  margin-bottom: 15px; 
+}
+.sm-modal-content h3 { 
+  font-size: 24px; 
+  color: #1a1a1a; 
+  margin-bottom: 12px; 
+  font-weight: 700;
+}
+.sm-modal-content p { 
+  color: #555; 
+  font-size: 16px; 
+  margin-bottom: 30px; 
+}
+.sm-modal-actions { 
+  display: flex; 
+  gap: 15px; 
+  justify-content: center; 
+}
+.sm-btn-cancel { 
+  background: #f0f0f0; 
+  color: #333; 
+  border: none; 
+  padding: 12px 25px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  transition: 0.2s; 
+}
+.sm-btn-confirm { 
+  background: #e30613; 
+  color: white; 
+  border: none; 
+  padding: 12px 25px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  transition: 0.2s; 
+}
+.sm-btn-confirm:hover { 
+  background: #c2181d; 
+  transform: translateY(-2px); 
+}
+.sm-btn-cancel:hover { 
+  background: #e5e5e5; 
+}
+
+@keyframes smPopIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================
+   🔥 NEW: DROPDOWN MENU STYLES - HOVER BASED
+   ============================================ */
+
+.sm-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.sm-dropdown-toggle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  position: relative;
+}
+
+.sm-dropdown-arrow {
+  font-size: 12px !important;
+  transition: transform 0.3s ease !important;
+  margin-left: auto !important;
+  color: currentColor !important;
+}
+
+.sm-dropdown-container:hover .sm-dropdown-arrow {
+  transform: rotate(180deg) !important;
+}
+
+/* 🔥 HOVER BASED DROPDOWN */
+.sm-dropdown-menu {
+  display: none;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-top: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  animation: slideDown 0.3s ease;
+  padding: 6px 0;
+}
+
+/* Show dropdown on hover */
+.sm-dropdown-container:hover .sm-dropdown-menu {
+  display: block;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sm-dropdown-item {
+  width: 100%;
+  padding: 10px 16px 10px 44px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  text-align: left;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+
+.sm-dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.sm-dropdown-item:hover {
+  background: white;
+  color: #e30613;
+  border-left-color: #e30613;
+  padding-left: 48px;
+}
+
+.sm-dropdown-item:hover::before {
+  background: #e30613;
+  transform: scale(1.2);
+}
+
+.sm-dropdown-item.active {
+  background: white;
+  color: #e30613;
+  border-left-color: #e30613;
+  font-weight: 600;
+}
+
+.sm-dropdown-item.active::before {
+  background: #e30613;
+}
+
+.sm-dropdown-item svg {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+}
+
+/* Active state for parent when dropdown item is active */
+.sm-dropdown-container:has(.sm-dropdown-item.active) .sm-tab-btn {
+  background: #e30613 !important;
+  color: white !important;
+}
+
+/* Hover effect for dropdown toggle */
+.sm-dropdown-toggle:hover {
+  background: #e30613 !important;
+  color: white !important;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+.sm-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sm-main::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.sm-main::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.sm-main::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .sm-sidebar {
+    width: 260px;
+    padding: 20px 15px;
+  }
+  
+  .sm-page-content {
+    padding: 30px 20px;
+  }
+  
+  .sm-search-box {
+    width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sm-dashboard-root {
+    flex-direction: column;
+  }
+  
+  .sm-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    padding: 20px;
+    position: relative;
+  }
+  
+  .sm-nav-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .sm-tab-btn {
+    flex: 1;
+    min-width: 140px;
+    justify-content: center;
+  }
+  
+  .sm-top-bar {
+    padding: 15px 20px;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .sm-search-box {
+    width: 100%;
+  }
+  
+  .sm-content-header {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  
+  .sm-export-btns {
+    width: 100%;
+  }
+  
+  .btn-excel, .btn-pdf {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .sm-table {
+    font-size: 12px;
+  }
+  
+  .sm-table th,
+  .sm-table td {
+    padding: 10px 12px;
+  }
+  
+  /* Mobile dropdown */
+  .sm-dropdown-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: white;
+  }
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.sm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.sm-loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #e30613;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.sm-hidden {
+  display: none !important;
+}
+
+.sm-visible {
+  display: flex !important;
+}
+
+.sm-text-center {
+  text-align: center;
+}
+
+.sm-mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.sm-mt-auto {
+  margin-top: auto;
+}

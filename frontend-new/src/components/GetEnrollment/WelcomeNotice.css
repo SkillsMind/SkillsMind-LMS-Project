@@ -1,0 +1,79 @@
+/* --- DESKTOP VIEW (Default) --- */
+.sm-vip-notice-container {
+    position: fixed;
+    right: -20px; /* Thora sa screen se bahar taake sirf hath aur board nazar aaye */
+    top: 30%; 
+    z-index: 9999;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.5s ease;
+}
+
+.char-box {
+    position: relative;
+    width: 320px;
+    display: flex;
+    align-items: center;
+}
+
+.vip-char-img {
+    width: 240px;
+    height: auto;
+    display: block !important;
+    z-index: 2;
+    filter: drop-shadow(-10px 10px 20px rgba(0,0,0,0.2));
+}
+
+.vip-notice-board {
+    position: absolute;
+    left: -110px; 
+    top: 20px;
+    background: #ffffff;
+    border: 4px solid #1a237e;
+    padding: 12px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    width: 180px;
+    transform: rotate(-4deg);
+    z-index: 1;
+    pointer-events: auto;
+}
+
+.student-name-display {
+    font-size: 18px;
+    font-weight: 900;
+    color: #E71D36;
+    margin: 2px 0;
+    text-transform: capitalize;
+}
+
+/* --- MOBILE VIEW (Responsive) --- */
+@media (max-width: 768px) {
+    .sm-vip-notice-container {
+        right: 5px;
+        top: auto;
+        bottom: 80px; /* Mobile par neechay bottom-right corner mein */
+        transform: none !important;
+    }
+
+    .char-box {
+        width: 180px; /* Size compress kar diya */
+    }
+
+    .vip-char-img {
+        width: 130px; /* Character chota kar diya */
+    }
+
+    .vip-notice-board {
+        width: 120px; /* Board chota kar diya */
+        left: -60px;
+        top: 10px;
+        padding: 8px;
+        border: 2px solid #1a237e;
+    }
+
+    .welcome-tag { font-size: 8px; }
+    .student-name-display { font-size: 13px; }
+    .skillsmind-msg { display: none; } /* Mobile par msg hide kiya taake jagah kam gheray */
+}

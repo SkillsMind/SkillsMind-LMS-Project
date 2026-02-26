@@ -1,0 +1,90 @@
+/* ======== HIDE NAVBAR & YELLOW SIDEBAR ON STUDENT DASHBOARD ======== */
+
+.student-dashboard ~ .skillsmind-nav,
+.student-dashboard ~ .sticky-sidebar,
+body:has(.student-dashboard) .skillsmind-nav,
+body:has(.student-dashboard) .sticky-sidebar {
+  display: none !important;
+}
+
+/* ======== FULL WHITE BACKGROUND ======== */
+
+html, body, #root, .App {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+body:has(.student-dashboard) {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* ======== STUDENT DASHBOARD LAYOUT ======== */
+
+.student-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* ======== MAIN CONTENT WRAPPER ======== */
+
+.main-wrapper {
+  flex: 1;
+  margin-left: 80px; /* Closed sidebar width */
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* Jab sidebar expand ho (80px se 280px) */
+.skills-sidebar.expanded ~ .main-wrapper,
+.skills-sidebar.expanded ~ * .main-wrapper,
+.main-wrapper:has(~ .skills-sidebar.expanded) {
+  margin-left: 280px;
+}
+
+/* Old classes - for backward compatibility */
+.main-wrapper.sidebar-closed {
+  margin-left: 80px;
+}
+
+.main-wrapper.sidebar-open {
+  margin-left: 280px;
+}
+
+/* ======== DASHBOARD CONTENT AREA ======== */
+
+.dashboard-content {
+  padding: 24px;
+  min-height: 100vh; /* Full height kyunki topbar hide hai */
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* ======== RESPONSIVE ======== */
+
+@media (max-width: 1024px) {
+  .main-wrapper {
+    margin-left: 0;
+  }
+  
+  .main-wrapper.sidebar-open,
+  .skills-sidebar.expanded ~ .main-wrapper {
+    margin-left: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+  
+  .dashboard-content {
+    padding: 16px;
+  }
+}

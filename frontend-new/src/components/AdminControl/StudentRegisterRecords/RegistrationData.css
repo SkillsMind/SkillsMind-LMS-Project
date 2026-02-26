@@ -1,0 +1,154 @@
+.registration-data-page {
+    padding: 25px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.admin-header h2 {
+    color: #000B29;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+.admin-header p {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.custom-table th {
+    background: #f1f5f9;
+    padding: 15px;
+    text-align: left;
+    color: #475569;
+    font-size: 14px;
+}
+
+.custom-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.name-cell strong { display: block; color: #1e293b; }
+.name-cell small { color: #94a3b8; font-size: 11px; }
+
+.contact-cell span, .location-cell span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.delete-icon-btn {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.delete-icon-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.no-data {
+    text-align: center;
+    color: #94a3b8;
+    padding: 40px !important;
+}/* SkillsMind Registration Table Styles */
+.registration-container { padding: 25px; background-color: #f8f9fa; min-height: 100vh; }
+
+.sm-content-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    margin-bottom: 25px; background: white; padding: 20px; border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.action-tools { display: flex; gap: 12px; }
+
+/* Premium Buttons */
+.btn-tool { 
+    border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s;
+}
+.btn-tool.refresh { background: #f1f3f5; color: #495057; }
+.btn-tool.pdf { background: #e31e24; color: white; }
+.btn-tool.excel { background: #1d6f42; color: white; }
+.btn-tool:hover { transform: translateY(-2px); opacity: 0.9; }
+
+.sm-data-card { background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+.sm-table { width: 100%; border-collapse: collapse; }
+.sm-table th { background: #fdfdfd; padding: 18px; text-align: left; color: #666; font-size: 13px; border-bottom: 2px solid #f1f1f1; }
+.sm-table td { padding: 18px; border-bottom: 1px solid #f8f9fa; vertical-align: middle; }
+
+/* Delete Button */
+.btn-delete-sm { 
+    background: #fff5f5; color: #e31e24; border: 1px solid #ffe3e3; 
+    padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s;
+}
+.btn-delete-sm:hover { background: #e31e24; color: white; }/* SkillsMind Custom Delete Modal */
+.sm-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6); display: flex; align-items: center;
+    justify-content: center; z-index: 2000; backdrop-filter: blur(4px);
+}
+
+.sm-modal-box {
+    background: white; padding: 30px; border-radius: 20px; width: 400px;
+    text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.sm-modal-icon {
+    font-size: 50px; color: #e31e24; margin-bottom: 15px;
+}
+
+.sm-modal-btns {
+    display: flex; justify-content: center; gap: 15px; margin-top: 25px;
+}
+
+.btn-confirm-del {
+    background: #e31e24; color: white; border: none; padding: 10px 25px;
+    border-radius: 8px; cursor: pointer; font-weight: bold;
+}
+
+.btn-cancel-del {
+    background: #f1f3f5; color: #495057; border: none; padding: 10px 25px;
+    border-radius: 8px; cursor: pointer;
+}

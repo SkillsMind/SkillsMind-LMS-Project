@@ -1,0 +1,136 @@
+.knowledge-canvas {
+  position: relative;
+  height: 500px;
+  background: linear-gradient(135deg, #F0F9FF 0%, #FFFFFF 100%);
+  border-radius: 20px;
+  border: 2px solid #E0F2FE;
+  overflow: hidden;
+}
+
+.connections-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.concepts-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.concept-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 3px solid #E5E7EB;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.concept-node:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  z-index: 10;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.concept-node.small {
+  width: 80px;
+  height: 80px;
+}
+
+.concept-node.medium {
+  width: 100px;
+  height: 100px;
+}
+
+.concept-node.large {
+  width: 120px;
+  height: 120px;
+}
+
+.concept-node.mastered {
+  border-color: #10B981;
+  background: #ECFDF5;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.node-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.concept-node.mastered .node-glow {
+  opacity: 1;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0; }
+}
+
+.concept-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #000B29;
+  text-align: center;
+  padding: 0 8px;
+  z-index: 1;
+}
+
+.master-icon {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  color: #10B981;
+  background: white;
+  border-radius: 50%;
+  padding: 2px;
+}
+
+.map-legend {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 24px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot.mastered { background: #10B981; }
+.dot.learning { background: #F59E0B; }
+.dot.locked { background: #E5E7EB; }

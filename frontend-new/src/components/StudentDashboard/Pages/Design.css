@@ -1,0 +1,608 @@
+/* ==========================================
+   SKILLSMIND - PAGES COMMON STYLES
+   Schedule, Homework, Notebook, Attendance, etc.
+   ========================================== */
+
+.page-container {
+  padding: 24px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease;
+  background: var(--bg-light);
+  min-height: 100vh;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #000B29;
+  margin-bottom: 8px;
+}
+
+.page-header p {
+  color: #64748B;
+  font-size: 15px;
+}
+
+/* Buttons */
+.add-note-btn, .submit-btn, .start-quiz-btn, .save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #DC2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-note-btn:hover, .submit-btn:hover, .start-quiz-btn:hover {
+  background: #B91C1C;
+  transform: translateY(-2px);
+}
+
+/* Schedule Page */
+.schedule-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.day-schedule {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+}
+
+.day-header {
+  background: #F8FAFC;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.day-header h3 {
+  font-weight: 700;
+  color: #000B29;
+}
+
+.day-classes {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.class-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  border-left: 4px solid #DC2626;
+}
+
+.class-card.completed {
+  border-left-color: #10B981;
+  opacity: 0.7;
+}
+
+.class-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #DC2626;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 100px;
+}
+
+.class-info {
+  flex: 1;
+}
+
+.class-info h4 {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.class-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #DBEAFE;
+  color: #1E40AF;
+  border-radius: 12px;
+}
+
+.class-action {
+  padding: 8px 16px;
+  background: #000B29;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Homework Page */
+.homework-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.homework-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  transition: all 0.3s;
+}
+
+.homework-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.homework-icon {
+  width: 48px;
+  height: 48px;
+  background: #FEF3C7;
+  color: #D97706;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.homework-details {
+  flex: 1;
+}
+
+.homework-details h3 {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.homework-details p {
+  color: #64748B;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.homework-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #DC2626;
+  font-size: 13px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #D1FAE5;
+  color: #059669;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Notebook Page */
+.notebook-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  height: calc(100vh - 200px);
+}
+
+.notes-sidebar {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  overflow-y: auto;
+}
+
+.note-preview {
+  padding: 16px;
+  border-bottom: 1px solid #E2E8F0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.note-preview:hover, .note-preview.active {
+  background: #F8FAFC;
+}
+
+.note-preview h4 {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.note-preview p {
+  color: #64748B;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.note-preview span {
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+.note-editor {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-title-input {
+  font-size: 20px;
+  font-weight: 700;
+  border: none;
+  border-bottom: 2px solid #E2E8F0;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  outline: none;
+}
+
+.note-title-input:focus {
+  border-color: #DC2626;
+}
+
+.note-content-input {
+  flex: 1;
+  border: none;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.6;
+  outline: none;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #E2E8F0;
+}
+
+.delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.empty-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  gap: 16px;
+}
+
+/* Attendance Page */
+.attendance-overview {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.attendance-circle {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  border: 1px solid #E2E8F0;
+}
+
+.circle-progress {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: conic-gradient(#10B981 calc(var(--percentage) * 1%), #E2E8F0 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  position: relative;
+}
+
+.circle-progress::before {
+  content: '';
+  width: 120px;
+  height: 120px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.circle-progress span {
+  position: relative;
+  font-size: 32px;
+  font-weight: 800;
+  color: #000B29;
+}
+
+.attendance-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.att-stat {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.att-stat.present { color: #10B981; }
+.att-stat.absent { color: #DC2626; }
+.att-stat.late { color: #F59E0B; }
+
+.att-stat h4 {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.att-stat p {
+  color: #64748B;
+  font-size: 14px;
+}
+
+.monthly-attendance {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  padding: 24px;
+}
+
+.month-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.month-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  font-weight: 600;
+}
+
+.month-bar {
+  flex: 1;
+  height: 8px;
+  background: #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.month-fill {
+  height: 100%;
+  background: #10B981;
+  border-radius: 4px;
+}
+
+/* Quizzes Page */
+.quizzes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.quiz-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.3s;
+}
+
+.quiz-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.quiz-card.locked {
+  opacity: 0.6;
+}
+
+.quiz-icon {
+  width: 56px;
+  height: 56px;
+  background: #F3E8FF;
+  color: #7C3AED;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-info h3 {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.quiz-info p {
+  color: #64748B;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.quiz-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748B;
+}
+
+.quiz-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: #D1FAE5;
+  color: #059669;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.locked-badge {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  background: #F1F5F9;
+  color: #64748B;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Results Page */
+.results-summary {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.gpa-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  padding: 32px;
+  text-align: center;
+}
+
+.gpa-card h2 {
+  font-size: 48px;
+  font-weight: 800;
+  color: #000B29;
+  margin-bottom: 8px;
+}
+
+.result-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.res-stat {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  padding: 24px;
+  text-align: center;
+}
+
+.res-stat h4 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #000B29;
+  margin-bottom: 4px;
+}
+
+.grades-table {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+}
+
+.table-header, .table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 1fr;
+  padding: 16px 24px;
+  align-items: center;
+}
+
+.table-header {
+  background: #F8FAFC;
+  font-weight: 700;
+  font-size: 14px;
+  color: #64748B;
+}
+
+.table-row {
+  border-top: 1px solid #E2E8F0;
+}
+
+.grade-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: #000B29;
+  color: white;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .notebook-layout,
+  .attendance-overview,
+  .results-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .attendance-stats,
+  .result-stat-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .page-container {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,323 @@
+/* ==========================================
+    SkillsMind Premium Admin Dashboard - FINAL
+   ========================================== */
+
+:root {
+    --sm-dark: #000B29;
+    --sm-red: #e31e24;
+    --sm-bg: #f8fafc;
+    --sm-green: #2cb910;
+    --sm-amber: #f59e0b;
+    --sm-blue: #3b82f6; 
+    --sm-text-main: #1e293b;
+    --sm-text-light: #64748b;
+    --sm-white: #ffffff;
+    --sm-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Overall Container */
+.payment-approval-container {
+    padding: 30px;
+    background-color: var(--sm-bg);
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    position: relative;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header Section */
+.sm-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.sm-header-text h1 {
+    color: var(--sm-dark);
+    font-size: 26px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+}
+
+.sm-header-text p {
+    color: var(--sm-text-light);
+    margin: 5px 0 0 0;
+    font-size: 14px;
+}
+
+/* Header Actions Wrapper */
+.sm-header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Export Buttons Designing - ENHANCED */
+.sm-export-btn {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Excel Style - Professional Green Gradient */
+.sm-export-btn.excel { 
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%); 
+    border-bottom: 3px solid #052e16;
+}
+
+/* PDF Style - Professional Red Gradient */
+.sm-export-btn.pdf { 
+    background: linear-gradient(135deg, #e31e24 0%, #991b1b 100%); 
+    border-bottom: 3px solid #7f1d1d;
+}
+
+.sm-export-btn:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.15);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.sm-export-btn:active {
+    transform: translateY(0px);
+}
+
+.sm-refresh-btn {
+    background: var(--sm-dark);
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.sm-refresh-btn:hover {
+    background: #ffffff;
+    color: var(--sm-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 11, 41, 0.2);
+}
+
+/* Table Card & Wrapper */
+.sm-table-card {
+    background: var(--sm-white);
+    border-radius: 16px;
+    box-shadow: var(--sm-shadow);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Responsive Table Wrapper */
+.sm-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sm-styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1100px;
+    table-layout: auto;
+}
+
+.sm-styled-table th {
+    background: #f1f5f9;
+    padding: 18px 15px;
+    color: var(--sm-dark);
+    font-weight: 800;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sm-styled-table td {
+    padding: 16px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+/* Student Info Box */
+.sm-user-box { display: flex; align-items: center; gap: 12px; }
+.sm-avatar {
+    width: 40px; height: 40px;
+    background: var(--sm-dark);
+    color: white; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 16px;
+    flex-shrink: 0;
+}
+.sm-name { display: block; font-weight: 700; color: var(--sm-dark); font-size: 14px; }
+.sm-email { font-size: 11px; color: var(--sm-text-light); }
+.sm-cnic-tag { font-size: 12px; color: var(--sm-text-main); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+
+/* COURSE & FEE STACK */
+.sm-course-stack { display: flex; flex-direction: column; gap: 2px; }
+.sm-course-name-bold { font-weight: 800; color: var(--sm-red); font-size: 13px; }
+.sm-amount-sub { font-weight: 700; color: var(--sm-dark); font-size: 12px; }
+
+/* TRANSACTION STACK */
+.sm-trx-stack { display: flex; flex-direction: column; gap: 4px; }
+.sm-badge-method { 
+    font-weight: 700; color: var(--sm-dark); font-size: 10px; 
+    text-transform: uppercase; background: #e2e8f0; 
+    padding: 2px 6px; border-radius: 4px; width: fit-content;
+}
+.sm-trx-code { 
+    font-family: 'Courier New', monospace; font-size: 11px; 
+    color: var(--sm-text-light);
+}
+
+/* VIEW PROOF BUTTON */
+.sm-view-proof-btn {
+    background: #f1f5f9 !important;
+    color: var(--sm-dark) !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: flex; align-items: center; gap: 5px;
+    transition: 0.2s;
+}
+
+.sm-view-proof-btn:hover {
+    background: var(--sm-dark) !important;
+    color: white !important;
+}
+
+/* ACTION BUTTONS */
+.sm-action-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    min-width: 140px; 
+}
+
+.sm-btn-approve, .sm-btn-reject, .sm-btn-delete, .sm-btn-pending {
+    width: 34px; height: 34px;
+    border: none; border-radius: 8px;
+    cursor: pointer !important; 
+    display: flex;
+    align-items: center; justify-content: center;
+    font-size: 14px; transition: 0.3s; color: white;
+}
+
+.sm-btn-approve { background: var(--sm-green); box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2); }
+.sm-btn-reject { background: var(--sm-red); box-shadow: 0 3px 8px rgba(227, 30, 36, 0.2); }
+.sm-btn-delete { background: #475569; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1); }
+.sm-btn-pending { background: var(--sm-blue); box-shadow: 0 3px 8px rgba(59, 130, 246, 0.2); }
+
+.sm-btn-approve:hover, .sm-btn-reject:hover, .sm-btn-delete:hover, .sm-btn-pending:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+/* STATUS BADGES - COLOR IMPROVEMENTS (Lower-case dynamic support added) */
+.sm-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 900; 
+    display: inline-block;
+    border: 1px solid transparent;
+    text-align: center;
+    min-width: 95px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* SkillsMind Premium Badge Colors */
+.sm-badge.approved, .sm-badge.status-approved { 
+    background: #dcfce7; color: #15803d; border-color: #86efac; 
+}
+.sm-badge.rejected, .sm-badge.status-rejected { 
+    background: #fee2e2; color: #dc2626; border-color: #fca5a5; 
+}
+.sm-badge.pending, .sm-badge.status-pending { 
+    background: #fef9c3; color: #a16207; border-color: #fde047; 
+}
+
+/* SWEETALERT PREMIUM OVERRIDES */
+.swal2-container { z-index: 1000000 !important; }
+.sm-swal-container .swal2-popup {
+    border-radius: 20px !important;
+    padding: 2em !important;
+}
+
+/* IMAGE MODAL */
+.sm-image-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 11, 41, 0.9);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 99999; 
+    backdrop-filter: blur(8px);
+}
+
+.sm-image-content {
+    background: white; padding: 12px; border-radius: 20px;
+    position: relative; max-width: 500px; width: 90%; 
+    animation: smZoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sm-full-view-link {
+    color: var(--sm-red);
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+@keyframes smZoom { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.sm-close-modal {
+    position: absolute; top: -12px; right: -12px;
+    background: var(--sm-red); color: white; border: none;
+    width: 35px; height: 35px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(227, 30, 36, 0.3);
+}
+
+/* LOADING STATE */
+.sm-loading-container {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px;
+}
+.sm-loader {
+    width: 45px; height: 45px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--sm-red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.sm-no-data { text-align: center; padding: 50px !important; font-weight: 600; color: var(--sm-text-light); }

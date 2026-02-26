@@ -1,0 +1,431 @@
+/* SkillsMind Ultra-Professional Payment Gateway V3.1 */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary:  #000B29; /* SkillsMind Blue */
+    --primary-dark: #000B29;
+    --dark: #0f172a;
+    --success:  #000B29;
+    --bg-light: #f8fafc;
+    --border: #e2e8f0;
+    --text-main: #000B29;
+    --text-muted: #ffffff;
+    --white: #ffffff;
+    --accent-red: rgb(209, 10, 23);
+}
+
+/* Base Style */
+.sm-payment-page-v2 {
+    background: var(--bg-light);
+    min-height: 100vh;
+    padding: 40px 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--text-main);
+}
+
+/* Nav Section */
+.sm-payment-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto 40px;
+}
+
+.sm-brand-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--dark);
+    text-align: right;
+}
+
+.sm-brand-name span {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--primary);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+/* Main Grid Layout */
+.sm-payment-wrapper {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ============================================================
+    LEFT SIDE: COMPACT PREMIUM COURSE CARD (UPDATED)
+   ============================================================ */
+
+.premium-course-card-visual {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 40px;
+    /* transition add ki hai hover smooth karne ke liye */
+    transition: all 0.4s ease;
+    user-select: none;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    cursor: pointer;
+}
+
+/* HOVER EFFECT: Card thora lift hoga aur shadow gehri hogi */
+.premium-course-card-visual:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+.course-card-top {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: #000;
+}
+
+.course-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+/* HOVER EFFECT: Image thori aur dark hogi taake reserved name pop kare */
+.premium-course-card-visual:hover .course-preview-img {
+    opacity: 0.5;
+}
+
+/* BRIGHT NEON RESERVED LABEL */
+.reserved-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background:#000B29;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-align: center;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    /* Hover par scale up hoga */
+    transition: transform 0.3s ease;
+}
+
+.premium-course-card-visual:hover .reserved-label {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.premium-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: var(--accent-red);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    z-index: 5;
+}
+
+/* Card Body Content */
+.course-card-body-premium {
+    padding: 20px;
+    background: var(--white);
+}
+
+.sm-course-stats-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.sm-course-stats-bar span {
+    background: #f0f7ff;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* COURSE TITLE: Size bada aur bold kar diya */
+.course-title-main {
+    font-size: 1.5rem; /* Bada Font Size */
+    font-weight: 900;   /* Extra Bold */
+    color: var(--dark);
+    margin-bottom: 15px;
+    line-height: 1.2;
+}
+
+.course-meta-info {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.course-meta-info span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.course-meta-info svg {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.price-section-premium {
+    background: var(--dark);
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+    color: white;
+}
+
+.price-section-premium .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    opacity: 0.6;
+    display: block;
+}
+
+.final-price {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+}
+/* ============================================================
+   RIGHT SIDE: PAYMENT FORMS (Kept same as your original)
+   ============================================================ */
+
+.sm-selection-container, .sm-expanded-payment-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+    border: 1px solid var(--border);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 30px;
+}
+
+.sm-grid-methods {
+    display: grid;
+    gap: 15px;
+}
+
+.premium-method-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 25px;
+    border: 2px solid #f1f5f9;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-method-card:hover {
+    border-color: var(--primary);
+    background: #f8faff;
+    transform: translateX(5px);
+}
+
+.method-img-logo {
+    width: 60px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.method-info strong {
+    display: block;
+    font-size: 1.1rem;
+}
+
+.method-info span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.method-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 25px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid;
+}
+
+.method-header h4 { font-size: 1.2rem; margin: 0; }
+.method-header p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+.sm-field {
+    margin-bottom: 20px;
+}
+
+.sm-field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--dark);
+}
+
+.sm-field input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 1rem;
+    outline: none;
+    transition: 0.3s;
+}
+
+.sm-field input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.sm-input-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.sm-account-details {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.detail-row:last-child { border: none; }
+
+.copyable-text {
+    color: var(--primary);
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.dropzone-v2 {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    transition: 0.3s;
+    background: #fafafa;
+}
+
+.dropzone-v2:hover {
+    border-color: var(--primary);
+    background: #f5f3ff;
+}
+
+.sm-submit-payment-btn {
+    width: 100%;
+    padding: 18px;
+    border-radius: 14px;
+    border: none;
+    color: white;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+
+.sm-submit-payment-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .sm-payment-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .sm-course-preview-sidebar {
+        order: 2;
+        position: static;
+    }
+}
+
+@media (max-width: 600px) {
+    .sm-input-group { grid-template-columns: 1fr; }
+    .sm-expanded-payment-card { padding: 25px; }
+}/* Puray page ka background white karne ke liye */
+.payment-page-container {
+    background-color: #ffffff !important;
+    min-height: 100vh;
+    padding-top: 20px;
+}
+
+/* Back Button Design */
+.sm-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc; /* Light grey/white feel */
+    border: 1px solid #e2e8f0;
+    padding: 10px 18px;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: fit-content;
+    margin-bottom: 25px;
+    text-decoration: none;
+}
+
+.sm-back-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    transform: translateX(-5px); /* Chota sa animation */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.sm-back-btn svg {
+    font-size: 1rem;
+    color: #3b82f6; /* SkillsMind Blue */
+}

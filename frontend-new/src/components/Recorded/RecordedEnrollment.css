@@ -1,0 +1,86 @@
+.recorded-enroll-container {
+    min-height: 100vh;
+    background: #f1f5f9;
+    padding: 30px;
+}
+
+.recorded-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 30px;
+}
+
+.recorded-main-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.rec-badge {
+    background: #fee2e2;
+    color: #dc2626;
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.recorded-header h1 { font-size: 28px; color: #0f172a; margin-bottom: 10px; }
+.recorded-header p { color: #64748b; line-height: 1.6; }
+
+.recorded-perks-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 30px 0;
+}
+
+.perk-box {
+    text-align: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.enrollment-action-box {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price-display { display: flex; flex-direction: column; }
+.price-display .price { font-size: 32px; font-weight: 900; color: #dc2626; }
+
+.confirm-recorded-btn {
+    background: #0f172a;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-course-card {
+    background: white;
+    padding: 15px;
+    border-radius: 20px;
+}
+
+.sidebar-course-card img { width: 100%; border-radius: 15px; margin-bottom: 15px; }
