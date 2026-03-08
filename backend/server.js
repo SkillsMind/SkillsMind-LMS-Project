@@ -18,22 +18,22 @@ const server = http.createServer(app);
 // ==========================================
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173    "],
+        origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173"],
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["Authorization", "Content-Type"]
     },
-    transports: ['websocket', 'polling'], // Support both transports
+    transports: ['websocket', 'polling'],
     pingTimeout: 60000,
     pingInterval: 25000,
-    allowEIO3: true // Allow Engine.IO v3 clients
+    allowEIO3: true
 });
 
 app.set('io', io);
 
 // --- 1. MIDDLEWARE ---
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173    "],
+    origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173"],
     credentials: true
 })); 
 
@@ -50,8 +50,9 @@ const uploadDir = path.join(__dirname, 'uploads');
 const videoDir = path.join(__dirname, 'uploads', 'videos');
 const receiptDir = path.join(__dirname, 'uploads', 'receipts');
 const assignmentDir = path.join(__dirname, 'uploads', 'assignments');
+const profileDir = path.join(__dirname, 'uploads', 'profiles');
 
-const dirs = [uploadDir, videoDir, receiptDir, assignmentDir];
+const dirs = [uploadDir, videoDir, receiptDir, assignmentDir, profileDir];
 dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -67,7 +68,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 }));
 
 // ==========================================
-// 🔧 TEMPORARY: Safe route loader with error handling
+// 🔧 FIXED: Safe route loader with error handling
 // ==========================================
 const safeRoute = (routePath, routeName) => {
     try {
@@ -76,9 +77,8 @@ const safeRoute = (routePath, routeName) => {
         return route;
     } catch (err) {
         console.warn(`⚠️  ${routeName} temporarily disabled: ${err.message.split('\n')[0]}`);
-        // Return dummy router
         const dummyRouter = express.Router();
-        dummyRouter.all('*', (req, res) => {
+        dummyRouter.use((req, res) => {
             res.status(503).json({ 
                 success: false, 
                 message: `${routeName} temporarily unavailable`,
@@ -98,6 +98,11 @@ app.use('/api/enroll', safeRoute('./routes/LiveEnrollment', 'Enrollment'));
 app.use('/api/courses', safeRoute('./routes/course', 'Courses'));
 app.use('/api/payments', safeRoute('./routes/Paymentreceived', 'Payments'));
 
+// ==========================================
+// 🔥 NEW: STUDENT PROFILE DASHBOARD ROUTES
+// ==========================================
+app.use('/api/student-profile', safeRoute('./routes/studentProfile', 'Student Profile Dashboard'));
+
 // Dashboard & Admin
 app.use('/api/student-dashboard', safeRoute('./routes/studentDashboard', 'Student Dashboard'));
 app.use('/api/admin', safeRoute('./routes/admin', 'Admin'));
@@ -108,6 +113,7 @@ app.use('/api/attendance', safeRoute('./routes/attendanceRoutes', 'Attendance'))
 app.use('/api/quizzes', safeRoute('./routes/quizRoutes', 'Quizzes'));
 app.use('/api/results', safeRoute('./routes/resultRoutes', 'Results'));
 app.use('/api/announcements', safeRoute('./routes/announcementRoutes', 'Announcements'));
+app.use('/api/settings', safeRoute('./routes/settings', 'Settings'));
 
 // ==========================================
 // 📝 NOTEBOOK ROUTES
@@ -120,26 +126,50 @@ app.use('/api/notes', safeRoute('./routes/notes', 'Notes'));
 app.use('/api/schedules', safeRoute('./routes/schedules', 'Schedules'));
 
 // ==========================================
-// 🔥 TEMPORARILY DISABLED ROUTES (Fix in progress)
+// 🔥 NEW: ZOOM & ATTENDANCE ROUTES (LIVE CLASSES)
 // ==========================================
-// ⚠️  These routes have middleware issues - fix later
-app.use('/api/important-links', (req, res) => res.json({ 
-    success: true, 
-    message: 'Important Links temporarily disabled', 
-    data: [] 
-}));
-app.use('/api/notices', (req, res) => res.json({ 
-    success: true, 
-    message: 'Notices temporarily disabled', 
-    data: [] 
-}));
-app.use('/api/careers', (req, res) => res.json({ 
-    success: true, 
-    message: 'Careers temporarily disabled', 
-    data: [] 
-}));
+app.use('/api/zoom', safeRoute('./routes/zoom', 'Zoom Live Classes'));
+app.use('/api/attendance-new', safeRoute('./routes/attendance', 'New Attendance System'));
 
-console.log('⚠️  Note: /api/important-links, /api/notices, /api/careers temporarily disabled');
+// ==========================================
+// 🔥 NEW: IMPORTANT LINKS ROUTES - DIRECT IMPORT (FIXED)
+// ==========================================
+try {
+    const importantLinksRoutes = require('./routes/importantLinks');
+    app.use('/api/important-links', importantLinksRoutes);
+    console.log('✅ Important Links Routes loaded successfully');
+} catch (err) {
+    console.error('❌ Important Links Routes Error:', err.message);
+    app.use('/api/important-links', (req, res) => res.status(503).json({ 
+        success: false, 
+        message: 'Important Links service error', 
+        error: err.message,
+        hint: 'Check if models/ImportantLink.js exists'
+    }));
+}
+
+// ==========================================
+// 📢 NOTICES ROUTES - ENABLED
+// ==========================================
+const noticesRouter = require('./routes/notices');
+app.use('/api/notices', noticesRouter);
+
+// ==========================================
+// 🔥 NEW: JOBS & INTERNSHIPS ROUTES - ENABLED
+// ==========================================
+try {
+    const jobsRoutes = require('./routes/jobs');
+    app.use('/api/jobs', jobsRoutes);
+    console.log('✅ Jobs & Internships Routes loaded successfully');
+} catch (err) {
+    console.error('❌ Jobs Routes Error:', err.message);
+    app.use('/api/jobs', (req, res) => res.status(503).json({ 
+        success: false, 
+        message: 'Jobs service error', 
+        error: err.message,
+        hint: 'Check if models/Job.js and routes/jobs.js exist'
+    }));
+}
 
 // ==========================================
 // AI Routes
@@ -179,12 +209,11 @@ app.get('/api/stats', async (req, res) => {
 });
 
 // ==========================================
-// SOCKET.IO CONNECTION - FIXED
+// SOCKET.IO CONNECTION - FIXED (WITH ZOOM & ATTENDANCE)
 // ==========================================
 io.on('connection', (socket) => {
     console.log('⚡ New client connected:', socket.id);
     
-    // 🔧 Send connection confirmation
     socket.emit('connected', { message: 'Connected to server', socketId: socket.id });
 
     socket.on('joinStudentRoom', (studentId) => {
@@ -220,7 +249,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 🔥 NEW: Schedule real-time updates
     socket.on('joinSchedule', (scheduleId) => {
         if (scheduleId) {
             socket.join(`schedule_${scheduleId}`);
@@ -228,7 +256,39 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 🔥 NEW: Broadcast schedule updates to course students
+    // 🔥 NEW: Zoom Meeting Rooms
+    socket.on('joinZoomMeeting', (meetingId) => {
+        if (meetingId) {
+            socket.join(`zoom_${meetingId}`);
+            console.log(`🔴 Client joined Zoom room: zoom_${meetingId}`);
+        }
+    });
+
+    socket.on('leaveZoomMeeting', (meetingId) => {
+        if (meetingId) {
+            socket.leave(`zoom_${meetingId}`);
+            console.log(`🔴 Client left Zoom room: zoom_${meetingId}`);
+        }
+    });
+
+    // 🔥 NEW: Attendance Real-time Updates
+    socket.on('attendanceUpdate', (data) => {
+        console.log('📊 Broadcasting attendance update:', data);
+        io.to(`zoom_${data.meetingId}`).emit('attendanceUpdated', data);
+        io.to(`course_${data.courseId}`).emit('attendanceUpdated', data);
+    });
+
+    socket.on('studentJoinedClass', (data) => {
+        console.log('👤 Student joined class:', data);
+        io.to(`zoom_${data.meetingId}`).emit('studentJoined', data);
+    });
+
+    socket.on('studentLeftClass', (data) => {
+        console.log('👤 Student left class:', data);
+        io.to(`zoom_${data.meetingId}`).emit('studentLeft', data);
+    });
+
+    // Schedule Events
     socket.on('scheduleUpdate', (data) => {
         console.log('📅 Broadcasting schedule update:', data);
         io.to(`course_${data.courseId}`).emit('scheduleUpdated', data);
@@ -244,7 +304,32 @@ io.on('connection', (socket) => {
         io.to(`course_${data.courseId}`).emit('scheduleCancelled', data);
     });
 
-    // 🔧 Handle errors
+    // 🔥 NEW: Zoom Meeting Events
+    socket.on('zoomMeetingCreated', (data) => {
+        console.log('🔴 Broadcasting Zoom meeting created:', data);
+        io.to(`course_${data.courseId}`).emit('zoomMeetingCreated', data);
+    });
+
+    socket.on('zoomMeetingStarted', (data) => {
+        console.log('🔴 Broadcasting Zoom meeting started:', data);
+        io.to(`course_${data.courseId}`).emit('classStarted', data);
+    });
+
+    socket.on('zoomMeetingEnded', (data) => {
+        console.log('🔴 Broadcasting Zoom meeting ended:', data);
+        io.to(`course_${data.courseId}`).emit('classEnded', data);
+    });
+
+    // 🔥 NEW: Job posting real-time updates
+    socket.on('newJobPosted', (data) => {
+        console.log('💼 Broadcasting new job:', data);
+        if (data.relevantCourses && data.relevantCourses.length > 0) {
+            data.relevantCourses.forEach(courseId => {
+                io.to(`course_${courseId}`).emit('newJobAvailable', data);
+            });
+        }
+    });
+
     socket.on('error', (error) => {
         console.error('Socket error:', error);
     });
@@ -255,20 +340,7 @@ io.on('connection', (socket) => {
 });
 
 // --- DATABASE CONNECTION ---
-// OLD (replace this):
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ SkillsMind Database connected successfully!"))
-  .catch((err) => console.error("❌ Database connection error:", err));
-
-// NEW (with timeout options):
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000,  // 30 seconds
-    socketTimeoutMS: 45000,
-    connectTimeoutMS: 30000,
-    maxPoolSize: 10,
-})
   .then(() => console.log("✅ SkillsMind Database connected successfully!"))
   .catch((err) => console.error("❌ Database connection error:", err));
 
@@ -284,5 +356,10 @@ server.listen(PORT, () => {
     console.log(`🎯 Quiz System Active`);
     console.log(`📝 Notebook System Active at: /api/notes`);
     console.log(`📅 Schedule/Timetable System Active at: /api/schedules`);
-    console.log(`⚠️  Important Links, Notices, Careers temporarily disabled`);
+    console.log(`🔴 Zoom Live Classes Active at: /api/zoom`);
+    console.log(`📊 New Attendance System Active at: /api/attendance-new`);
+    console.log(`🔗 Important Links System Active at: /api/important-links`);
+    console.log(`📢 Notices System Active at: /api/notices`);
+    console.log(`💼 Jobs & Internships System Active at: /api/jobs`);
+    console.log(`👤 Student Profile Dashboard Active at: /api/student-profile`);
 });

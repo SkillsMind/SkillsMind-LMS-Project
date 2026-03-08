@@ -37,16 +37,45 @@ const UserSchema = new mongoose.Schema({
         enum: ['student', 'admin'],
         default: 'student'
     },
-    // 🔥 YEH FIELD ADD KI HAI - Student ke enrolled courses track karne ke liye
     enrolledCourses: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
     }],
-    // Purani 'date' field ko rehne diya hai taake purana data kharab na ho
+    // ✅ SETTINGS FIELD ADDED
+    settings: {
+        notifications: {
+            type: Object,
+            default: {
+                emailNotifications: true,
+                pushNotifications: true,
+                courseUpdates: true,
+                assignmentReminders: true,
+                quizReminders: true,
+                marketingEmails: false
+            }
+        },
+        privacy: {
+            type: Object,
+            default: {
+                profileVisible: true,
+                showProgress: true,
+                showCertificates: true,
+                allowMessages: true
+            }
+        },
+        appearance: {
+            type: Object,
+            default: {
+                theme: 'light',
+                fontSize: 'medium',
+                compactMode: false
+            }
+        }
+    },
     date: {
         type: Date,
         default: Date.now
     }
-}, { timestamps: true }); // Yeh line naye users ke liye 'createdAt' banayegi
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

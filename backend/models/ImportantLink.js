@@ -4,7 +4,8 @@ const importantLinkSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Title is required'],
-    trim: true
+    trim: true,
+    maxlength: [200, 'Title cannot exceed 200 characters']
   },
   url: {
     type: String,
@@ -14,7 +15,7 @@ const importantLinkSchema = new mongoose.Schema({
   description: {
     type: String,
     trim: true,
-    default: ''
+    maxlength: [500, 'Description cannot exceed 500 characters']
   },
   course: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,21 +24,24 @@ const importantLinkSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    trim: true,
-    default: 'general'
-  },
-  isActive: {
-    type: Boolean,
-    default: true
+    enum: ['Study Material', 'Reference', 'Tool', 'Other'],
+    default: 'Study Material'
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true
 });
 
-// 🔥 YEH LINE BAHUT ZAROORI HAI!
+// Index for faster queries
+importantLinkSchema.index({ course: 1, category: 1 });
+importantLinkSchema.index({ isActive: 1 });
+
 module.exports = mongoose.model('ImportantLink', importantLinkSchema);

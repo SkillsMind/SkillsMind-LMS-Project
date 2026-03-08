@@ -11,7 +11,6 @@ const scheduleSchema = new mongoose.Schema({
     ref: 'Course',
     required: true
   },
-  // 🔥 NEW: Week and session tracking for batch schedules
   weekNumber: {
     type: Number,
     default: 1
@@ -20,10 +19,9 @@ const scheduleSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
-  // 🔥 NEW: Batch/Group identifier
   batchId: {
     type: String,
-    default: null // Groups schedules created together in one batch
+    default: null
   },
   
   day: {
@@ -37,7 +35,7 @@ const scheduleSchema = new mongoose.Schema({
   },
   duration: {
     type: Number,
-    default: 60 // minutes
+    default: 60
   },
   type: {
     type: String,
@@ -58,17 +56,37 @@ const scheduleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  // 🔥 UPDATED: Meeting link with visibility control
+  
+  // 🔥 FIXED: Changed from ObjectId to String
+  zoomMeetingId: {
+    type: String,
+    default: null
+  },
+  isZoomEnabled: {
+    type: Boolean,
+    default: false
+  },
+  
   meetingLink: {
     type: String,
     trim: true,
     default: ''
   },
-  // 🔥 NEW: When to show meeting link (e.g., 15 minutes before class)
+  
   showLinkBeforeMinutes: {
     type: Number,
     default: 15
   },
+  
+  classStartedAt: {
+    type: Date,
+    default: null
+  },
+  classEndedAt: {
+    type: Date,
+    default: null
+  },
+  
   recordingUrl: {
     type: String,
     trim: true
@@ -85,17 +103,78 @@ const scheduleSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  // 🔥 NEW: Actual date for this specific session
+  
   sessionDate: {
     type: Date,
     required: true
+  },
+  
+  attendanceEnabled: {
+    type: Boolean,
+    default: true
+  },
+  
+  minAttendancePercentage: {
+    type: Number,
+    default: 75
   }
 }, {
   timestamps: true
 });
 
-// 🔥 NEW: Index for efficient queries
 scheduleSchema.index({ courseId: 1, sessionDate: 1 });
 scheduleSchema.index({ batchId: 1 });
+scheduleSchema.index({ zoomMeetingId: 1 });
+scheduleSchema.index({ status: 1, sessionDate: 1 });
+
+// Virtual for checking if class is currently live
+scheduleSchema.virtual('isCurrentlyLive').get(function() {
+  if (this.status !== 'ongoing' || !this.classStartedAt) return false;
+  
+  const now = new Date();
+  const startTime = new Date(this.classStartedAt);
+  const durationMs = (this.duration || 60) * 60 * 1000;
+  
+  return now >= startTime && now <= new Date(startTime.getTime() + durationMs);
+});
+
+// Virtual for checking if link should be visible
+scheduleSchema.virtual('isLinkVisible').get(function() {
+  if (!this.meetingLink || this.status === 'cancelled') return false;
+  
+  const now = new Date();
+  const classTime = new Date(this.sessionDate);
+  const [hours, minutes] = this.time.split(':');
+  classTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  
+  const visibleTime = new Date(classTime.getTime() - (this.showLinkBeforeMinutes * 60000));
+  
+  return now >= visibleTime;
+});
+
+// Method to update status based on time
+scheduleSchema.methods.updateStatus = function() {
+  const now = new Date();
+  const classTime = new Date(this.sessionDate);
+  const [hours, minutes] = this.time.split(':');
+  classTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  
+  const endTime = new Date(classTime.getTime() + (this.duration * 60000));
+  
+  if (this.status === 'cancelled') return this.status;
+  
+  if (now < classTime) {
+    this.status = 'upcoming';
+  } else if (now >= classTime && now <= endTime) {
+    this.status = 'ongoing';
+  } else {
+    this.status = 'completed';
+  }
+  
+  return this.status;
+};
+
+scheduleSchema.set('toJSON', { virtuals: true });
+scheduleSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Schedule', scheduleSchema);

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 
-// All Models
 const User = require('../models/User');
 const StudentProfile = require('../models/StudentProfile');
 const StudentCourse = require('../models/StudentCourse');
@@ -12,295 +11,512 @@ const Quiz = require('../models/Quiz');
 const Attendance = require('../models/Attendance');
 const Announcement = require('../models/Announcement');
 const Notification = require('../models/Notification');
-
-// ✅ NEW: Import CareerOpportunity model (new name)
-const CareerOpportunity = require('../models/Job');
+const Job = require('../models/Job');
 const ImportantLink = require('../models/ImportantLink');
 const Schedule = require('../models/Schedule');
-
-// Auth Middleware
+const Notice = require('../models/Notice');
 const auth = require('../middleware/auth');
 
 // ==========================================
-// GET /api/student-dashboard/overview/:studentId
+// 🔥 CLEAN HELPER: Get Student's Enrolled Courses
 // ==========================================
-router.get('/overview/:studentId', auth, async (req, res) => {
+const getStudentEnrolledCourses = async (studentId) => {
+    console.log('🔍 Finding courses for student:', studentId);
+    
+    const user = await User.findById(studentId).select('enrolledCourses');
+    
+    if (!user?.enrolledCourses?.length) {
+        return { courseIds: [], courses: [] };
+    }
+
+    const courseIds = user.enrolledCourses.map(id => id.toString());
+    
+    // Get full course details with instructor populated
+    const courses = await Course.find({
+        _id: { $in: courseIds.map(id => new mongoose.Types.ObjectId(id)) }
+    }).select('title code category instructor thumbnail totalLessons').populate('instructor', 'name');
+
+    console.log(`✅ Found ${courses.length} courses`);
+    return { courseIds, courses };
+};
+
+// ==========================================
+// GET /api/student-dashboard/courses
+// Returns: List of enrolled courses (for sidebar/dropdown)
+// ==========================================
+router.get('/courses', auth, async (req, res) => {
     try {
-        const { studentId } = req.params;
-        
-        console.log('Dashboard API called for student:', studentId);
-        console.log('Authenticated user from token:', req.user.id);
+        const studentId = req.user.id;
+        const { courses } = await getStudentEnrolledCourses(studentId);
 
-        // Security check
-        if (req.user.id !== studentId) {
-            console.log('Access denied: User ID mismatch');
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. You can only view your own dashboard.' 
-            });
-        }
-
-        const studentObjectId = new mongoose.Types.ObjectId(studentId);
-        const today = new Date();
-
-        // 1. Get Student Profile
-        const studentProfile = await StudentProfile.findOne({ user: studentObjectId })
-            .populate('user', 'name email role');
-
-        if (!studentProfile) {
-            console.log('Profile not found for user:', studentId);
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Student profile not found. Please complete your profile first.' 
-            });
-        }
-
-        // 2. Get Enrolled Courses
-        const enrolledCourses = await StudentCourse.find({ 
-            studentId: studentObjectId,
-            status: { $in: ['active', 'completed'] }
-        }).populate('courseId', 'title thumbnail instructor duration level syllabus');
-
-        const courseIds = enrolledCourses.map(ec => ec.courseId._id);
-
-        // 3. Get Current Course (most recent)
-        let currentCourse = null;
-        if (enrolledCourses.length > 0) {
-            const activeEnroll = enrolledCourses.sort((a, b) => 
-                (b.progress.lastAccessed || 0) - (a.progress.lastAccessed || 0)
-            )[0];
-            
-            const courseDetails = activeEnroll.courseId;
-            const completedLessons = activeEnroll.progress.completedLessons.length;
-            const totalLessons = courseDetails.syllabus?.reduce((acc, week) => 
-                acc + (week.lessons?.length || 0), 0) || 24;
-            
-            const nextClass = await Schedule.findOne({
-                course: courseDetails._id,
-                isActive: true
-            }).sort({ startDateTime: 1 });
-
-            currentCourse = {
-                id: courseDetails._id,
-                name: courseDetails.title,
-                instructor: courseDetails.instructor?.name || 'Instructor',
-                progress: Math.round((completedLessons / totalLessons) * 100) || activeEnroll.progress.overallPercentage,
-                totalLessons: totalLessons,
-                completedLessons: completedLessons,
-                nextClass: nextClass ? 
-                    new Date(nextClass.startDateTime).toLocaleString() 
-                    : 'No upcoming classes',
-                thumbnail: courseDetails.thumbnail || '/default-course.jpg',
-                enrollmentType: activeEnroll.enrollmentType,
-                batchInfo: activeEnroll.batchInfo,
-                meetingLink: nextClass?.meetingLink || null
-            };
-        }
-
-        // 4. Get Attendance Stats
-        const attendanceStats = await Attendance.aggregate([
-            { 
-                $match: { 
-                    studentId: studentObjectId,
-                    date: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-                } 
-            },
-            { $group: { _id: '$status', count: { $sum: 1 } } }
-        ]);
-        
-        const totalAttendanceDays = attendanceStats.reduce((acc, curr) => acc + curr.count, 0);
-        const presentDays = attendanceStats.find(s => s._id === 'present')?.count || 0;
-        const attendanceRate = totalAttendanceDays > 0 ? Math.round((presentDays / totalAttendanceDays) * 100) : 0;
-
-        // 5. Get Pending Assignments
-        const pendingAssignments = await Assignment.find({
-            courseId: { $in: courseIds },
-            isActive: true,
-            dueDate: { $gte: new Date() },
-            'submissions.studentId': { $ne: studentObjectId }
-        }).select('title dueDate courseId totalMarks');
-
-        // 6. Get Upcoming Quizzes
-        const upcomingQuizzes = await Quiz.find({
-            courseId: { $in: courseIds },
-            isActive: true,
-            startDate: { $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-            endDate: { $gte: new Date() },
-            'attempts.studentId': { $ne: studentObjectId }
-        }).select('title duration totalMarks startDate endDate');
-
-        // 7. Calculate Grade
-        const assignmentSubmissions = await Assignment.find({
-            courseId: { $in: courseIds },
-            'submissions.studentId': studentObjectId,
-            'submissions.status': 'graded'
-        });
-
-        let totalMarks = 0;
-        let obtainedMarks = 0;
-        assignmentSubmissions.forEach(assignment => {
-            const sub = assignment.submissions.find(s => s.studentId.toString() === studentId);
-            if (sub) {
-                totalMarks += assignment.totalMarks;
-                obtainedMarks += sub.marks;
-            }
-        });
-        
-        const overallPercentage = totalMarks > 0 ? (obtainedMarks / totalMarks) * 100 : 0;
-
-        // 8. Get Announcements
-        const announcements = await Announcement.find({
-            $or: [
-                { targetAudience: 'all' },
-                { targetAudience: 'enrolled', courseId: { $in: courseIds } },
-                { targetAudience: 'specific-course', courseId: { $in: courseIds } }
-            ],
-            isActive: true,
-            $or: [
-                { expiryDate: { $exists: false } },
-                { expiryDate: { $gte: new Date() } }
-            ]
-        }).sort({ createdAt: -1 }).limit(5);
-
-        // 9. Get Job Opportunities - ✅ FIXED: Use CareerOpportunity model
-        const jobOpportunities = await CareerOpportunity.find({
-            relevantCourses: { $in: courseIds },
-            isActive: true,
-            deadline: { $gte: new Date() }
-        }).sort({ postedAt: -1 }).limit(5);
-
-        // 10. Get Important Links
-        const importantLinks = await ImportantLink.find({
-            course: { $in: courseIds },
-            isActive: true
-        }).sort({ createdAt: -1 }).limit(8);
-
-        // 11. Get Weekly Schedule
-        const weeklySchedule = await Schedule.find({
-            course: { $in: courseIds },
-            isActive: true
-        }).sort({ startDateTime: 1 });
-
-        // 12. Get Notifications
-        const notifications = await Notification.find({
-            recipientId: studentObjectId,
-            isRead: false
-        }).sort({ createdAt: -1 }).limit(10);
-
-        // Helper function for grade
-        const calculateGrade = (percentage) => {
-            if (percentage >= 90) return 'A+';
-            if (percentage >= 85) return 'A';
-            if (percentage >= 80) return 'A-';
-            if (percentage >= 75) return 'B+';
-            if (percentage >= 70) return 'B';
-            if (percentage >= 65) return 'B-';
-            if (percentage >= 60) return 'C+';
-            if (percentage >= 55) return 'C';
-            if (percentage >= 50) return 'D';
-            return 'F';
-        };
-
-        // Compile Response
-        const dashboardData = {
+        res.json({
             success: true,
-            student: {
-                id: studentId,
-                name: studentProfile.user.name,
-                email: studentProfile.user.email,
-                phone: studentProfile.phone || studentProfile.mobile,
-                avatar: studentProfile.profileImage,
-                joinDate: studentProfile.createdAt,
-                location: studentProfile.city,
-                studentId: `SM-${studentProfile.createdAt.getFullYear()}-${String(studentProfile._id).slice(-4).toUpperCase()}`
-            },
-            currentCourse: currentCourse,
-            stats: {
-                attendance: attendanceRate,
-                assignmentsPending: pendingAssignments.length,
-                quizzesCompleted: await Quiz.countDocuments({
-                    courseId: { $in: courseIds },
-                    'attempts.studentId': studentObjectId,
-                    'attempts.status': 'completed'
-                }),
-                overallGrade: calculateGrade(overallPercentage),
-                overallPercentage: Math.round(overallPercentage),
-                totalCourses: enrolledCourses.length,
-                completedCourses: enrolledCourses.filter(c => c.status === 'completed').length
-            },
-            quickAccess: {
-                pendingAssignments: pendingAssignments.map(a => ({
-                    id: a._id,
-                    title: a.title,
-                    dueDate: a.dueDate,
-                    courseName: enrolledCourses.find(c => c.courseId._id.toString() === a.courseId.toString())?.courseId?.title,
-                    totalMarks: a.totalMarks
-                })),
-                upcomingQuizzes: upcomingQuizzes.map(q => ({
-                    id: q._id,
-                    title: q.title,
-                    startDate: q.startDate,
-                    duration: q.duration,
-                    totalMarks: q.totalMarks
-                }))
-            },
-            announcements: announcements.map(a => ({
-                id: a._id,
-                title: a.title,
-                content: a.content,
-                category: a.category,
-                priority: a.priority,
-                createdAt: a.createdAt,
-                isNew: (new Date() - a.createdAt) < 24 * 60 * 60 * 1000
-            })),
-            opportunities: jobOpportunities.map(j => ({
-                id: j._id,
-                title: j.title,
-                company: j.company,
-                type: j.type,
-                location: j.location,
-                deadline: j.deadline
-            })),
-            importantLinks: importantLinks.map(l => ({
-                id: l._id,
-                title: l.title,
-                url: l.url,
-                category: l.category,
-                description: l.description
-            })),
-            weeklySchedule: weeklySchedule.map(s => ({
-                id: s._id,
-                title: s.title,
-                courseName: enrolledCourses.find(c => c.courseId._id.toString() === s.course.toString())?.courseId?.title,
-                dateTime: s.startDateTime,
-                meetingLink: s.meetingLink,
-                isToday: s.startDateTime ? new Date(s.startDateTime).toDateString() === new Date().toDateString() : false
-            })),
-            notifications: notifications.map(n => ({
-                id: n._id,
-                title: n.title,
-                message: n.message,
-                type: n.type,
-                actionLink: n.actionLink
-            }))
-        };
-
-        console.log('Dashboard data compiled successfully');
-        res.status(200).json(dashboardData);
-
+            count: courses.length,
+            data: courses
+        });
     } catch (error) {
-        console.error('Dashboard Overview Error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to load dashboard data',
-            error: error.message 
+        console.error('❌ Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching courses',
+            error: error.message
         });
     }
 });
 
 // ==========================================
-// PUT /api/student-dashboard/notifications/:notificationId/read
+// GET /api/student-dashboard/overview
+// Returns: Dashboard data for ALL enrolled courses
 // ==========================================
+router.get('/overview', auth, async (req, res) => {
+    try {
+        const studentId = req.user.id;
+        const { courseIds, courses } = await getStudentEnrolledCourses(studentId);
+        
+        if (!courseIds.length) {
+            return res.json({
+                success: true,
+                courses: [],
+                student: null,
+                stats: {
+                    totalCourses: 0,
+                    totalLessons: 0,
+                    pendingAssignments: 0,
+                    upcomingQuizzes: 0
+                },
+                data: {
+                    assignments: [],
+                    quizzes: [],
+                    announcements: [],
+                    importantLinks: [],
+                    schedules: [],
+                    notices: [],
+                    jobs: []
+                }
+            });
+        }
+
+        const studentObjectId = new mongoose.Types.ObjectId(studentId);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get student profile
+        const studentProfile = await StudentProfile.findOne({ user: studentObjectId });
+
+        // Get ALL data for ALL enrolled courses
+        const courseObjectIds = courseIds.map(id => new mongoose.Types.ObjectId(id));
+
+        const [
+            allJobs,
+            allAssignments,
+            allQuizzes,
+            allAnnouncements,
+            allImportantLinks,
+            allSchedules,
+            allNotices
+        ] = await Promise.all([
+            // Jobs for all courses
+            Job.find({
+                relevantCourses: { $in: courseObjectIds },
+                isActive: true,
+                deadline: { $gte: today }
+            }).populate('relevantCourses', 'title code').sort({ postedAt: -1 }),
+
+            // Assignments for all courses
+            Assignment.find({
+                courseId: { $in: courseObjectIds },
+                isActive: true,
+                dueDate: { $gte: today }
+            }).select('title dueDate totalMarks courseId').populate('courseId', 'title'),
+
+            // Quizzes for all courses
+            Quiz.find({
+                course: { $in: courseObjectIds },
+                isActive: true,
+                endDate: { $gte: today }
+            }).select('title duration totalMarks course').populate('course', 'title'),
+
+            // Announcements for all courses or global
+            Announcement.find({
+                $or: [
+                    { targetAudience: 'all' },
+                    { targetAudience: 'enrolled', courseId: { $in: courseObjectIds } }
+                ],
+                isActive: true
+            }).sort({ createdAt: -1 }).limit(10),
+
+            // Important Links for all courses
+            ImportantLink.find({
+                course: { $in: courseObjectIds },
+                isActive: true
+            }).sort({ createdAt: -1 }),
+
+            // Schedules for all courses
+            Schedule.find({
+                courseId: { $in: courseObjectIds },
+                isActive: true,
+                $or: [
+                    { date: { $gte: today } },
+                    { isRecurring: true }
+                ]
+            }).sort({ date: 1, startTime: 1 }).populate('courseId', 'title'),
+
+            // Notices for all courses
+            Notice.find({
+                isActive: true,
+                $or: [
+                    { course: { $in: courseObjectIds } },
+                    { targetCourses: { $in: courseObjectIds } },
+                    { course: null }
+                ],
+                $or: [
+                    { expiryDate: null },
+                    { expiryDate: { $gte: today } }
+                ]
+            }).populate('course', 'title code').sort({ priority: -1, createdAt: -1 })
+        ]);
+
+        // Calculate total lessons from all courses
+        const totalLessons = courses.reduce((sum, course) => sum + (course.totalLessons || 0), 0);
+
+        // Transform courses data
+        const coursesData = courses.map(course => ({
+            id: course._id,
+            title: course.title,
+            code: course.code,
+            category: course.category,
+            instructor: course.instructor?.name || 'TBA',
+            thumbnail: course.thumbnail,
+            totalLessons: course.totalLessons || 0,
+            progress: 0 // Calculate if you have progress tracking
+        }));
+
+        res.json({
+            success: true,
+            student: {
+                id: studentId,
+                name: studentProfile?.user?.name || studentProfile?.name || 'Student',
+                email: studentProfile?.user?.email,
+                avatar: studentProfile?.profileImage
+            },
+            courses: coursesData,
+            stats: {
+                totalCourses: courses.length,
+                totalLessons: totalLessons,
+                pendingAssignments: allAssignments.length,
+                upcomingQuizzes: allQuizzes.length,
+                unreadNotices: allNotices.filter(n => !n.readBy?.some(r => r.user.toString() === studentId)).length
+            },
+            data: {
+                jobs: allJobs,
+                assignments: allAssignments,
+                quizzes: allQuizzes,
+                announcements: allAnnouncements,
+                importantLinks: allImportantLinks,
+                schedules: allSchedules,
+                notices: allNotices
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Dashboard Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load dashboard',
+            error: error.message
+        });
+    }
+});
+
+// ==========================================
+// GET /api/student-dashboard/overview/:courseId
+// Returns: Dashboard data for SPECIFIC course only (for detailed view)
+// ==========================================
+router.get('/overview/:courseId', auth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.id;
+
+        // Verify student is enrolled in this course
+        const { courseIds, courses } = await getStudentEnrolledCourses(studentId);
+        
+        if (!courseIds.includes(courseId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not enrolled in this course'
+            });
+        }
+
+        const courseObjectId = new mongoose.Types.ObjectId(courseId);
+        const studentObjectId = new mongoose.Types.ObjectId(studentId);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get course details
+        const currentCourse = courses.find(c => c._id.toString() === courseId);
+
+        // Get ALL data for THIS SPECIFIC COURSE ONLY
+        const [
+            jobs,
+            assignments,
+            quizzes,
+            announcements,
+            importantLinks,
+            schedules,
+            notices
+        ] = await Promise.all([
+            Job.find({
+                relevantCourses: courseObjectId,
+                isActive: true,
+                deadline: { $gte: today }
+            }).populate('relevantCourses', 'title code').sort({ postedAt: -1 }),
+
+            Assignment.find({
+                courseId: courseObjectId,
+                isActive: true,
+                dueDate: { $gte: today }
+            }).select('title dueDate totalMarks'),
+
+            Quiz.find({
+                course: courseObjectId,
+                isActive: true,
+                endDate: { $gte: today }
+            }).select('title duration totalMarks'),
+
+            Announcement.find({
+                $or: [
+                    { targetAudience: 'all' },
+                    { targetAudience: 'enrolled', courseId: courseObjectId }
+                ],
+                isActive: true
+            }).sort({ createdAt: -1 }).limit(5),
+
+            ImportantLink.find({
+                course: courseObjectId,
+                isActive: true
+            }).sort({ createdAt: -1 }),
+
+            Schedule.find({
+                courseId: courseObjectId,
+                isActive: true,
+                $or: [
+                    { date: { $gte: today } },
+                    { isRecurring: true }
+                ]
+            }).sort({ date: 1, startTime: 1 }),
+
+            Notice.find({
+                isActive: true,
+                $or: [
+                    { course: courseObjectId },
+                    { targetCourses: courseObjectId },
+                    { course: null }
+                ],
+                $or: [
+                    { expiryDate: null },
+                    { expiryDate: { $gte: today } }
+                ]
+            }).populate('course', 'title code').sort({ priority: -1, createdAt: -1 })
+        ]);
+
+        const studentProfile = await StudentProfile.findOne({ user: studentObjectId });
+
+        res.json({
+            success: true,
+            course: {
+                id: currentCourse._id,
+                title: currentCourse.title,
+                code: currentCourse.code,
+                category: currentCourse.category,
+                instructor: currentCourse.instructor?.name || currentCourse.instructor || 'TBA',
+                thumbnail: currentCourse.thumbnail,
+                totalLessons: currentCourse.totalLessons || 0
+            },
+            student: {
+                id: studentId,
+                name: studentProfile?.user?.name || studentProfile?.name || 'Student',
+                email: studentProfile?.user?.email,
+                avatar: studentProfile?.profileImage
+            },
+            stats: {
+                totalJobs: jobs.length,
+                pendingAssignments: assignments.length,
+                upcomingQuizzes: quizzes.length,
+                unreadNotices: notices.filter(n => !n.readBy?.some(r => r.user.toString() === studentId)).length,
+                totalLessons: schedules.length,
+                upcomingClasses: schedules.filter(s => new Date(s.date) >= today).length
+            },
+            data: {
+                jobs,
+                assignments,
+                quizzes,
+                announcements,
+                importantLinks,
+                schedules,
+                notices
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Dashboard Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load dashboard',
+            error: error.message
+        });
+    }
+});
+
+// ==========================================
+// GET /api/student-dashboard/jobs/:courseId
+// Returns: Jobs for SPECIFIC course only
+// ==========================================
+router.get('/jobs/:courseId', auth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.id;
+
+        const { courseIds } = await getStudentEnrolledCourses(studentId);
+        
+        if (!courseIds.includes(courseId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not enrolled in this course'
+            });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const jobs = await Job.find({
+            relevantCourses: new mongoose.Types.ObjectId(courseId),
+            isActive: true,
+            deadline: { $gte: today }
+        })
+        .populate('relevantCourses', 'title code')
+        .sort({ postedAt: -1 });
+
+        res.json({
+            success: true,
+            count: jobs.length,
+            data: jobs
+        });
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching jobs',
+            error: error.message
+        });
+    }
+});
+
+// ==========================================
+// GET /api/student-dashboard/assignments/:courseId
+// Returns: Assignments for SPECIFIC course only
+// ==========================================
+router.get('/assignments/:courseId', auth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.id;
+
+        const { courseIds } = await getStudentEnrolledCourses(studentId);
+        
+        if (!courseIds.includes(courseId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not enrolled in this course'
+            });
+        }
+
+        const assignments = await Assignment.find({
+            courseId: new mongoose.Types.ObjectId(courseId),
+            isActive: true
+        }).sort({ dueDate: 1 });
+
+        res.json({
+            success: true,
+            count: assignments.length,
+            data: assignments
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching assignments',
+            error: error.message
+        });
+    }
+});
+
+// ==========================================
+// GET /api/student-dashboard/quizzes/:courseId
+// Returns: Quizzes for SPECIFIC course only
+// ==========================================
+router.get('/quizzes/:courseId', auth, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.id;
+
+        const { courseIds } = await getStudentEnrolledCourses(studentId);
+        
+        if (!courseIds.includes(courseId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not enrolled in this course'
+            });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const quizzes = await Quiz.find({
+            course: new mongoose.Types.ObjectId(courseId),
+            isActive: true,
+            endDate: { $gte: today }
+        }).sort({ startDate: 1 });
+
+        res.json({
+            success: true,
+            count: quizzes.length,
+            data: quizzes
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching quizzes',
+            error: error.message
+        });
+    }
+});
+
+// ==========================================
+// LEGACY ROUTES (for backward compatibility)
+// ==========================================
+
+// GET /api/student-dashboard/my-courses
+router.get('/my-courses', auth, async (req, res) => {
+    try {
+        const studentId = req.user.id;
+        const { courses } = await getStudentEnrolledCourses(studentId);
+
+        res.json({
+            success: true,
+            count: courses.length,
+            data: courses
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching courses',
+            error: error.message
+        });
+    }
+});
+
+// PUT /api/student-dashboard/notifications/:notificationId/read
 router.put('/notifications/:notificationId/read', auth, async (req, res) => {
     try {
         await Notification.findByIdAndUpdate(req.params.notificationId, {
@@ -308,6 +524,30 @@ router.put('/notifications/:notificationId/read', auth, async (req, res) => {
             readAt: new Date()
         });
         res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// PUT /api/student-dashboard/notices/:noticeId/read
+router.put('/notices/:noticeId/read', auth, async (req, res) => {
+    try {
+        const { noticeId } = req.params;
+        const userId = req.user.id;
+
+        const notice = await Notice.findById(noticeId);
+        if (!notice) {
+            return res.status(404).json({ success: false, message: 'Notice not found' });
+        }
+
+        const alreadyRead = notice.readBy?.some(r => r.user.toString() === userId);
+        
+        if (!alreadyRead) {
+            notice.readBy.push({ user: userId, readAt: new Date() });
+            await notice.save();
+        }
+
+        res.json({ success: true, message: 'Notice marked as read' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
