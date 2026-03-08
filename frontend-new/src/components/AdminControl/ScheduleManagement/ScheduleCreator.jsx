@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { adminAPI } from '../../../services/api';
 import toast from 'react-hot-toast';
 import { 
@@ -6,16 +6,35 @@ import {
   FaCheckCircle, FaClock, FaCalendarAlt, FaVideo,
   FaLink, FaAlignLeft, FaPalette, FaEye, FaCalendarWeek,
   FaCopy, FaEdit, FaChevronDown, FaChevronUp, FaCalendarDay,
-  FaToggleOn, FaToggleOff, FaExpand, FaCompress
+  FaToggleOn, FaToggleOff, FaExpand, FaCompress, FaSync,
+  FaExclamationTriangle, FaInfoCircle, FaUndo, FaRedo,
+  FaHistory, FaDownload, FaUpload, FaMagic, FaCalculator
 } from 'react-icons/fa';
 import './ScheduleCreator.css';
 
+// 🔥 CONSTANTS
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DURATION_OPTIONS = [15, 30, 40, 45, 60, 75, 90, 105, 120, 150, 180];
+const COLORS = ['#000B29', '#E30613', '#16a34a', '#3b82f6', '#ca8a04', '#9333ea', '#0891b2', '#be123c'];
+
 const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
   const isEdit = !!schedule;
+  const isWeekEdit = schedule?.isWeekEdit === true;
   
   const [batchMode, setBatchMode] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [allExpanded, setAllExpanded] = useState(true);
+  const [existingSchedules, setExistingSchedules] = useState([]);
+  const [conflicts, setConflicts] = useState([]);
+  const [timeErrors, setTimeErrors] = useState({});
+  const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
+  const [lastSaved, setLastSaved] = useState(null);
   
+  // Refs for auto-save
+  const autoSaveTimeoutRef = useRef(null);
+  const isDirtyRef = useRef(false);
+
   const [formData, setFormData] = useState({
     title: '',
     courseId: '',
@@ -30,41 +49,30 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     recordingUrl: '',
     color: '#000B29',
     instructor: '',
-    notifyStudents: true
+    notifyStudents: true,
+    sessionDate: ''
   });
 
   const [batchData, setBatchData] = useState({
     startDate: '',
-    durationWeeks: 4, // Default 4 weeks
+    durationWeeks: 4,
     instructor: 'Anas Jutt',
-    color: '#000B29'
+    color: '#000B29',
+    autoCalculateDates: true // 🔥 NEW: Auto-calculate dates
   });
 
-  // Week-wise structure
   const [weeksData, setWeeksData] = useState([
     {
       weekNumber: 1,
       isOpen: true,
       days: [
-        { id: 1, day: 'Monday', time: '10:00', duration: 60, type: 'live', topic: '', enabled: true },
-        { id: 2, day: 'Wednesday', time: '14:00', duration: 60, type: 'live', topic: '', enabled: true }
+        { id: 1, day: 'Monday', time: '10:00', duration: 60, type: 'live', topic: '', enabled: true, date: '' }
       ]
     }
   ]);
 
-  const [loading, setLoading] = useState(false);
-  const [allExpanded, setAllExpanded] = useState(true);
-
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const timeSlots = [
-    '08:00', '09:00', '10:00', '11:00', '12:00', 
-    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
-  ];
-
-  const colors = [
-    '#000B29', '#E30613', '#16a34a', '#3b82f6', 
-    '#ca8a04', '#9333ea', '#0891b2', '#be123c'
-  ];
+  // 🔥 NEW: Custom time input state
+  const [customTimeMode, setCustomTimeMode] = useState({});
 
   const toastStyle = {
     border: '1px solid #000B29',
@@ -74,8 +82,117 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     borderRadius: '8px'
   };
 
+  // 🔥 AUTO-SAVE: Save draft to localStorage
+  const saveDraft = useCallback(() => {
+    const draft = {
+      formData,
+      batchData,
+      weeksData,
+      timestamp: new Date().toISOString(),
+      isWeekEdit,
+      mode: batchMode ? 'batch' : isEdit ? 'edit' : 'single'
+    };
+    localStorage.setItem('schedule_draft', JSON.stringify(draft));
+    setLastSaved(new Date());
+    setAutoSaveStatus('saved');
+  }, [formData, batchData, weeksData, isWeekEdit, batchMode, isEdit]);
+
+  // 🔥 AUTO-SAVE: Trigger auto-save
+  const triggerAutoSave = useCallback(() => {
+    isDirtyRef.current = true;
+    setAutoSaveStatus('saving');
+    
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      saveDraft();
+    }, 3000); // Save after 3 seconds of inactivity
+  }, [saveDraft]);
+
+  // 🔥 LOAD DRAFT on mount
   useEffect(() => {
-    if (isEdit && schedule) {
+    const savedDraft = localStorage.getItem('schedule_draft');
+    if (savedDraft && !isEdit && !isWeekEdit) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        const hoursSinceSave = (new Date() - new Date(draft.timestamp)) / (1000 * 60 * 60);
+        
+        if (hoursSinceSave < 24) { // Only restore if less than 24 hours old
+          toast.success('Previous draft restored! Continue where you left off.', {
+            style: toastStyle,
+            duration: 5000
+          });
+          
+          setFormData(draft.formData);
+          setBatchData(draft.batchData);
+          setWeeksData(draft.weeksData);
+          if (draft.mode === 'batch') setBatchMode(true);
+        }
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+      }
+    }
+  }, [isEdit, isWeekEdit]);
+
+  // 🔥 CLEAR DRAFT on successful save
+  const clearDraft = () => {
+    localStorage.removeItem('schedule_draft');
+    isDirtyRef.current = false;
+  };
+
+  // 🔥 AUTO-CALCULATE DATES: Calculate date for any day in any week
+  const calculateDateForDay = useCallback((startDateStr, weekNumber, dayName) => {
+    if (!startDateStr) return '';
+    
+    const startDate = new Date(startDateStr);
+    const dayIndex = DAYS_OF_WEEK.indexOf(dayName);
+    
+    // Get to the correct week
+    const weekStart = new Date(startDate);
+    weekStart.setDate(startDate.getDate() + (weekNumber - 1) * 7);
+    
+    // Adjust to the correct day of week
+    const currentDayIndex = weekStart.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const targetDayIndex = dayIndex === 6 ? 0 : dayIndex + 1; // Convert to 0-6 format
+    
+    let diff = targetDayIndex - currentDayIndex;
+    if (diff < 0) diff += 7;
+    
+    const finalDate = new Date(weekStart);
+    finalDate.setDate(weekStart.getDate() + diff);
+    
+    return finalDate.toISOString().split('T')[0];
+  }, []);
+
+  // 🔥 AUTO-CALCULATE ALL DATES for all weeks
+  const autoCalculateAllDates = useCallback(() => {
+    if (!batchData.startDate || !batchData.autoCalculateDates) return;
+    
+    setWeeksData(prev => prev.map(week => ({
+      ...week,
+      days: week.days.map(day => ({
+        ...day,
+        date: day.enabled ? calculateDateForDay(batchData.startDate, week.weekNumber, day.day) : day.date
+      }))
+    })));
+    
+    toast.success('All dates auto-calculated! ✨', { style: toastStyle, duration: 2000 });
+  }, [batchData.startDate, batchData.autoCalculateDates, calculateDateForDay]);
+
+  // Watch for start date changes to auto-calculate
+  useEffect(() => {
+    if (batchMode && batchData.startDate && batchData.autoCalculateDates) {
+      autoCalculateAllDates();
+    }
+  }, [batchData.startDate, batchData.durationWeeks, batchMode, batchData.autoCalculateDates, autoCalculateAllDates]);
+
+  // Initialize for Edit Mode
+  useEffect(() => {
+    if (isWeekEdit && schedule?.weekClasses) {
+      initializeWeekEdit();
+    } else if (isEdit && !isWeekEdit) {
       setFormData({
         title: schedule.title || '',
         courseId: schedule.courseId?._id || schedule.courseId || '',
@@ -90,13 +207,63 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
         recordingUrl: schedule.recordingUrl || '',
         color: schedule.color || '#000B29',
         instructor: schedule.instructor || '',
-        notifyStudents: schedule.notifyStudents !== false
+        notifyStudents: schedule.notifyStudents !== false,
+        sessionDate: schedule.sessionDate ? new Date(schedule.sessionDate).toISOString().split('T')[0] : ''
       });
     }
-  }, [isEdit, schedule]);
+  }, [isEdit, isWeekEdit, schedule]);
+
+  // Initialize week edit mode
+  const initializeWeekEdit = () => {
+    const weekClasses = schedule.weekClasses || [];
+    const weekNumber = schedule.weekNumber || 1;
+    const courseId = schedule.courseId?._id || schedule.courseId || '';
+
+    setExistingSchedules(weekClasses);
+
+    const daysData = weekClasses.map((s, idx) => ({
+      id: s._id || `temp-${Date.now()}-${idx}`,
+      day: s.day || 'Monday',
+      time: s.time || '10:00',
+      duration: s.duration || 60,
+      type: s.type || 'live',
+      topic: s.topic || s.title?.replace(`Week ${weekNumber} - `, '') || '',
+      enabled: true,
+      date: s.sessionDate ? new Date(s.sessionDate).toISOString().split('T')[0] : '',
+      _isExisting: !!s._id,
+      _originalId: s._id
+    }));
+
+    setWeeksData([{
+      weekNumber: weekNumber,
+      isOpen: true,
+      days: daysData.length > 0 ? daysData : [
+        { id: Date.now(), day: 'Monday', time: '10:00', duration: 60, type: 'live', topic: '', enabled: true, date: '' }
+      ]
+    }]);
+
+    if (weekClasses.length > 0) {
+      const firstClass = weekClasses[0];
+      setFormData(prev => ({
+        ...prev,
+        courseId: courseId,
+        color: firstClass.color || '#000B29',
+        instructor: firstClass.instructor || ''
+      }));
+      setBatchData(prev => ({
+        ...prev,
+        color: firstClass.color || '#000B29',
+        instructor: firstClass.instructor || ''
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, courseId }));
+    }
+  };
 
   // Generate weeks when duration changes
   useEffect(() => {
+    if (isWeekEdit || isEdit) return;
+    
     const totalWeeks = parseInt(batchData.durationWeeks) || 4;
     setWeeksData(prev => {
       const newWeeks = [];
@@ -108,85 +275,184 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           const prevWeek = newWeeks[i - 2];
           newWeeks.push({
             weekNumber: i,
-            isOpen: false, // Closed by default for new weeks
+            isOpen: i === 1, // Only first week open by default
             days: prevWeek ? 
               prevWeek.days.map((d, idx) => ({ 
                 ...d, 
-                id: Date.now() + idx + i * 100,
-                topic: '' 
+                id: `temp-${Date.now()}-${i}-${idx}`,
+                topic: '',
+                date: batchData.autoCalculateDates ? calculateDateForDay(batchData.startDate, i, d.day) : ''
               })) :
-              [{ id: Date.now() + i, day: 'Monday', time: '10:00', duration: 60, type: 'live', topic: '', enabled: true }]
+              [{ id: `temp-${Date.now()}-${i}-0`, day: 'Monday', time: '10:00', duration: 60, type: 'live', topic: '', enabled: true, date: batchData.autoCalculateDates ? calculateDateForDay(batchData.startDate, i, 'Monday') : '' }]
           });
         }
       }
       return newWeeks;
     });
-  }, [batchData.durationWeeks]);
+  }, [batchData.durationWeeks, isWeekEdit, isEdit, batchData.startDate, batchData.autoCalculateDates, calculateDateForDay]);
 
-  // Toggle single week
+  // Check for time conflicts
+  const checkConflicts = async (courseId, sessionDate, time, duration, excludeId = null) => {
+    if (!courseId || !sessionDate || !time) return [];
+    
+    try {
+      const res = await adminAPI.checkScheduleConflict({
+        courseId,
+        sessionDate,
+        time,
+        duration: parseInt(duration) || 60,
+        excludeId
+      });
+      return res.data?.conflicts || [];
+    } catch (err) {
+      console.error('Conflict check error:', err);
+      return [];
+    }
+  };
+
+  const validateTime = (time) => {
+    const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+    return timeRegex.test(time);
+  };
+
   const toggleWeek = (weekNum) => {
     setWeeksData(prev => prev.map(w => 
       w.weekNumber === weekNum ? { ...w, isOpen: !w.isOpen } : w
     ));
+    triggerAutoSave();
   };
 
-  // Expand/Collapse all
   const toggleAllWeeks = () => {
     setWeeksData(prev => prev.map(w => ({ ...w, isOpen: !allExpanded })));
     setAllExpanded(!allExpanded);
+    triggerAutoSave();
   };
 
-  // Add day to week
+  // 🔥 FIXED: Add day to week - NOW PROPERLY WORKS
   const addDayToWeek = (weekIndex) => {
     const newWeeks = [...weeksData];
     const week = newWeeks[weekIndex];
-    const usedDays = week.days.map(d => d.day);
-    const availableDay = days.find(d => !usedDays.includes(d)) || days[0];
     
-    week.days.push({
-      id: Date.now(),
+    // Find next available day or default to Monday
+    const usedDays = week.days.filter(d => d.enabled).map(d => d.day);
+    const availableDay = DAYS_OF_WEEK.find(d => !usedDays.includes(d)) || 'Monday';
+    
+    const newDay = {
+      id: `day-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       day: availableDay,
-      time: '10:00',
-      duration: 60,
+      time: week.days[0]?.time || '10:00',
+      duration: week.days[0]?.duration || 60,
       type: 'live',
       topic: '',
-      enabled: true
-    });
+      enabled: true,
+      date: batchData.autoCalculateDates && batchData.startDate 
+        ? calculateDateForDay(batchData.startDate, week.weekNumber, availableDay)
+        : '',
+      _isExisting: false,
+      _originalId: null
+    };
+    
+    week.days.push(newDay);
     setWeeksData(newWeeks);
+    triggerAutoSave();
+    
+    toast.success(`New day added to Week ${week.weekNumber}!`, { 
+      style: toastStyle,
+      duration: 2000 
+    });
   };
 
-  // Remove day from week
+  // 🔥 FIXED: Remove day from week - NOW PROPERLY WORKS
   const removeDayFromWeek = (weekIndex, dayId) => {
     const newWeeks = [...weeksData];
-    if (newWeeks[weekIndex].days.length <= 1) {
-      toast.error('Each week must have at least one day', { style: toastStyle });
+    const week = newWeeks[weekIndex];
+    
+    // Don't allow removing the last enabled day
+    const enabledDays = week.days.filter(d => d.enabled);
+    if (enabledDays.length <= 1 && week.days.find(d => d.id === dayId)?.enabled) {
+      toast.error('Each week must have at least one active day', { style: toastStyle });
       return;
     }
-    newWeeks[weekIndex].days = newWeeks[weekIndex].days.filter(d => d.id !== dayId);
+
+    const dayToRemove = week.days.find(d => d.id === dayId);
+    
+    // If it's an existing schedule, confirm deletion
+    if (dayToRemove?._isExisting) {
+      if (!window.confirm(`This will delete "${dayToRemove.topic || 'this class'}" permanently. Continue?`)) {
+        return;
+      }
+    }
+    
+    week.days = week.days.filter(d => d.id !== dayId);
     setWeeksData(newWeeks);
+    triggerAutoSave();
+    
+    toast.success('Day removed', { style: toastStyle, duration: 2000 });
   };
 
-  // Update day field
-  const updateDayField = (weekIndex, dayId, field, value) => {
+  const updateDayField = async (weekIndex, dayId, field, value) => {
     const newWeeks = [...weeksData];
     const day = newWeeks[weekIndex].days.find(d => d.id === dayId);
     if (day) {
       day[field] = value;
+      
+      // Auto-update date if day changes and auto-calculate is on
+      if (field === 'day' && batchData.autoCalculateDates && batchData.startDate && day.enabled) {
+        day.date = calculateDateForDay(batchData.startDate, newWeeks[weekIndex].weekNumber, value);
+      }
+      
+      // Check conflicts when time or date changes
+      if ((field === 'time' || field === 'date') && day.enabled && formData.courseId) {
+        if (validateTime(day.time) && day.date) {
+          const conflicts = await checkConflicts(
+            formData.courseId,
+            day.date,
+            day.time,
+            day.duration,
+            day._originalId
+          );
+          
+          if (conflicts.length > 0) {
+            setTimeErrors(prev => ({
+              ...prev,
+              [dayId]: `Conflict: ${conflicts.map(c => c.title).join(', ')}`
+            }));
+          } else {
+            setTimeErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors[dayId];
+              return newErrors;
+            });
+          }
+        }
+      }
     }
     setWeeksData(newWeeks);
+    triggerAutoSave();
   };
 
-  // Toggle day enabled
   const toggleDayEnabled = (weekIndex, dayId) => {
     const newWeeks = [...weeksData];
     const day = newWeeks[weekIndex].days.find(d => d.id === dayId);
     if (day) {
+      // Don't disable if it's the last enabled day
+      const enabledDays = newWeeks[weekIndex].days.filter(d => d.enabled);
+      if (enabledDays.length <= 1 && day.enabled) {
+        toast.error('At least one day must be active', { style: toastStyle });
+        return;
+      }
+      
       day.enabled = !day.enabled;
+      
+      // Auto-calculate date if enabling
+      if (day.enabled && batchData.autoCalculateDates && batchData.startDate) {
+        day.date = calculateDateForDay(batchData.startDate, newWeeks[weekIndex].weekNumber, day.day);
+      }
     }
     setWeeksData(newWeeks);
+    triggerAutoSave();
   };
 
-  // Copy Week 1 pattern to all weeks
   const copyPatternToAllWeeks = () => {
     const firstWeek = weeksData[0];
     const newWeeks = weeksData.map((week, idx) => {
@@ -195,27 +461,68 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
         ...week,
         days: firstWeek.days.map((day, dayIdx) => ({
           ...day,
-          id: Date.now() + idx * 100 + dayIdx,
-          topic: week.days[dayIdx]?.topic || ''
+          id: `temp-${Date.now()}-${idx}-${dayIdx}`,
+          topic: week.days[dayIdx]?.topic || '',
+          date: batchData.autoCalculateDates && batchData.startDate
+            ? calculateDateForDay(batchData.startDate, week.weekNumber, day.day)
+            : (week.days[dayIdx]?.date || ''),
+          _isExisting: false,
+          _originalId: null
         }))
       };
     });
     setWeeksData(newWeeks);
+    triggerAutoSave();
     toast.success('Pattern copied to all weeks!', { style: toastStyle });
   };
 
-  const getDateForDay = (startDate, weekNumber, dayName) => {
-    const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayIndex = daysMap.indexOf(dayName);
+  const addWeekToBatch = () => {
+    const newWeekNumber = weeksData.length + 1;
+    const lastWeek = weeksData[weeksData.length - 1];
     
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + (weekNumber - 1) * 7);
+    setWeeksData(prev => [...prev, {
+      weekNumber: newWeekNumber,
+      isOpen: true,
+      days: lastWeek ? 
+        lastWeek.days.map((d, idx) => ({
+          ...d,
+          id: `temp-${Date.now()}-${newWeekNumber}-${idx}`,
+          topic: '',
+          date: batchData.autoCalculateDates && batchData.startDate
+            ? calculateDateForDay(batchData.startDate, newWeekNumber, d.day)
+            : '',
+          _isExisting: false,
+          _originalId: null
+        })) :
+        [{ id: `temp-${Date.now()}-${newWeekNumber}-0`, day: 'Monday', time: '10:00', duration: 60, type: 'live', topic: '', enabled: true, date: batchData.autoCalculateDates && batchData.startDate ? calculateDateForDay(batchData.startDate, newWeekNumber, 'Monday') : '' }]
+    }]);
     
-    const currentDay = date.getDay();
-    const diff = dayIndex - currentDay;
-    date.setDate(date.getDate() + diff);
+    triggerAutoSave();
+    toast.success(`Week ${newWeekNumber} added!`, { style: toastStyle });
+  };
+
+  const removeWeekFromBatch = (weekIndex) => {
+    if (weeksData.length <= 1) {
+      toast.error('At least one week is required', { style: toastStyle });
+      return;
+    }
     
-    return date;
+    const week = weeksData[weekIndex];
+    const hasExisting = week.days.some(d => d._isExisting);
+    
+    if (hasExisting) {
+      if (!window.confirm('This week has saved classes. Are you sure you want to remove it?')) {
+        return;
+      }
+    }
+    
+    setWeeksData(prev => {
+      const newWeeks = prev.filter((_, idx) => idx !== weekIndex);
+      return newWeeks.map((w, idx) => ({ ...w, weekNumber: idx + 1 }));
+    });
+    
+    triggerAutoSave();
+    toast.success('Week removed', { style: toastStyle });
   };
 
   const generatePreview = () => {
@@ -226,9 +533,131 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     setPreviewMode(true);
   };
 
+  // 🔥 FIXED: Handle Edit Week Submit with proper add/delete
+  const handleEditWeekSubmit = async () => {
+    if (!formData.courseId) {
+      toast.error('Course not found', { style: toastStyle });
+      return;
+    }
+
+    const week = weeksData[0];
+    const validDays = week.days.filter(d => d.enabled && d.topic.trim() && d.date);
+    
+    if (validDays.length === 0) {
+      toast.error('Please add at least one day with topic and date', { style: toastStyle });
+      return;
+    }
+
+    // Check for time errors
+    const hasErrors = validDays.some(d => timeErrors[d.id]);
+    if (hasErrors) {
+      toast.error('Please resolve time conflicts before saving', { style: toastStyle });
+      return;
+    }
+
+    setLoading(true);
+    const loadId = toast.loading('Updating week schedule...', { style: toastStyle });
+
+    try {
+      const results = [];
+      const errors = [];
+
+      // Process each day (create new or update existing)
+      for (let i = 0; i < validDays.length; i++) {
+        const dayData = validDays[i];
+        
+        const scheduleData = {
+          title: `Week ${week.weekNumber} - ${dayData.topic}`,
+          courseId: formData.courseId,
+          weekNumber: week.weekNumber,
+          sessionNumber: i + 1,
+          day: dayData.day,
+          time: dayData.time,
+          duration: parseInt(dayData.duration) || 60,
+          type: dayData.type,
+          status: 'upcoming',
+          topic: dayData.topic,
+          description: `${dayData.topic} - Week ${week.weekNumber} ${dayData.day} class`,
+          color: batchData.color,
+          instructor: batchData.instructor,
+          notifyStudents: formData.notifyStudents,
+          sessionDate: new Date(dayData.date)
+        };
+
+        try {
+          let res;
+          if (dayData._isExisting && dayData._originalId) {
+            // Update existing
+            res = await adminAPI.updateSchedule(dayData._originalId, scheduleData);
+            results.push({ type: 'updated', data: res.data, id: dayData._originalId });
+          } else {
+            // Create new
+            res = await adminAPI.createSchedule(scheduleData);
+            results.push({ type: 'created', data: res.data });
+          }
+        } catch (err) {
+          console.error(`Error processing day ${dayData.day}:`, err);
+          errors.push({ 
+            day: dayData.day, 
+            error: err.response?.data?.error || err.message 
+          });
+        }
+      }
+
+      // Delete removed days (existing schedules that are no longer in the list)
+      const currentOriginalIds = validDays
+        .filter(d => d._isExisting && d._originalId)
+        .map(d => d._originalId);
+      
+      const removedSchedules = existingSchedules.filter(
+        s => s._id && !currentOriginalIds.includes(s._id)
+      );
+      
+      for (const removed of removedSchedules) {
+        try {
+          await adminAPI.deleteSchedule(removed._id);
+          results.push({ type: 'deleted', id: removed._id });
+        } catch (err) {
+          console.error(`Error deleting schedule ${removed._id}:`, err);
+        }
+      }
+
+      if (errors.length > 0) {
+        toast.error(`${errors.length} operations failed. Check console.`, { 
+          id: loadId, 
+          style: toastStyle,
+          duration: 5000
+        });
+      } else {
+        const created = results.filter(r => r.type === 'created').length;
+        const updated = results.filter(r => r.type === 'updated').length;
+        const deleted = results.filter(r => r.type === 'deleted').length;
+        
+        toast.success(
+          `Week ${week.weekNumber} updated! ${created} new, ${updated} updated${deleted > 0 ? `, ${deleted} removed` : ''}`, 
+          { id: loadId, style: toastStyle }
+        );
+        
+        clearDraft();
+        onSuccess();
+      }
+    } catch (err) {
+      console.error('Edit week error:', err);
+      toast.error(err.message || 'Failed to update week', { id: loadId, style: toastStyle });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBatchSubmit = async () => {
     if (!formData.courseId || !batchData.startDate) {
       toast.error('Please fill all required fields', { style: toastStyle });
+      return;
+    }
+
+    const hasErrors = Object.keys(timeErrors).length > 0;
+    if (hasErrors) {
+      toast.error('Please resolve time conflicts before saving', { style: toastStyle });
       return;
     }
 
@@ -237,13 +666,14 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
 
     try {
       const allSchedules = [];
-      const start = new Date(batchData.startDate);
       
       weeksData.forEach((week) => {
         week.days.forEach((dayData, dayIndex) => {
           if (!dayData.enabled || !dayData.topic.trim()) return;
           
-          const sessionDate = getDateForDay(start, week.weekNumber, dayData.day);
+          const sessionDate = dayData.date 
+            ? new Date(dayData.date)
+            : calculateDateForDay(batchData.startDate, week.weekNumber, dayData.day);
           
           allSchedules.push({
             title: `Week ${week.weekNumber} - ${dayData.topic}`,
@@ -252,7 +682,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
             sessionNumber: dayIndex + 1,
             day: dayData.day,
             time: dayData.time,
-            duration: dayData.duration,
+            duration: parseInt(dayData.duration) || 60,
             type: dayData.type,
             status: 'upcoming',
             topic: dayData.topic,
@@ -288,6 +718,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           `${allSchedules.length} schedules created successfully!`, 
           { id: loadId, style: toastStyle }
         );
+        clearDraft();
         onSuccess();
       }
     } catch (err) {
@@ -299,14 +730,9 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSingleSubmit = async (e) => {
     e.preventDefault();
     
-    if (batchMode) {
-      handleBatchSubmit();
-      return;
-    }
-
     if (!formData.title.trim()) {
       toast.error('Please enter schedule title', { style: toastStyle });
       return;
@@ -317,12 +743,38 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
       return;
     }
 
+    if (!formData.sessionDate) {
+      toast.error('Please select a date for this class', { style: toastStyle });
+      return;
+    }
+
+    if (!validateTime(formData.time)) {
+      toast.error('Please enter valid time (HH:MM format)', { style: toastStyle });
+      return;
+    }
+
+    const conflicts = await checkConflicts(
+      formData.courseId,
+      formData.sessionDate,
+      formData.time,
+      formData.duration,
+      isEdit ? schedule._id : null
+    );
+
+    if (conflicts.length > 0) {
+      const conflictMsg = conflicts.map(c => `${c.title} at ${c.time}`).join(', ');
+      if (!window.confirm(`Time conflict detected with: ${conflictMsg}\n\nSave anyway?`)) {
+        return;
+      }
+    }
+
     const finalData = {
       ...formData,
       title: formData.title.trim(),
       topic: formData.topic.trim(),
       duration: parseInt(formData.duration) || 60,
-      notifyStudents: formData.notifyStudents
+      notifyStudents: formData.notifyStudents,
+      sessionDate: new Date(formData.sessionDate)
     };
 
     setLoading(true);
@@ -342,6 +794,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           isEdit ? 'Schedule updated!' : 'Schedule created successfully!', 
           { id: loadId, style: toastStyle }
         );
+        clearDraft();
         onSuccess();
       }
     } catch (err) {
@@ -353,18 +806,46 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (isWeekEdit) {
+      await handleEditWeekSubmit();
+      return;
+    }
+    
+    if (batchMode) {
+      await handleBatchSubmit();
+      return;
+    }
+
+    await handleSingleSubmit(e);
+  };
+
+  // 🔥 NEW: Handle custom time input
+  const handleTimeChange = (weekIndex, dayId, value, isCustom = false) => {
+    if (isCustom) {
+      // Direct input
+      updateDayField(weekIndex, dayId, 'time', value);
+    } else {
+      // Dropdown selection
+      updateDayField(weekIndex, dayId, 'time', value);
+    }
+  };
+
   const selectedCourse = courses.find(c => c._id === formData.courseId);
 
   // Preview Mode
   if (previewMode) {
     const previewData = [];
-    const start = new Date(batchData.startDate);
     
     weeksData.forEach((week) => {
       const weekSessions = [];
       week.days.forEach((dayData) => {
         if (!dayData.enabled || !dayData.topic.trim()) return;
-        const sessionDate = getDateForDay(start, week.weekNumber, dayData.day);
+        const sessionDate = dayData.date 
+          ? new Date(dayData.date)
+          : calculateDateForDay(batchData.startDate, week.weekNumber, dayData.day);
         weekSessions.push({
           date: sessionDate,
           day: dayData.day,
@@ -395,7 +876,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
 
         <div className="preview-summary">
           <div className="preview-stat">
-            <span className="stat-value">{batchData.durationWeeks}</span>
+            <span className="stat-value">{weeksData.length}</span>
             <span className="stat-label">Weeks</span>
           </div>
           <div className="preview-stat">
@@ -403,7 +884,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
             <span className="stat-label">Total Sessions</span>
           </div>
           <div className="preview-stat">
-            <span className="stat-value">{Math.round(totalSessions / batchData.durationWeeks)}x</span>
+            <span className="stat-value">{Math.round(totalSessions / weeksData.length)}x</span>
             <span className="stat-label">Avg Classes/Week</span>
           </div>
         </div>
@@ -455,17 +936,36 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
 
   return (
     <div className="form-container">
+      {/* 🔥 NEW: Auto-save Status Bar */}
+      <div className="autosave-bar">
+        <div className="autosave-status">
+          {autoSaveStatus === 'saving' && <><FaSpinner className="spin" /> Saving draft...</>}
+          {autoSaveStatus === 'saved' && lastSaved && <><FaCheckCircle /> Auto-saved {lastSaved.toLocaleTimeString()}</>}
+        </div>
+        {!isEdit && !isWeekEdit && (
+          <button 
+            className="btn-clear-draft" 
+            onClick={() => {
+              localStorage.removeItem('schedule_draft');
+              window.location.reload();
+            }}
+          >
+            <FaUndo /> Reset Form
+          </button>
+        )}
+      </div>
+
       <div className="form-header">
         <h2>
-          {isEdit ? <FaCheckCircle /> : batchMode ? <FaCalendarWeek /> : <FaPlus />}
-          {isEdit ? ' Edit Schedule' : batchMode ? ' Batch Schedule Creator' : ' Create New Schedule'}
+          {isWeekEdit ? <FaEdit /> : isEdit ? <FaCheckCircle /> : batchMode ? <FaCalendarWeek /> : <FaPlus />}
+          {isWeekEdit ? ` Edit Week ${schedule?.weekNumber}` : isEdit ? ' Edit Schedule' : batchMode ? ' Batch Schedule Creator' : ' Create New Schedule'}
         </h2>
         <button className="btn-back" onClick={onCancel}>
           <FaArrowLeft /> Back
         </button>
       </div>
 
-      {!isEdit && (
+      {!isEdit && !isWeekEdit && (
         <div className="mode-toggle">
           <button 
             className={`mode-btn ${!batchMode ? 'active' : ''}`}
@@ -485,15 +985,19 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
       <form onSubmit={handleSubmit} className="schedule-form">
         {/* Course & Duration Section */}
         <div className="form-section">
-          <h3><FaCalendarAlt /> {batchMode ? 'Course & Duration' : 'Basic Information'}</h3>
+          <h3><FaCalendarAlt /> {batchMode || isWeekEdit ? 'Course Information' : 'Basic Information'}</h3>
           
           <div className="form-grid">
             <div className="form-group">
               <label>Select Course *</label>
               <select
                 value={formData.courseId}
-                onChange={(e) => setFormData({...formData, courseId: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, courseId: e.target.value});
+                  triggerAutoSave();
+                }}
                 required
+                disabled={isWeekEdit}
               >
                 <option value="">-- Select Course --</option>
                 {courses.map(c => <option key={c._id} value={c._id}>{c.title}</option>)}
@@ -510,20 +1014,65 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                   <input
                     type="date"
                     value={batchData.startDate}
-                    onChange={(e) => setBatchData({...batchData, startDate: e.target.value})}
+                    onChange={(e) => {
+                      setBatchData({...batchData, startDate: e.target.value});
+                      triggerAutoSave();
+                    }}
                     required
                   />
+                  <small className="course-hint">All dates will auto-calculate from this date</small>
                 </div>
                 <div className="form-group">
                   <label>Duration (Weeks) *</label>
                   <select
                     value={batchData.durationWeeks}
-                    onChange={(e) => setBatchData({...batchData, durationWeeks: parseInt(e.target.value)})}
+                    onChange={(e) => {
+                      setBatchData({...batchData, durationWeeks: parseInt(e.target.value)});
+                      triggerAutoSave();
+                    }}
                   >
                     {[1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24].map(w => (
                       <option key={w} value={w}>{w} Weeks</option>
                     ))}
                   </select>
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={batchData.autoCalculateDates}
+                      onChange={(e) => {
+                        setBatchData({...batchData, autoCalculateDates: e.target.checked});
+                        if (e.target.checked && batchData.startDate) {
+                          autoCalculateAllDates();
+                        }
+                        triggerAutoSave();
+                      }}
+                    />
+                    <span><FaMagic /> Auto-calculate all dates</span>
+                  </label>
+                  <small className="course-hint">Automatically set dates based on start date</small>
+                </div>
+              </>
+            ) : isWeekEdit ? (
+              <>
+                <div className="form-group">
+                  <label>Week Number</label>
+                  <input
+                    type="text"
+                    value={`Week ${schedule?.weekNumber}`}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Total Days</label>
+                  <input
+                    type="text"
+                    value={`${weeksData[0]?.days?.length || 0} days configured`}
+                    disabled
+                    className="disabled-input"
+                  />
                 </div>
               </>
             ) : (
@@ -533,17 +1082,23 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, title: e.target.value});
+                      triggerAutoSave();
+                    }}
                     placeholder="e.g., Week 1 - Introduction"
                     required
                   />
                 </div>
-                <div className="form-group full-width">
+                <div className="form-group">
                   <label>Topic *</label>
                   <input
                     type="text"
                     value={formData.topic}
-                    onChange={(e) => setFormData({...formData, topic: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, topic: e.target.value});
+                      triggerAutoSave();
+                    }}
                     placeholder="e.g., React Basics"
                     required
                   />
@@ -553,27 +1108,99 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           </div>
         </div>
 
-        {/* Week-wise Schedule Section - FIXED LAYOUT */}
-        {batchMode && (
+        {/* Single Schedule Date & Time Section */}
+        {!batchMode && !isWeekEdit && (
+          <div className="form-section">
+            <h3><FaCalendarAlt /> Date & Time</h3>
+            <div className="form-grid three-col">
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  value={formData.sessionDate}
+                  onChange={(e) => {
+                    setFormData({...formData, sessionDate: e.target.value});
+                    triggerAutoSave();
+                  }}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Time *</label>
+                <div className="time-input-wrapper">
+                  <input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => {
+                      setFormData({...formData, time: e.target.value});
+                      triggerAutoSave();
+                    }}
+                    required
+                    className="custom-time-input"
+                  />
+                </div>
+                <small className="course-hint">24-hour format</small>
+              </div>
+              <div className="form-group">
+                <label>Duration (minutes)</label>
+                <select
+                  value={formData.duration}
+                  onChange={(e) => {
+                    setFormData({...formData, duration: parseInt(e.target.value)});
+                    triggerAutoSave();
+                  }}
+                >
+                  {DURATION_OPTIONS.map(d => (
+                    <option key={d} value={d}>{d} minutes</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            {conflicts.length > 0 && (
+              <div className="conflict-warning">
+                <FaExclamationTriangle />
+                <span>Time conflict detected with: {conflicts.map(c => c.title).join(', ')}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Week-wise Schedule Section */}
+        {(batchMode || isWeekEdit) && (
           <div className="form-section week-schedule-section">
             <div className="section-header-with-action">
               <div className="header-title-group">
-                <h3><FaCalendarWeek /> Week-wise Class Schedule</h3>
+                <h3><FaCalendarWeek /> {isWeekEdit ? 'Edit Week Days' : 'Week-wise Class Schedule'}</h3>
                 <p className="section-description">
-                  Configure each week. Click week header to expand/collapse. Add days and set topics.
+                  {isWeekEdit 
+                    ? 'Add, remove, or modify days for this week. Click "Add Another Day" to add more classes.'
+                    : 'Configure each week. Dates auto-calculate based on start date. Add days as needed.'
+                  }
                 </p>
               </div>
               <div className="section-actions">
-                <button type="button" className="btn-icon-text" onClick={toggleAllWeeks}>
-                  {allExpanded ? <><FaCompress /> Collapse All</> : <><FaExpand /> Expand All</>}
-                </button>
-                <button 
-                  type="button" 
-                  className="btn-copy-pattern" 
-                  onClick={copyPatternToAllWeeks}
-                >
-                  <FaCopy /> Copy Week 1 Pattern
-                </button>
+                {!isWeekEdit && (
+                  <>
+                    <button type="button" className="btn-icon-text" onClick={toggleAllWeeks}>
+                      {allExpanded ? <><FaCompress /> Collapse All</> : <><FaExpand /> Expand All</>}
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn-copy-pattern" 
+                      onClick={copyPatternToAllWeeks}
+                    >
+                      <FaCopy /> Copy Pattern
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn-add-week" 
+                      onClick={addWeekToBatch}
+                    >
+                      <FaPlus /> Add Week
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             
@@ -592,11 +1219,24 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                       </div>
                       <div className="week-stats">
                         <span className="configured-count">
-                          {week.days.filter(d => d.enabled && d.topic.trim()).length} of {week.days.length} configured
+                          {week.days.filter(d => d.enabled && d.topic.trim() && d.date).length} of {week.days.length} configured
                         </span>
                       </div>
                     </div>
                     <div className="week-header-actions">
+                      {!isWeekEdit && weeksData.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn-delete-week"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeWeekFromBatch(weekIndex);
+                          }}
+                          title="Remove this week"
+                        >
+                          <FaTrash />
+                        </button>
+                      )}
                       <span className="days-count-badge">
                         {week.days.filter(d => d.enabled).length} days
                       </span>
@@ -615,17 +1255,18 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                         <div className="table-header">
                           <div className="th-status">Status</div>
                           <div className="th-day">Day</div>
-                          <div className="th-time">Time</div>
+                          <div className="th-date">Date *</div>
+                          <div className="th-time">Time *</div>
                           <div className="th-duration">Duration</div>
                           <div className="th-type">Type</div>
-                          <div className="th-topic">Topic for this Day *</div>
+                          <div className="th-topic">Topic *</div>
                           <div className="th-delete"></div>
                         </div>
 
                         {/* Table Body */}
                         <div className="table-body">
                           {week.days.map((dayData) => (
-                            <div key={dayData.id} className={`table-row ${!dayData.enabled ? 'disabled' : ''}`}>
+                            <div key={dayData.id} className={`table-row ${!dayData.enabled ? 'disabled' : ''} ${dayData._isExisting ? 'existing' : 'new'} ${timeErrors[dayData.id] ? 'has-error' : ''}`}>
                               <div className="td-status">
                                 <button
                                   type="button"
@@ -645,18 +1286,37 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                                   onChange={(e) => updateDayField(weekIndex, dayData.id, 'day', e.target.value)}
                                   disabled={!dayData.enabled}
                                 >
-                                  {days.map(d => <option key={d} value={d}>{d}</option>)}
+                                  {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
                               </div>
                               
-                              <div className="td-time">
-                                <select
-                                  value={dayData.time}
-                                  onChange={(e) => updateDayField(weekIndex, dayData.id, 'time', e.target.value)}
+                              <div className="td-date">
+                                <input
+                                  type="date"
+                                  value={dayData.date}
+                                  onChange={(e) => updateDayField(weekIndex, dayData.id, 'date', e.target.value)}
                                   disabled={!dayData.enabled}
-                                >
-                                  {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
+                                  className={!dayData.date && dayData.enabled ? 'required-field' : ''}
+                                />
+                              </div>
+                              
+                              <div className="td-time">
+                                {/* 🔥 NEW: Custom time input with dropdown option */}
+                                <div className="custom-time-wrapper">
+                                  <input
+                                    type="time"
+                                    value={dayData.time}
+                                    onChange={(e) => handleTimeChange(weekIndex, dayData.id, e.target.value)}
+                                    disabled={!dayData.enabled}
+                                    className="time-input"
+                                  />
+                                </div>
+                                {timeErrors[dayData.id] && (
+                                  <div className="error-tooltip">
+                                    <FaExclamationTriangle />
+                                    {timeErrors[dayData.id]}
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="td-duration">
@@ -665,7 +1325,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                                   onChange={(e) => updateDayField(weekIndex, dayData.id, 'duration', parseInt(e.target.value))}
                                   disabled={!dayData.enabled}
                                 >
-                                  {[30, 45, 60, 90, 120].map(d => (
+                                  {DURATION_OPTIONS.map(d => (
                                     <option key={d} value={d}>{d} min</option>
                                   ))}
                                 </select>
@@ -688,8 +1348,9 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                                   type="text"
                                   value={dayData.topic}
                                   onChange={(e) => updateDayField(weekIndex, dayData.id, 'topic', e.target.value)}
-                                  placeholder={`Enter topic for Week ${week.weekNumber} ${dayData.day}`}
+                                  placeholder={`Topic for Week ${week.weekNumber}`}
                                   disabled={!dayData.enabled}
+                                  className={!dayData.topic && dayData.enabled ? 'required-field' : ''}
                                 />
                               </div>
                               
@@ -727,92 +1388,20 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           </div>
         )}
 
-        {/* Single Mode Fields */}
-        {!batchMode && (
-          <>
-            <div className="form-section">
-              <h3><FaClock /> Schedule Timing</h3>
-              <div className="form-grid three-col">
-                <div className="form-group">
-                  <label>Day *</label>
-                  <select
-                    value={formData.day}
-                    onChange={(e) => setFormData({...formData, day: e.target.value})}
-                    required
-                  >
-                    {days.map(day => <option key={day} value={day}>{day}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Time *</label>
-                  <select
-                    value={formData.time}
-                    onChange={(e) => setFormData({...formData, time: e.target.value})}
-                    required
-                  >
-                    {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Duration (minutes)</label>
-                  <input
-                    type="number"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value) || 60})}
-                    min="15"
-                    max="180"
-                    step="15"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h3><FaVideo /> Class Type</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Class Type *</label>
-                  <div className="radio-group">
-                    <label className={`radio-card ${formData.type === 'live' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="type"
-                        value="live"
-                        checked={formData.type === 'live'}
-                        onChange={(e) => setFormData({...formData, type: e.target.value})}
-                      />
-                      <span className="radio-icon">🔴</span>
-                      <span className="radio-label">Live Class</span>
-                    </label>
-                    <label className={`radio-card ${formData.type === 'recorded' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="type"
-                        value="recorded"
-                        checked={formData.type === 'recorded'}
-                        onChange={(e) => setFormData({...formData, type: e.target.value})}
-                      />
-                      <span className="radio-icon">📹</span>
-                      <span className="radio-label">Recorded</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
         {/* Settings Section */}
         <div className="form-section">
-          <h3><FaPalette /> {batchMode ? 'Instructor & Settings' : 'Settings'}</h3>
+          <h3><FaPalette /> {batchMode || isWeekEdit ? 'Instructor & Settings' : 'Settings'}</h3>
           <div className="form-grid">
-            {batchMode && (
+            {(batchMode || isWeekEdit) && (
               <div className="form-group">
                 <label>Instructor Name</label>
                 <input
                   type="text"
                   value={batchData.instructor}
-                  onChange={(e) => setBatchData({...batchData, instructor: e.target.value})}
+                  onChange={(e) => {
+                    setBatchData({...batchData, instructor: e.target.value});
+                    triggerAutoSave();
+                  }}
                   placeholder="e.g., Anas Jutt"
                 />
               </div>
@@ -820,16 +1409,20 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
             <div className="form-group">
               <label>Schedule Color</label>
               <div className="color-picker">
-                {colors.map(c => (
+                {COLORS.map(c => (
                   <button
                     key={c}
                     type="button"
-                    className={`color-option ${(batchMode ? batchData.color : formData.color) === c ? 'active' : ''}`}
+                    className={`color-option ${(batchMode || isWeekEdit ? batchData.color : formData.color) === c ? 'active' : ''}`}
                     style={{ backgroundColor: c }}
-                    onClick={() => batchMode 
-                      ? setBatchData({...batchData, color: c})
-                      : setFormData({...formData, color: c})
-                    }
+                    onClick={() => {
+                      if (batchMode || isWeekEdit) {
+                        setBatchData({...batchData, color: c});
+                      } else {
+                        setFormData({...formData, color: c});
+                      }
+                      triggerAutoSave();
+                    }}
                   />
                 ))}
               </div>
@@ -839,7 +1432,10 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                 <input
                   type="checkbox"
                   checked={formData.notifyStudents}
-                  onChange={(e) => setFormData({...formData, notifyStudents: e.target.checked})}
+                  onChange={(e) => {
+                    setFormData({...formData, notifyStudents: e.target.checked});
+                    triggerAutoSave();
+                  }}
                 />
                 <span>Notify students via email</span>
               </label>
@@ -852,7 +1448,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           <button type="button" className="btn-cancel" onClick={onCancel}>
             Cancel
           </button>
-          {batchMode ? (
+          {batchMode && !isWeekEdit ? (
             <button 
               type="button" 
               className="btn-preview"
@@ -863,8 +1459,8 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
             </button>
           ) : (
             <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? <FaSpinner className="spin" /> : <FaSave />}
-              {isEdit ? 'Update Schedule' : 'Create Schedule'}
+              {loading ? <FaSpinner className="spin" /> : isWeekEdit ? <FaSync /> : isEdit ? <FaSave /> : <FaPlus />}
+              {isWeekEdit ? 'Update Week' : isEdit ? 'Update Schedule' : 'Create Schedule'}
             </button>
           )}
         </div>

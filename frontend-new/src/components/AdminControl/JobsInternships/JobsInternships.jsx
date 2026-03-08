@@ -6,7 +6,10 @@ const JobsInternships = () => {
   const [jobs, setJobs] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [editingJob, setEditingJob] = useState(null);
+  
   const [formData, setFormData] = useState({
     title: '',
     company: '',
@@ -21,22 +24,30 @@ const JobsInternships = () => {
     deadline: ''
   });
 
+  const API_URL = 'http://localhost:5000/api';
+
   useEffect(() => {
     fetchJobs();
     fetchCourses();
+    
+    // 🔥 Real-time refresh every 10 seconds for admin
+    const interval = setInterval(fetchJobs, 10000);
+    return () => clearInterval(interval);
   }, []);
+
+  const getAuthHeaders = () => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  });
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/careers');
-      // 🔥 FIX: Ensure array
-      const jobsData = Array.isArray(res.data) ? res.data : 
-                      Array.isArray(res.data?.jobs) ? res.data.jobs : 
-                      Array.isArray(res.data?.data) ? res.data.data : [];
-      setJobs(jobsData);
+      const res = await axios.get(`${API_URL}/jobs`, getAuthHeaders());
+      console.log('Fetched jobs:', res.data);
+      setJobs(res.data.data || []);
     } catch (error) {
       console.error('Error fetching jobs:', error);
+      alert('Error loading jobs: ' + (error.response?.data?.message || error.message));
       setJobs([]);
     } finally {
       setLoading(false);
@@ -45,11 +56,18 @@ const JobsInternships = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/courses');
-      // 🔥 FIX: Ensure array
-      const coursesData = Array.isArray(res.data) ? res.data : 
-                         Array.isArray(res.data?.courses) ? res.data.courses : 
-                         Array.isArray(res.data?.data) ? res.data.data : [];
+      const res = await axios.get(`${API_URL}/courses/for-assignments`, getAuthHeaders());
+      console.log('Fetched courses:', res.data);
+      
+      let coursesData = [];
+      if (res.data.courses) {
+        coursesData = res.data.courses;
+      } else if (Array.isArray(res.data)) {
+        coursesData = res.data;
+      } else if (res.data.data) {
+        coursesData = res.data.data;
+      }
+      
       setCourses(coursesData);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -59,22 +77,73 @@ const JobsInternships = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (formData.relevantCourses.length === 0) {
+      alert('Please select at least one relevant course!');
+      return;
+    }
+
     try {
+      setSubmitting(true);
+      
       const data = {
         ...formData,
         requirements: formData.requirements ? formData.requirements.split('\n').filter(r => r.trim()) : [],
         skills: formData.skills ? formData.skills.split(',').map(s => s.trim()).filter(s => s) : []
       };
-      await axios.post('http://localhost:5000/api/jobs-internships', data);
+
+      console.log('Submitting job data:', data);
+
+      if (editingJob) {
+        await axios.put(`${API_URL}/jobs/${editingJob._id}`, data, getAuthHeaders());
+        alert('Job updated successfully!');
+      } else {
+        await axios.post(`${API_URL}/jobs`, data, getAuthHeaders());
+        alert('Job posted successfully! Students will see this immediately.');
+      }
+      
       fetchJobs();
       resetForm();
     } catch (error) {
-      console.error('Error posting job:', error);
-      alert('Error posting job. Please try again.');
+      console.error('Error saving job:', error);
+      alert('Error: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (job) => {
+    setEditingJob(job);
+    setFormData({
+      title: job.title || '',
+      company: job.company || '',
+      type: job.type || 'Job',
+      description: job.description || '',
+      requirements: job.requirements ? job.requirements.join('\n') : '',
+      skills: job.skills ? job.skills.join(', ') : '',
+      relevantCourses: job.relevantCourses?.map(c => c._id || c) || [],
+      location: job.location || '',
+      salary: job.salary || '',
+      applicationUrl: job.applicationUrl || '',
+      deadline: job.deadline ? new Date(job.deadline).toISOString().split('T')[0] : ''
+    });
+  };
+
+  const handleDelete = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+    
+    try {
+      await axios.delete(`${API_URL}/jobs/${jobId}`, getAuthHeaders());
+      alert('Job deleted successfully!');
+      fetchJobs();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Error deleting job: ' + (error.response?.data?.message || error.message));
     }
   };
 
   const resetForm = () => {
+    setEditingJob(null);
     setFormData({
       title: '',
       company: '',
@@ -94,10 +163,10 @@ const JobsInternships = () => {
     ? jobs 
     : jobs.filter(j => j.type?.toLowerCase() === filter.toLowerCase());
 
-  if (loading) {
+  if (loading && jobs.length === 0) {
     return (
       <div className="ji-container">
-        <div className="ji-loading">Loading...</div>
+        <div className="ji-loading">Loading opportunities...</div>
       </div>
     );
   }
@@ -105,8 +174,8 @@ const JobsInternships = () => {
   return (
     <div className="ji-container">
       <div className="ji-header">
-        <h2>💼 Manage Jobs & Internships</h2>
-        <p>Post job and internship opportunities for students</p>
+        <h2>Manage Jobs & Internships</h2>
+        <p>Post job and internship opportunities for students (Real-time updates)</p>
       </div>
       
       {/* Stats */}
@@ -129,14 +198,16 @@ const JobsInternships = () => {
           <div className="ji-stat-icon">📊</div>
           <div className="ji-stat-info">
             <h3>{jobs.length}</h3>
-            <p>Total</p>
+            <p>Total Active</p>
           </div>
         </div>
       </div>
 
       {/* Form */}
       <div className="ji-form-section">
-        <h3 className="ji-form-title">➕ Post New Opportunity</h3>
+        <h3 className="ji-form-title">
+          {editingJob ? '✏️ Edit Opportunity' : '➕ Post New Opportunity'}
+        </h3>
         <form onSubmit={handleSubmit} className="ji-form">
           <div className="ji-form-group">
             <label>Title *</label>
@@ -212,7 +283,7 @@ const JobsInternships = () => {
           </div>
           
           <div className="ji-form-group">
-            <label>Relevant Courses</label>
+            <label>Relevant Courses *</label>
             <select
               multiple
               value={formData.relevantCourses}
@@ -221,13 +292,23 @@ const JobsInternships = () => {
                 setFormData({...formData, relevantCourses: values});
               }}
               size="4"
+              required
             >
-              {courses.map(course => (
-                <option key={course._id} value={course._id}>
-                  {course.name}
-                </option>
-              ))}
+              {courses.length === 0 ? (
+                <option disabled>Loading courses...</option>
+              ) : (
+                courses.map(course => (
+                  <option key={course._id} value={course._id}>
+                    {course.title || course.name || 'Untitled Course'}
+                  </option>
+                ))
+              )}
             </select>
+            <small>
+              {formData.relevantCourses.length > 0 
+                ? `${formData.relevantCourses.length} course(s) selected` 
+                : 'Select courses for which this opportunity is relevant'}
+            </small>
           </div>
           
           <div className="ji-form-group">
@@ -251,12 +332,13 @@ const JobsInternships = () => {
           </div>
           
           <div className="ji-form-group">
-            <label>Application URL</label>
+            <label>Application URL *</label>
             <input
               type="url"
               placeholder="https://careers.company.com"
               value={formData.applicationUrl}
               onChange={(e) => setFormData({...formData, applicationUrl: e.target.value})}
+              required
             />
           </div>
           
@@ -271,12 +353,33 @@ const JobsInternships = () => {
           </div>
           
           <div className="ji-form-actions">
-            <button type="submit" className="ji-btn ji-btn-primary">
-              🚀 Post Opportunity
+            <button 
+              type="submit" 
+              className="ji-btn ji-btn-primary"
+              disabled={submitting}
+            >
+              {submitting ? '⏳ Saving...' : (editingJob ? '💾 Update Opportunity' : '🚀 Post Opportunity')}
             </button>
-            <button type="button" className="ji-btn ji-btn-secondary" onClick={resetForm}>
-              ❌ Reset
-            </button>
+            {editingJob && (
+              <button 
+                type="button" 
+                className="ji-btn ji-btn-secondary" 
+                onClick={resetForm}
+                disabled={submitting}
+              >
+                ❌ Cancel Edit
+              </button>
+            )}
+            {!editingJob && (
+              <button 
+                type="button" 
+                className="ji-btn ji-btn-secondary" 
+                onClick={resetForm}
+                disabled={submitting}
+              >
+                🔄 Reset
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -284,7 +387,7 @@ const JobsInternships = () => {
       {/* Jobs List */}
       <div className="ji-jobs-section">
         <div className="ji-section-header">
-          <h3 className="ji-section-title">📋 Posted Opportunities</h3>
+          <h3 className="ji-section-title">📋 Posted Opportunities ({jobs.length})</h3>
           <div className="ji-filters">
             <button 
               className={`ji-filter-btn ${filter === 'all' ? 'active' : ''}`}
@@ -341,6 +444,12 @@ const JobsInternships = () => {
                       {job.salary}
                     </div>
                   )}
+                  {job.relevantCourses && job.relevantCourses.length > 0 && (
+                    <div className="ji-job-detail">
+                      <span className="ji-job-detail-icon">📚</span>
+                      {job.relevantCourses.length} course(s): {job.relevantCourses.map(c => c.title || c.name || 'Course').join(', ')}
+                    </div>
+                  )}
                 </div>
                 
                 <p className="ji-job-description">{job.description}</p>
@@ -359,12 +468,30 @@ const JobsInternships = () => {
                   </span>
                   <div className="ji-job-actions">
                     {job.applicationUrl && (
-                      <a href={job.applicationUrl} target="_blank" rel="noopener noreferrer" className="ji-btn-view">
+                      <a 
+                        href={job.applicationUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="ji-btn-view"
+                        title="Open application link"
+                      >
                         Apply ↗
                       </a>
                     )}
-                    <button className="ji-btn-icon ji-btn-edit">✏️</button>
-                    <button className="ji-btn-icon ji-btn-delete">🗑️</button>
+                    <button 
+                      className="ji-btn-icon ji-btn-edit" 
+                      onClick={() => handleEdit(job)}
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      className="ji-btn-icon ji-btn-delete" 
+                      onClick={() => handleDelete(job._id)}
+                      title="Delete"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               </div>

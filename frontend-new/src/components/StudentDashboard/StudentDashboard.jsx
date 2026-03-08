@@ -24,7 +24,7 @@ import Progress from './Pages/Progress';
 import Notices from './Pages/Notices';
 import Timeline from './Pages/Timeline';
 
-// Import Notice Board Pages (YE PAGES AB INTERNAL ROUTES HAIN - SIDEBAR KE SAATH)
+// Import Notice Board Pages
 import AnnouncementsPage from './Pages/AnnouncementsPage';
 import ImportantLinksPage from './Pages/ImportantLinksPage';
 import OpportunitiesPage from './Pages/OpportunitiesPage';
@@ -41,10 +41,11 @@ import DailyChallenges from './Features/DailyChallenges';
 import ResourceExchange from './Features/ResourceExchange';
 import MentorBooking from './Features/MentorBooking';
 
-// ============================================
-// 🆕 NEW: Assignment Builder Import
-// ============================================
+// Assignment Builder Import
 import AssignmentBuilder from './Pages/AssignmentBuilder';
+
+// ✅ SETTINGS PAGE IMPORT
+import Settings from './Pages/Settings';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const StudentDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [studentName, setStudentName] = useState("");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const studentEmail = localStorage.getItem('studentEmail');
 
@@ -89,7 +91,6 @@ const StudentDashboard = () => {
     if (navbar) navbar.style.display = 'none';
     if (stickySidebar) stickySidebar.style.display = 'none';
     
-    // PURE WHITE BACKGROUND
     document.body.style.backgroundColor = '#ffffff';
     document.body.style.background = '#ffffff';
     document.documentElement.style.backgroundColor = '#ffffff';
@@ -158,23 +159,47 @@ const StudentDashboard = () => {
     );
   }
 
-  // ======== NAVIGATION HANDLER ========
-  // Sab pages internal hain - StudentDashboard ke andar hi open honge
-  const handleNavigate = (page) => {
-    console.log('Navigating to:', page);
+  // ======== TOPBAR NAVIGATION HANDLER ========
+  const handleTopbarNavigate = (page) => {
+    console.log('Topbar navigation:', page);
     
-    // Sab pages ko internal treat karo - activeTab change hoga
-    setActiveTab(page);
+    switch(page) {
+      case 'profile':
+        // My Profile click par Profile page khule
+        setActiveTab('profile');
+        break;
+      case 'settings':
+        // Settings page khule
+        setActiveTab('settings');
+        break;
+      case 'logout':
+        // Logout logic
+        handleLogout();
+        break;
+      default:
+        setActiveTab(page);
+    }
   };
 
-  // Determine if we should show back button (when not on dashboard)
-  const showBackButton = activeTab !== 'dashboard';
+  // ======== LOGOUT HANDLER ========
+  const handleLogout = () => {
+    // Clear all localStorage
+    localStorage.clear();
+    // Redirect to login page
+    navigate('/login');
+  };
+
+  // ======== SIDEBAR NAVIGATION HANDLER ========
+  const handleSidebarNavigate = (tabId) => {
+    console.log('Sidebar navigation:', tabId);
+    setActiveTab(tabId);
+  };
 
   const renderContent = () => {
     const props = { 
       studentName,
-      onNavigate: handleNavigate,
-      showBackButton
+      onNavigate: handleSidebarNavigate,
+      showBackButton: activeTab !== 'dashboard'
     };
     
     switch(activeTab) {
@@ -183,6 +208,9 @@ const StudentDashboard = () => {
       case 'tasks': return <TasksAssignments {...props} />;
       case 'calendar': return <CalendarSchedule {...props} />;
       case 'profile': return <Profile {...props} />;
+      
+      // ✅ SETTINGS CASE ADDED
+      case 'settings': return <Settings {...props} />;
       
       case 'schedule': return <Schedule {...props} />;
       case 'homework': return <Homework {...props} />;
@@ -195,12 +223,8 @@ const StudentDashboard = () => {
       case 'notices': return <Notices {...props} />;
       case 'timeline': return <Timeline {...props} />;
       
-      // ============================================
-      // 🆕 NEW: Assignment Builder Case
-      // ============================================
       case 'assignment-builder': return <AssignmentBuilder {...props} />;
       
-      // NOTICE BOARD PAGES - SIDEBAR KE SAATH OPEN HONGE
       case 'announcements': return <AnnouncementsPage {...props} />;
       case 'important-links': return <ImportantLinksPage {...props} />;
       case 'opportunities': return <OpportunitiesPage {...props} />;
@@ -228,8 +252,10 @@ const StudentDashboard = () => {
     }}>
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab}
+        setActiveTab={handleSidebarNavigate}
         studentName={studentName}
+        mobileOpen={mobileSidebarOpen}
+        setMobileOpen={setMobileSidebarOpen}
       />
       
       <div className="main-wrapper" style={{ 
@@ -243,7 +269,8 @@ const StudentDashboard = () => {
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           sidebarOpen={sidebarOpen}
           studentName={studentName}
-          hidden={true}
+          onNavigate={handleTopbarNavigate}
+          onMenuClick={() => setMobileSidebarOpen(true)}
         />
         
         <main className="dashboard-content" style={{ 

@@ -3,7 +3,8 @@ import {
   BookOpen, Calendar, CheckCircle, Clock, Award, TrendingUp, 
   Bell, FileText, Edit3, Users, ClipboardList, Target, 
   BarChart3, ChevronRight, User, LogOut, Settings,
-  Megaphone, Link, Briefcase, Play, AlertCircle, Loader2
+  Megaphone, Link, Briefcase, Play, AlertCircle, Loader2,
+  ChevronDown, School, GraduationCap, ChevronLeft
 } from 'lucide-react';
 import './DashboardHome.css';
 
@@ -11,6 +12,7 @@ const API_URL = 'http://localhost:5000/api';
 
 const DashboardHome = ({ onNavigate, showBackButton }) => {
   const [data, setData] = useState(null);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -69,7 +71,7 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
       setIsDemoMode(false);
       console.log('✅ Authenticated user found:', user.id);
 
-      const response = await fetch(`${API_URL}/student-dashboard/overview/${user.id}`, {
+      const response = await fetch(`${API_URL}/student-dashboard/overview`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -96,8 +98,9 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
         throw new Error(result.message || 'Failed to load dashboard data');
       }
 
-      console.log('✅ Real data loaded successfully');
+      console.log('✅ Real data loaded successfully:', result);
       setData(result);
+      setCourses(result.courses || []);
       
       localStorage.setItem('dashboardCache', JSON.stringify(result));
       
@@ -108,7 +111,9 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
       const cached = localStorage.getItem('dashboardCache');
       if (cached) {
         console.log('📦 Using cached data');
-        setData(JSON.parse(cached));
+        const cachedData = JSON.parse(cached);
+        setData(cachedData);
+        setCourses(cachedData.courses || []);
       } else {
         loadDemoData();
         setIsDemoMode(true);
@@ -128,26 +133,33 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
         studentId: 'SM-2024-DEMO',
         location: 'Karachi, Pakistan'
       },
-      currentCourse: {
-        id: 1,
-        name: 'Shopify Mastery (Demo)',
-        instructor: 'Sarah Ahmed',
-        progress: 65,
-        totalLessons: 24,
-        completedLessons: 16,
-        nextClass: 'Tomorrow, 2:00 PM',
-        enrollmentType: 'live',
-        thumbnail: null,
-        meetingLink: 'https://zoom.us/j/123456789 '
-      },
+      courses: [
+        {
+          id: 1,
+          title: 'Shopify Mastery',
+          code: 'SHOPIFY-101',
+          instructor: 'Sarah Ahmed',
+          category: 'E-commerce',
+          totalLessons: 24,
+          progress: 65
+        },
+        {
+          id: 2,
+          title: 'Facebook Marketing',
+          code: 'FB-201',
+          instructor: 'Ali Khan',
+          category: 'Marketing',
+          totalLessons: 18,
+          progress: 30
+        }
+      ],
       stats: {
-        attendance: 92,
-        assignmentsPending: 2,
-        quizzesCompleted: 8,
+        totalCourses: 2,
+        totalLessons: 42,
+        pendingAssignments: 2,
+        upcomingQuizzes: 1,
         overallGrade: 'A-',
-        overallPercentage: 85,
-        totalCourses: 1,
-        completedCourses: 0
+        overallPercentage: 85
       },
       quickAccess: {
         pendingAssignments: [
@@ -165,11 +177,11 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
         { id: 2, title: 'Digital Marketing Intern', company: 'Creative Agency', type: 'internship', location: 'Karachi' }
       ],
       importantLinks: [
-        { id: 1, title: 'Shopify Documentation', url: 'https://help.shopify.com ', category: 'documentation' },
+        { id: 1, title: 'Shopify Documentation', url: 'https://help.shopify.com   ', category: 'documentation' },
         { id: 2, title: 'Course Resources', url: '#', category: 'reference' }
       ],
       weeklySchedule: [
-        { id: 1, title: 'Live Class: Store Setup', courseName: 'Shopify Mastery', recurring: { startTime: '2:00 PM', days: ['monday', 'wednesday'] }, meetingLink: 'https://zoom.us/j/123456789 ', isToday: true }
+        { id: 1, title: 'Live Class: Store Setup', courseName: 'Shopify Mastery', recurring: { startTime: '2:00 PM', days: ['monday', 'wednesday'] }, meetingLink: 'https://zoom.us/j/123456789   ', isToday: true }
       ],
       notifications: [
         { id: 1, title: 'Welcome!', message: 'Complete your profile setup', type: 'system' }
@@ -177,6 +189,7 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
     };
 
     setData(demoData);
+    setCourses(demoData.courses);
     setLoading(false);
   };
 
@@ -193,9 +206,13 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
     window.location.href = '/login';
   };
 
+  // ==== FIXED NAVIGATION HANDLER ====
   const handleNavigate = (page) => {
+    console.log('Navigating to:', page);
     if (onNavigate && typeof onNavigate === 'function') {
       onNavigate(page);
+    } else {
+      console.warn('onNavigate prop not provided or not a function');
     }
   };
 
@@ -214,7 +231,7 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
 
   if (!data) return null;
 
-  const { student, currentCourse, stats, quickAccess, announcements, opportunities, importantLinks, weeklySchedule, notifications } = data;
+  const { student, stats, quickAccess, announcements, opportunities, importantLinks, weeklySchedule, notifications } = data;
 
   return (
     <div className="skillsmind-dashboard">
@@ -342,49 +359,54 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
       {/* Main Content */}
       <main className="main-dashboard-content">
         
-        {/* Current Course Banner */}
-        {currentCourse ? (
-          <section className="current-course-banner">
-            <div className="course-content">
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                <div className="course-tag">CURRENT COURSE</div>
-                {currentCourse.enrollmentType === 'live' && (
-                  <div className="course-tag" style={{ background: 'var(--accent)' }}>LIVE CLASS</div>
-                )}
-              </div>
-              <h1>{currentCourse.name}</h1>
-              <div className="course-details">
-                <span><User size={14} /> {currentCourse.instructor}</span>
-                <span><BookOpen size={14} /> {currentCourse.completedLessons}/{currentCourse.totalLessons} Lessons</span>
-                <span><Clock size={14} /> {currentCourse.nextClass}</span>
-              </div>
-              <div className="progress-container">
-                <div className="progress-track">
-                  <div className="progress-fill" style={{ width: `${currentCourse.progress}%` }}></div>
+        {/* ULTRA COMPACT COURSES STRIP */}
+        {courses && courses.length > 0 ? (
+          <section className="courses-strip">
+            <div className="courses-strip-inner">
+              <div className="courses-strip-header">
+                <div className="courses-strip-title">
+                  <GraduationCap size={18} />
+                  <span>My Courses</span>
+                  <span className="course-count">{courses.length}</span>
                 </div>
-                <span className="progress-text">{currentCourse.progress}% Complete</span>
+                <button className="courses-strip-action" onClick={() => handleNavigate('courses')}>
+                  View All <ChevronRight size={14} />
+                </button>
               </div>
-              <button className="continue-learning-btn" onClick={() => handleNavigate('course-content')}>
-                Continue Learning <ChevronRight size={16} />
-              </button>
-            </div>
-            <div className="course-icon-bg">
-              <BookOpen size={80} />
+              
+              <div className="courses-horizontal-scroll">
+                {courses.map((course) => (
+                  <div key={course.id} className="course-chip">
+                    <div className="course-chip-main">
+                      <span className="course-chip-name">{course.title}</span>
+                      <span className="course-chip-code">{course.code}</span>
+                    </div>
+                    <div className="course-chip-meta">
+                      <span>{course.instructor}</span>
+                      <span className="dot">•</span>
+                      <span>{course.totalLessons} Lessons</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="courses-strip-footer">
+                <span>{stats?.totalLessons || 0} Lessons • {courses.length} Courses</span>
+              </div>
             </div>
           </section>
         ) : (
-          <section className="current-course-banner">
-            <div className="course-content">
-              <h1>Welcome to SkillsMind!</h1>
-              <p>Enroll in a course to get started</p>
-              <button className="continue-learning-btn" onClick={() => handleNavigate('courses')}>
-                Browse Courses <ChevronRight size={16} />
-              </button>
+          <section className="courses-strip empty">
+            <div className="courses-strip-inner empty">
+              <div className="empty-content">
+                <GraduationCap size={24} />
+                <span>No courses enrolled</span>
+                <button onClick={() => handleNavigate('courses')}>Browse Courses</button>
+              </div>
             </div>
           </section>
         )}
 
-        {/* Rest of your dashboard content... */}
         {/* Stats Grid */}
         <section className="student-record-section">
           <div className="section-title-bar">
@@ -405,17 +427,17 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
             <div className="record-card" onClick={() => handleNavigate('assignments')}>
               <div className="record-icon orange"><ClipboardList size={24} /></div>
               <div className="record-info">
-                <h4>{stats?.assignmentsPending || 0}</h4>
+                <h4>{stats?.pendingAssignments || 0}</h4>
                 <p>Pending Assignments</p>
-                <span className="record-trend warning">{stats?.assignmentsPending > 0 ? 'Due soon' : 'All done'}</span>
+                <span className="record-trend warning">{stats?.pendingAssignments > 0 ? 'Due soon' : 'All done'}</span>
               </div>
             </div>
 
             <div className="record-card" onClick={() => handleNavigate('quizzes')}>
               <div className="record-icon purple"><Target size={24} /></div>
               <div className="record-info">
-                <h4>{stats?.quizzesCompleted || 0}</h4>
-                <p>Quizzes Completed</p>
+                <h4>{stats?.upcomingQuizzes || 0}</h4>
+                <p>Upcoming Quizzes</p>
                 <span className="record-trend up">Keep going!</span>
               </div>
             </div>

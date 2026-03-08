@@ -1,63 +1,65 @@
 /* ============================================
    JOBS & INTERNSHIPS - ADMIN PANEL STYLES
+   Color Scheme: #000B29 (Navy), #E30613 (Red), White
    ============================================ */
 
 .ji-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 24px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #ffffff;
+  min-height: 100vh;
 }
 
 .ji-header {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #000B29;
   color: white;
-  padding: 30px;
+  padding: 32px;
   border-radius: 16px;
-  margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0, 11, 41, 0.15);
 }
 
 .ji-header h2 {
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   font-size: 28px;
   font-weight: 700;
+  color: #ffffff;
 }
 
 .ji-header p {
   margin: 0;
-  opacity: 0.9;
+  opacity: 0.8;
   font-size: 14px;
+  color: #e2e8f0;
 }
 
 /* Form Section */
 .ji-form-section {
   background: white;
   border-radius: 16px;
-  padding: 25px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e0e6ed;
+  padding: 28px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 12px rgba(0, 11, 41, 0.08);
+  border: 1px solid #e2e8f0;
 }
 
 .ji-form-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #000B29;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.ji-form-title::before {
-  content: '💼';
-  font-size: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
 }
 
 .ji-form {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
@@ -70,15 +72,11 @@
   grid-column: 1 / -1;
 }
 
-.ji-form-group.half-width {
-  grid-column: span 1;
-}
-
 .ji-form-group label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: #4a5568;
-  margin-bottom: 6px;
+  color: #000B29;
+  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -91,16 +89,17 @@
   border-radius: 10px;
   font-size: 14px;
   transition: all 0.3s ease;
-  background: #f7fafc;
+  background: #f8fafc;
+  color: #000B29;
 }
 
 .ji-form-group input:focus,
 .ji-form-group select:focus,
 .ji-form-group textarea:focus {
   outline: none;
-  border-color: #4facfe;
+  border-color: #E30613;
   background: white;
-  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+  box-shadow: 0 0 0 3px rgba(227, 6, 19, 0.1);
 }
 
 .ji-form-group textarea {
@@ -113,16 +112,9 @@
 }
 
 .ji-form-group small {
-  font-size: 11px;
-  color: #718096;
-  margin-top: 4px;
-}
-
-.ji-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  grid-column: 1 / -1;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 6px;
 }
 
 .ji-form-actions {
@@ -130,8 +122,8 @@
   display: flex;
   gap: 12px;
   margin-top: 10px;
-  padding-top: 20px;
-  border-top: 2px solid #e2e8f0;
+  padding-top: 24px;
+  border-top: 2px solid #f1f5f9;
 }
 
 .ji-btn {
@@ -148,28 +140,31 @@
 }
 
 .ji-btn-primary {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #E30613;
   color: white;
 }
 
 .ji-btn-primary:hover {
+  background: #c00510;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+  box-shadow: 0 8px 20px rgba(227, 6, 19, 0.3);
 }
 
 .ji-btn-secondary {
-  background: #edf2f7;
-  color: #4a5568;
+  background: #f1f5f9;
+  color: #000B29;
+  border: 2px solid #e2e8f0;
 }
 
 .ji-btn-secondary:hover {
   background: #e2e8f0;
+  border-color: #000B29;
 }
 
 /* Type Toggle */
 .ji-type-toggle {
   display: flex;
-  background: #f7fafc;
+  background: #f8fafc;
   border-radius: 10px;
   padding: 4px;
   border: 2px solid #e2e8f0;
@@ -177,7 +172,7 @@
 
 .ji-type-option {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   border: none;
   background: transparent;
   border-radius: 8px;
@@ -185,13 +180,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: #718096;
+  color: #64748b;
 }
 
 .ji-type-option.active {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #000B29;
   color: white;
-  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 11, 41, 0.2);
 }
 
 /* Stats */
@@ -199,67 +194,68 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
 .ji-stat-card {
   background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 11, 41, 0.08);
   display: flex;
   align-items: center;
-  gap: 15px;
-  border-left: 4px solid #4facfe;
+  gap: 16px;
+  border-left: 4px solid #E30613;
 }
 
 .ji-stat-icon {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  width: 56px;
+  height: 56px;
+  background: #000B29;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .ji-stat-info h3 {
   margin: 0;
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
-  color: #2d3748;
+  color: #000B29;
 }
 
 .ji-stat-info p {
   margin: 0;
-  font-size: 12px;
-  color: #718096;
+  font-size: 13px;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
 /* Jobs List */
 .ji-jobs-section {
   background: white;
   border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(0, 11, 41, 0.08);
 }
 
 .ji-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 16px;
 }
 
 .ji-section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #2d3748;
+  font-size: 20px;
+  font-weight: 700;
+  color: #000B29;
 }
 
 .ji-filters {
@@ -268,48 +264,49 @@
 }
 
 .ji-filter-btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: 2px solid #e2e8f0;
   background: white;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: 25px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  color: #64748b;
 }
 
 .ji-filter-btn:hover {
-  border-color: #4facfe;
-  color: #4facfe;
+  border-color: #000B29;
+  color: #000B29;
 }
 
 .ji-filter-btn.active {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #000B29;
   color: white;
-  border-color: transparent;
+  border-color: #000B29;
 }
 
 /* Job Cards */
 .ji-jobs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
 }
 
 .ji-job-card {
-  background: #f7fafc;
-  border-radius: 12px;
-  padding: 20px;
-  border: 2px solid transparent;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid #f1f5f9;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
 .ji-job-card:hover {
-  border-color: #4facfe;
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(79, 172, 254, 0.2);
+  border-color: #E30613;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 11, 41, 0.12);
 }
 
 .ji-job-card::before {
@@ -319,58 +316,59 @@
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #E30613;
 }
 
 .ji-job-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding-right: 20px;
 }
 
 .ji-job-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  color: #2d3748;
-  margin: 0 0 4px 0;
+  color: #000B29;
+  margin: 0 0 6px 0;
 }
 
 .ji-job-company {
-  font-size: 14px;
-  color: #4facfe;
+  font-size: 15px;
+  color: #E30613;
   font-weight: 600;
 }
 
 .ji-job-type {
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .ji-job-type.job {
-  background: #c6f6d5;
-  color: #22543d;
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .ji-job-type.internship {
-  background: #feebc8;
-  color: #744210;
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .ji-job-details {
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
 .ji-job-detail {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  color: #718096;
+  font-size: 14px;
+  color: #64748b;
   margin-bottom: 6px;
 }
 
@@ -380,10 +378,10 @@
 }
 
 .ji-job-description {
-  font-size: 13px;
-  color: #4a5568;
-  line-height: 1.5;
-  margin-bottom: 15px;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 16px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -393,38 +391,40 @@
 .ji-job-skills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .ji-skill-tag {
-  background: #e2e8f0;
-  color: #4a5568;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
+  background: #f1f5f9;
+  color: #000B29;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 600;
+  border: 1px solid #e2e8f0;
 }
 
 .ji-job-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 15px;
-  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .ji-deadline {
-  font-size: 12px;
-  color: #718096;
+  font-size: 13px;
+  color: #64748b;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-weight: 500;
 }
 
 .ji-deadline.urgent {
-  color: #c53030;
-  font-weight: 600;
+  color: #E30613;
+  font-weight: 700;
 }
 
 .ji-job-actions {
@@ -433,87 +433,105 @@
 }
 
 .ji-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .ji-btn-edit {
-  background: #ebf8ff;
-  color: #3182ce;
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .ji-btn-edit:hover {
-  background: #3182ce;
+  background: #1e40af;
   color: white;
 }
 
 .ji-btn-delete {
-  background: #fed7d7;
-  color: #c53030;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .ji-btn-delete:hover {
-  background: #c53030;
+  background: #dc2626;
   color: white;
 }
 
 .ji-btn-view {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #000B29;
   color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
   text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.ji-btn-view:hover {
+  background: #E30613;
+  transform: translateY(-1px);
 }
 
 .ji-empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #718096;
+  padding: 80px 20px;
+  color: #64748b;
   grid-column: 1 / -1;
 }
 
 .ji-empty-icon {
   font-size: 64px;
   margin-bottom: 20px;
-  opacity: 0.5;
+  opacity: 0.3;
+}
+
+.ji-empty-state h3 {
+  color: #000B29;
+  font-size: 20px;
+  margin-bottom: 8px;
 }
 
 /* Status Badge */
 .ji-status {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 10px;
-  height: 10px;
+  top: 20px;
+  right: 20px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-}
-
-.ji-status.active {
-  background: #48bb78;
-  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.3);
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
 }
 
 .ji-status.expired {
-  background: #a0aec0;
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+/* Loading */
+.ji-loading {
+  text-align: center;
+  padding: 60px;
+  color: #64748b;
+  font-size: 16px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .ji-form {
-    grid-template-columns: 1fr;
+  .ji-container {
+    padding: 16px;
   }
   
-  .ji-form-row {
+  .ji-form {
     grid-template-columns: 1fr;
   }
   
@@ -529,5 +547,9 @@
   .ji-filters {
     overflow-x: auto;
     padding-bottom: 5px;
+  }
+  
+  .ji-header h2 {
+    font-size: 24px;
   }
 }

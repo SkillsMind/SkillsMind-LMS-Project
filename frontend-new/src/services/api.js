@@ -62,7 +62,7 @@ API.interceptors.response.use(
                 // 🔥 Redirect to login page
                 setTimeout(() => {
                     window.location.href = '/login';
-                }, 1500); // 1.5 second baad redirect taake toast dikhe
+                }, 1500);
                 
                 return Promise.reject(error);
             }
@@ -99,10 +99,22 @@ export const adminAPI = {
     createAssignment: (data) => API.post('/assignments', data),
     getAllAssignments: () => API.get('/assignments'),
     
-    // Attendance
-    markAttendance: (data) => API.post('/attendance/mark', data),
-    getAttendanceByCourse: (courseId, date) => 
-        API.get(`/attendance/${courseId}?date=${date}`),
+  // 🔥 NEW: Zoom Live Class APIs (Admin) - UPDATED
+createZoomMeeting: (scheduleId) => API.post(`/zoom/create-meeting/${scheduleId}`),
+startZoomMeeting: (meetingId) => API.post(`/zoom/start-meeting/${meetingId}`),
+endZoomMeeting: (meetingId) => API.post(`/zoom/end-meeting/${meetingId}`),
+getZoomParticipants: (meetingId) => API.get(`/zoom/participants/${meetingId}`),
+getZoomMeetingDetails: (scheduleId) => API.get(`/zoom/meeting-by-schedule/${scheduleId}`),
+checkZoomMeeting: (scheduleId) => API.get(`/zoom/check-meeting/${scheduleId}`),
+ // 🔥 NEW
+getAllZoomMeetings: () => API.get('/zoom/meetings'),
+    
+    // 🔥 NEW: Attendance System APIs (Admin)
+    getCourseAttendance: (courseId, date) => API.get(`/attendance/course/${courseId}?date=${date}`),
+    getAttendanceReport: (courseId, params) => API.get(`/attendance/report/${courseId}`, { params }),
+    updateAttendance: (attendanceId, data) => API.put(`/attendance/${attendanceId}`, data),
+    getStudentAttendanceDetails: (studentId, courseId) => API.get(`/attendance/student/${studentId}/course/${courseId}`),
+    getLiveAttendance: (meetingId) => API.get(`/attendance/live/${meetingId}`),
     
     // 🔥 Quiz Management APIs
     createQuiz: (data) => API.post('/quizzes', data),
@@ -116,57 +128,73 @@ export const adminAPI = {
     getQuizReport: (quizId) => API.get(`/quizzes/${quizId}/report`),
     downloadResultPDF: (quizId, studentId) => 
         API.get(`/quizzes/${quizId}/result-pdf/${studentId}`, {
-            responseType: 'blob' // Important for PDF download
+            responseType: 'blob'
         }),
     sendResultEmail: (quizId, studentId) => 
         API.post(`/quizzes/${quizId}/send-result`, { studentId }),
     
-    // 🔥 NEW: Schedule Management APIs
+    // ==========================================
+    // 🔥 UPDATED: Schedule Management APIs
+    // ==========================================
     getSchedules: () => API.get('/schedules'),
     getSchedule: (id) => API.get(`/schedules/${id}`),
     createSchedule: (data) => API.post('/schedules', data),
     updateSchedule: (id, data) => API.put(`/schedules/${id}`, data),
     deleteSchedule: (id) => API.delete(`/schedules/${id}`),
-    
-    // 🔥 NEW: Batch Schedule APIs - Updated for week-wise structure
-    createBatchSchedule: (data) => API.post('/schedules/batch-create', data),
-    deleteBatch: (batchId) => API.delete(`/schedules/batch/${batchId}`),
     getBatchSchedules: (batchId) => API.get(`/schedules/batch/${batchId}`),
+    getSchedulesByCourse: (courseId) => API.get(`/schedules/course/${courseId}`),
+    createBatchSchedule: (data) => API.post('/schedules/batch-create', data),
     
-    // 🔥 NEW: Get Courses for dropdown
+    // 🔥 NEW: Week Update API (Fixed for Edit Week functionality)
+    updateWeekSchedules: (courseId, weekNumber, data) => 
+        API.post(`/schedules/week-update/${courseId}/${weekNumber}`, data),
+    
+    // 🔥 NEW: Get Week Schedules (for Edit Week)
+    getWeekSchedules: (courseId, weekNumber) => 
+        API.get(`/schedules/course/${courseId}/week/${weekNumber}`),
+    
+    deleteBatch: (batchId) => API.delete(`/schedules/batch/${batchId}`),
+    
+    // 🔥 NEW: Schedule Conflict Check API
+    checkScheduleConflict: (data) => API.post('/schedules/check-conflict', data),
+    
+    // 🔥 NEW: Get Upcoming Schedules for Dashboard
+    getUpcomingSchedules: () => API.get('/schedules/dashboard/upcoming'),
+    
     getCourses: () => API.get('/courses/for-assignments'),
-    
-    // 🔥 NEW: Get students enrolled in a course
     getCourseStudents: (courseId) => API.get(`/courses/${courseId}/students`),
-    
-    // Notices
+
+    // Notices (Old - Announcements)
     createNotice: (data) => API.post('/announcements', data),
-    
-    // Get students by course (for dropdown)
-    getEnrolledStudents: (courseId) => 
-        API.get(`/courses/${courseId}/students`),
+    getEnrolledStudents: (courseId) => API.get(`/courses/${courseId}/students`),
     
     // ==========================================
-    // 🔥 NEW: DYNAMIC SYSTEM - ADMIN APIs
+    // 🔥 NEW: IMPORTANT LINKS - ADMIN APIs
     // ==========================================
-    
-    // Important Links Management
     createImportantLink: (data) => API.post('/important-links', data),
     getAllImportantLinks: () => API.get('/important-links'),
     updateImportantLink: (id, data) => API.put(`/important-links/${id}`, data),
     deleteImportantLink: (id) => API.delete(`/important-links/${id}`),
     
-    // Notice Board Management
+    // ==========================================
+    // 📢 NOTICES BOARD - ADMIN APIs
+    // ==========================================
+    getNoticeCourses: () => API.get('/notices/courses'),
     createNoticeBoard: (data) => API.post('/notices', data),
     getAllNotices: () => API.get('/notices'),
     updateNotice: (id, data) => API.put(`/notices/${id}`, data),
     deleteNotice: (id) => API.delete(`/notices/${id}`),
     
-    // Jobs & Internships Management
-    createJobInternship: (data) => API.post('/jobs-internships', data),
-    getAllJobsInternships: () => API.get('/jobs-internships'),
-    updateJobInternship: (id, data) => API.put(`/jobs-internships/${id}`, data),
-    deleteJobInternship: (id) => API.delete(`/jobs-internships/${id}`)
+    // ==========================================
+    // 💼 JOBS & INTERNSHIPS - ADMIN APIs
+    // ==========================================
+    createJob: (data) => API.post('/jobs', data),
+    getAllJobs: () => API.get('/jobs'),
+    getJob: (id) => API.get(`/jobs/${id}`),
+    updateJob: (id, data) => API.put(`/jobs/${id}`, data),
+    deleteJob: (id) => API.delete(`/jobs/${id}`),
+    getJobsByCourse: (courseId) => API.get(`/jobs/course/${courseId}`),
+    getJobsByType: (type) => API.get(`/jobs/type/${type}`)
 };
 
 // ================= STUDENT APIs =================
@@ -174,20 +202,20 @@ export const studentAPI = {
     // Student ki enrollments
     getMyCourses: (studentId) => API.get(`/student-courses/${studentId}`),
     
-    // Assignments - SIRF meri courses ki
+    // Assignments
     getMyAssignments: (studentId) => API.get(`/assignments/student/${studentId}`),
-    
     submitAssignment: (assignmentId, data) => 
         API.post(`/assignments/${assignmentId}/submit`, data),
     
-    // Attendance - SIRF meri courses ki
-    getMyAttendance: (studentId, month, year) => 
-        API.get(`/attendance/student/${studentId}?month=${month}&year=${year}`),
+    // 🔥 NEW: Zoom Live Class APIs (Student)
+    getZoomMeeting: (scheduleId) => API.get(`/zoom/student-meeting/${scheduleId}`),
+    joinZoomMeeting: (scheduleId) => API.post(`/zoom/join-meeting/${scheduleId}`),
+    leaveZoomMeeting: (scheduleId) => API.post(`/zoom/leave-meeting/${scheduleId}`),
     
-    // Comprehensive Attendance Data
-    getAttendance: (studentId, params = {}) => {
+    // 🔥 NEW: Attendance APIs (Student) - UPDATED
+    getMyAttendance: (studentId, params = {}) => {
         const { range, courseId, month, year } = params;
-        let queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
         
         if (range) queryParams.append('range', range);
         if (courseId && courseId !== 'all') queryParams.append('courseId', courseId);
@@ -198,41 +226,163 @@ export const studentAPI = {
         return API.get(`/attendance/student/${studentId}${queryString ? '?' + queryString : ''}`);
     },
     
-    // 🔥 NEW: Student Schedule APIs - WITH LINK VISIBILITY
-    getMySchedules: () => API.get('/schedules/my-schedules/student'), // 🔥 Updated route
+    // 🔥 NEW: Mark attendance attempt (when student clicks join)
+    markAttendanceAttempt: (scheduleId) => API.post('/attendance/mark-attempt', { scheduleId }),
+    
+    // 🔥 NEW: Get attendance status for specific schedule
+    getAttendanceStatus: (scheduleId) => API.get(`/attendance/status/${scheduleId}`),
+    
+    // 🔥 NEW: Student Schedule APIs
+    getMySchedules: () => API.get('/schedules/my-schedules/student'),
     getCourseSchedule: (courseId) => API.get(`/schedules/course/${courseId}`),
     
-    // Quizzes - SIRF meri courses ke
+    // Quizzes
     getMyQuizzes: () => API.get('/quizzes/my-quizzes'),
     startQuiz: (quizId) => API.get(`/quizzes/${quizId}/take`),
     submitQuiz: (quizId, data) => API.post(`/quizzes/${quizId}/submit`, data),
-    
-    // Results - SIRF mere
     getMyResults: () => API.get('/quizzes/my-results'),
     
-    // Notices - JO mujhe relevant hain
+    // Notices (Old)
     getMyNotices: (studentId) => API.get(`/announcements/student/${studentId}`),
     
-    // Notes (Personal)
+    // Notes
     getMyNotes: (studentId) => API.get(`/notes/student/${studentId}`),
     createNote: (data) => API.post('/notes', data),
     updateNote: (noteId, data) => API.put(`/notes/${noteId}`, data),
     deleteNote: (noteId) => API.delete(`/notes/${noteId}`),
     
     // ==========================================
-    // 🔥 NEW: DYNAMIC SYSTEM - STUDENT APIs
+    // 🔥 NEW: IMPORTANT LINKS - STUDENT APIs
     // ==========================================
-    
-    // Important Links - Student ke enrolled courses ke liye
     getMyImportantLinks: () => API.get('/important-links/student/my-links'),
     getImportantLinksByCourse: (courseId) => API.get(`/important-links/course/${courseId}`),
     
-    // Notices - Student ke liye relevant
+    // ==========================================
+    // 📢 NOTICES BOARD - STUDENT APIs
+    // ==========================================
     getMyNoticesBoard: () => API.get('/notices/student/my-notices'),
+    markNoticeAsRead: (id) => API.put(`/notices/${id}/read`),
     
-    // Jobs & Internships - Student ke courses ke hisaab se
-    getMyJobsInternships: () => API.get('/jobs-internships/student/my-jobs'),
-    getJobsByType: (type) => API.get(`/jobs-internships/student/by-type/${type}`)
+    // ==========================================
+    // 💼 JOBS & INTERNSHIPS - STUDENT APIs
+    // ==========================================
+    getMyJobs: () => API.get('/student-dashboard/jobs'),
+    getAvailableJobs: () => API.get('/jobs/student/available'),
+    getJobsByType: (type) => API.get(`/jobs/student/by-type/${type}`),
+    markJobAsViewed: (id) => API.put(`/jobs/${id}/view`)
+};
+
+// ==========================================
+// 📢 STANDALONE NOTICES API
+// ==========================================
+export const noticesAPI = {
+    getAllNotices: () => API.get('/notices'),
+    createNotice: (data) => API.post('/notices', data),
+    updateNotice: (id, data) => API.put(`/notices/${id}`, data),
+    deleteNotice: (id) => API.delete(`/notices/${id}`),
+    getNoticeCourses: () => API.get('/notices/courses'),
+    getMyNotices: () => API.get('/notices/student/my-notices'),
+    markAsRead: (id) => API.put(`/notices/${id}/read`)
+};
+
+// ==========================================
+// 💼 STANDALONE JOBS API
+// ==========================================
+export const jobsAPI = {
+    createJob: (data) => API.post('/jobs', data),
+    getAllJobs: () => API.get('/jobs'),
+    getJob: (id) => API.get(`/jobs/${id}`),
+    updateJob: (id, data) => API.put(`/jobs/${id}`, data),
+    deleteJob: (id) => API.delete(`/jobs/${id}`),
+    getJobsByCourse: (courseId) => API.get(`/jobs/course/${courseId}`),
+    getJobsByType: (type) => API.get(`/jobs/type/${type}`),
+    getMyJobs: () => API.get('/student-dashboard/jobs'),
+    getAvailableJobs: () => API.get('/jobs/student/available'),
+    getStudentJobsByType: (type) => API.get(`/jobs/student/by-type/${type}`),
+    markAsViewed: (id) => API.put(`/jobs/${id}/view`)
+};
+
+// ==========================================
+// 🔥 NEW: ZOOM API (Standalone)
+// ==========================================
+export const zoomAPI = {
+    // Admin
+    createMeeting: (scheduleId) => API.post(`/zoom/create-meeting/${scheduleId}`),
+    startMeeting: (meetingId) => API.post(`/zoom/start-meeting/${meetingId}`),
+    endMeeting: (meetingId) => API.post(`/zoom/end-meeting/${meetingId}`),
+    getParticipants: (meetingId) => API.get(`/zoom/participants/${meetingId}`),
+    getMeetingDetails: (meetingId) => API.get(`/zoom/meeting/${meetingId}`),
+    getAllMeetings: () => API.get('/zoom/meetings'),
+    
+    // Student
+    getStudentMeeting: (scheduleId) => API.get(`/zoom/student-meeting/${scheduleId}`),
+    joinMeeting: (scheduleId) => API.post(`/zoom/join-meeting/${scheduleId}`),
+    leaveMeeting: (scheduleId) => API.post(`/zoom/leave-meeting/${scheduleId}`),
+    
+    // Webhook (Server-side only)
+    handleWebhook: (data) => API.post('/zoom/webhook', data)
+};
+
+// ==========================================
+// 🔥 NEW: ATTENDANCE API (Standalone)
+// ==========================================
+export const attendanceAPI = {
+    // Student
+    getMyAttendance: (studentId, params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.range) queryParams.append('range', params.range);
+        if (params?.courseId && params.courseId !== 'all') queryParams.append('courseId', params.courseId);
+        
+        const queryString = queryParams.toString();
+        return API.get(`/attendance/student/${studentId}${queryString ? '?' + queryString : ''}`);
+    },
+    getMyStats: () => API.get('/attendance/my-stats'),
+    markAttempt: (scheduleId) => API.post('/attendance/mark-attempt', { scheduleId }),
+    getStatus: (scheduleId) => API.get(`/attendance/status/${scheduleId}`),
+    
+    // Admin
+    getCourseAttendance: (courseId, date) => API.get(`/attendance/course/${courseId}?date=${date}`),
+    getReport: (courseId, params) => API.get(`/attendance/report/${courseId}`, { params }),
+    updateAttendance: (attendanceId, data) => API.put(`/attendance/${attendanceId}`, data),
+    getStudentDetails: (studentId, courseId) => API.get(`/attendance/student/${studentId}/course/${courseId}`),
+    getLiveAttendance: (meetingId) => API.get(`/attendance/live/${meetingId}`)
+};
+
+// ==========================================
+// 🔥 NEW: SCHEDULE API (Standalone) - COMPLETE
+// ==========================================
+export const scheduleAPI = {
+    // Admin
+    getAll: () => API.get('/schedules'),
+    getById: (id) => API.get(`/schedules/${id}`),
+    create: (data) => API.post('/schedules', data),
+    update: (id, data) => API.put(`/schedules/${id}`, data),
+    delete: (id) => API.delete(`/schedules/${id}`),
+    
+    // Batch operations
+    createBatch: (data) => API.post('/schedules/batch-create', data),
+    getBatch: (batchId) => API.get(`/schedules/batch/${batchId}`),
+    deleteBatch: (batchId) => API.delete(`/schedules/batch/${batchId}`),
+    
+    // 🔥 NEW: Week Update (for Edit Week functionality)
+    updateWeek: (courseId, weekNumber, data) => 
+        API.post(`/schedules/week-update/${courseId}/${weekNumber}`, data),
+    
+    // 🔥 NEW: Get Week Schedules
+    getWeekSchedules: (courseId, weekNumber) => 
+        API.get(`/schedules/course/${courseId}/week/${weekNumber}`),
+    
+    // Course specific
+    getByCourse: (courseId) => API.get(`/schedules/course/${courseId}`),
+    
+    // 🔥 NEW: Conflict Check
+    checkConflict: (data) => API.post('/schedules/check-conflict', data),
+    
+    // 🔥 NEW: Upcoming for Dashboard
+    getUpcoming: () => API.get('/schedules/dashboard/upcoming'),
+    
+    // Student
+    getMySchedules: () => API.get('/schedules/my-schedules/student')
 };
 
 export default API;

@@ -1,0 +1,82 @@
+.live-class-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  width: 100%;
+  position: relative;
+}
+
+.live-class-btn.loading {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.live-class-btn.locked {
+  background: #fef3c7;
+  color: #92400e;
+  cursor: not-allowed;
+}
+
+.live-class-btn.ready {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.live-class-btn.ready:hover {
+  background: #3b82f6;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.live-class-btn.live {
+  background: #dc2626;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+}
+
+.live-class-btn.live:hover {
+  background: #b91c1c;
+  transform: scale(1.02);
+}
+
+.live-class-btn.completed {
+  background: #d1fae5;
+  color: #065f46;
+  cursor: default;
+}
+
+.password-hint {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  background: #000B29;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

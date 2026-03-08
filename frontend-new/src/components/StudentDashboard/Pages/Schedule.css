@@ -1244,4 +1244,418 @@
   .view-box {
     padding: 12px;
   }
+}/* ==========================================
+   IMPROVED STYLES - ADD THESE TO Schedule.css
+   ========================================== */
+
+/* Header Badges */
+.header-badges {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.count-badge {
+  padding: 6px 14px;
+  background: #000B29;
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.progress-badge {
+  padding: 6px 14px;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.total-weeks-badge {
+  padding: 6px 14px;
+  background: #e0e7ff;
+  color: #3730a3;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Tab Badge */
+.tab-badge {
+  margin-left: 6px;
+  padding: 2px 8px;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Empty State Improvements */
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 32px;
+  color: #9ca3af;
+}
+
+.empty-box h4 {
+  margin: 0 0 8px 0;
+  color: #374151;
+  font-size: 18px;
+}
+
+.empty-box p {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.btn-check-week {
+  padding: 12px 24px;
+  background: #000B29;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Class Row Improvements */
+.class-row {
+  position: relative;
+  overflow: hidden;
+}
+
+.class-row.is-today {
+  border: 2px solid #3b82f6;
+  background: #eff6ff;
+}
+
+.class-row.completed {
+  opacity: 0.7;
+  background: #f0fdf4;
+}
+
+.class-row.completed .row-info h4 {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+.live-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 700;
+  animation: pulse 2s infinite;
+  margin-top: 4px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.row-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #10b981;
+  color: white;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.time-until {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Live Class Wrapper */
+.live-class-wrapper {
+  margin-top: 12px;
+}
+
+.class-completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* Modern Table */
+.modern-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.modern-table td {
+  padding: 16px 12px;
+}
+
+.day-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.time-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.topic-cell .topic-title {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.topic-cell .topic-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.status-cell {
+  text-align: center;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-pill.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-pill.ongoing {
+  background: #dbeafe;
+  color: #1e40af;
+  animation: pulse 2s infinite;
+}
+
+.status-pill.upcoming {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Week Box Improvements */
+.week-box.past {
+  opacity: 0.8;
+}
+
+.week-box.past .week-header-btn {
+  background: #f9fafb;
+}
+
+.current-week-badge {
+  padding: 4px 10px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.past-week-badge {
+  padding: 4px 10px;
+  background: #10b981;
+  color: white;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.week-progress {
+  width: 60px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #10b981;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Instructor Small */
+.instructor-small {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Search Inline */
+.search-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  min-width: 250px;
+}
+
+.search-inline input {
+  border: none;
+  background: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+}
+
+/* Week Badge */
+.week-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #000B29;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Empty State Full */
+.empty-state-full {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+  background: #f3f4f6;
+}
+
+.empty-icon-large {
+  width: 120px;
+  height: 120px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #9ca3af;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.empty-state-full h2 {
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.empty-state-full p {
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.btn-browse-courses {
+  padding: 14px 28px;
+  background: #000B29;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Notification Types */
+.notif-item-compact.completed {
+  border-left: 3px solid #10b981;
+}
+
+.notif-item-compact.upcoming {
+  border-left: 3px solid #3b82f6;
+}
+
+/* Responsive Improvements */
+@media (max-width: 768px) {
+  .header-badges {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .search-inline {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .class-row {
+    padding: 16px;
+  }
+  
+  .row-title-wrap {
+    flex-wrap: wrap;
+  }
+  
+  .modern-table {
+    font-size: 13px;
+  }
+  
+  .status-pill {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
 }

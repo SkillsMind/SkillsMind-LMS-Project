@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import './GetEnrollment.css';
 
 import WelcomeNotice from './WelcomeNotice';
+import { useProfile } from '../../context/ProfileContext.jsx';
 
 const GetEnrollment = () => {
   const navigate = useNavigate();
@@ -32,13 +33,15 @@ const GetEnrollment = () => {
   
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [courses, setCourses] = useState([]);
-  const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const { profile, loading: profileLoading } = useProfile();
   
   const userId = localStorage.getItem('userId');
   const storedName = localStorage.getItem('userName') || "Student";
   const backendURL = "http://localhost:5000";
+
+  const student = profile;
 
   // --- Dynamic Learning Points Logic (Based on Course Title) ---
   const getLearningPoints = (courseTitle) => {
@@ -193,28 +196,8 @@ const GetEnrollment = () => {
     }
   };
 
-  const fetchStudentProfile = async () => {
-    if (!userId || userId === 'undefined') {
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await axios.get(`${backendURL}/api/student-profile/details/${userId}`);
-      const fetchedData = res.data.profile ? res.data.profile : res.data;
-      if (fetchedData) {
-        setStudent(fetchedData);
-        localStorage.setItem('skillsmind_profile', JSON.stringify(fetchedData));
-      }
-    } catch (err) {
-      console.error("Profile Fetch Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchCourses();
-    fetchStudentProfile();
   }, [userId]);
 
   const getImageUrl = (path) => {
@@ -250,7 +233,7 @@ const GetEnrollment = () => {
         }
       });
       if (res.data.success) {
-        await fetchStudentProfile();
+        // Profile context will auto-update, no need to manually fetch
       }
     } catch (err) {
       console.error("Image Upload Error:", err);
@@ -282,11 +265,9 @@ const GetEnrollment = () => {
     }
   };
 
-// GetEnrollment.jsx update karein (Line 260 ke paas)
-const handleEnroll = (courseId) => {
-    // Student ko payment method page pe bhejo with course info
+  const handleEnroll = (courseId) => {
     navigate(`/payment-method/${courseId}`);
-};
+  };
 
   return (
     <div className="sm-enroll-root">
@@ -375,7 +356,8 @@ const handleEnroll = (courseId) => {
             </div>
         </div>
       </div>
-{/* MOBILE SEARCH BAR - REAL TIME FOR SKILLSMIND */}
+
+      {/* MOBILE SEARCH BAR - REAL TIME FOR SKILLSMIND */}
       <AnimatePresence>
         {isSearchOpen && (
           <motion.div 
@@ -400,6 +382,7 @@ const handleEnroll = (courseId) => {
           </motion.div>
         )}
       </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {viewMode === 'grid' ? (
           <motion.div 
@@ -471,80 +454,78 @@ const handleEnroll = (courseId) => {
           >
             
             {/* Mode Selection Modal Overlay */}
-            {/* --- FINAL CLEAN POPUP SECTION --- */}
-// --- FINAL CLEAN POPUP SECTION ---
-<AnimatePresence>
- {showModeSelection && (
-  <div className="sm-pro-overlay" onClick={() => setShowModeSelection(false)}>
-    <motion.div 
-      className="sm-pro-modal"
-      initial={{ opacity: 0, scale: 0.5, rotateX: 45 }}
-      animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-      exit={{ opacity: 0, scale: 0.5 }}
-      transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <button className="sm-pro-close" onClick={() => setShowModeSelection(false)}><FaTimes /></button>
-      
-      <div className="sm-pro-top-bar"></div>
-      
-      <div className="sm-pro-content">
-        <div className="sm-pro-brand-icon"><FaGraduationCap /></div>
-        <h2 className="sm-pro-title">Unlock Your Path</h2>
-        <p className="sm-pro-subtitle">Select how you want to master this skill with <span>SkillsMind</span></p>
+            <AnimatePresence>
+              {showModeSelection && (
+                <div className="sm-pro-overlay" onClick={() => setShowModeSelection(false)}>
+                  <motion.div 
+                    className="sm-pro-modal"
+                    initial={{ opacity: 0, scale: 0.5, rotateX: 45 }}
+                    animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button className="sm-pro-close" onClick={() => setShowModeSelection(false)}><FaTimes /></button>
+                    
+                    <div className="sm-pro-top-bar"></div>
+                    
+                    <div className="sm-pro-content">
+                      <div className="sm-pro-brand-icon"><FaGraduationCap /></div>
+                      <h2 className="sm-pro-title">Unlock Your Path</h2>
+                      <p className="sm-pro-subtitle">Select how you want to master this skill with <span>SkillsMind</span></p>
 
-        <div className="sm-pro-options-grid">
-          
-          {/* --- LIVE CARD - UPDATED --- */}
-          <div className="sm-pro-card live" 
-               onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
-                   state: { 
-                       course: selectedCourse,
-                       mode: 'live',
-                       enrollmentData: {
-                           fullName: student?.name || storedName,
-                           email: student?.email || '',
-                           cnic: student?.cnic || ''
-                       }
-                   } 
-               })}>
-            <div className="sm-pro-badge">Popular</div>
-            <div className="sm-pro-icon-box"><FaChalkboardTeacher /></div>
-            <div className="sm-pro-info">
-              <h4>Live Class</h4>
-              <p>Real-time interaction</p>
-            </div>
-            <div className="sm-pro-action"><FaChevronRight /></div>
-          </div>
+                      <div className="sm-pro-options-grid">
+                        
+                        {/* LIVE CARD */}
+                        <div className="sm-pro-card live" 
+                             onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
+                                 state: { 
+                                     course: selectedCourse,
+                                     mode: 'live',
+                                     enrollmentData: {
+                                         fullName: student?.name || storedName,
+                                         email: student?.email || '',
+                                         cnic: student?.cnic || ''
+                                     }
+                                 } 
+                             })}>
+                          <div className="sm-pro-badge">Popular</div>
+                          <div className="sm-pro-icon-box"><FaChalkboardTeacher /></div>
+                          <div className="sm-pro-info">
+                            <h4>Live Class</h4>
+                            <p>Real-time interaction</p>
+                          </div>
+                          <div className="sm-pro-action"><FaChevronRight /></div>
+                        </div>
 
-          {/* --- RECORDED CARD - UPDATED --- */}
-          <div className="sm-pro-card recorded" 
-               onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
-                   state: { 
-                       course: selectedCourse,
-                       mode: 'recorded',
-                       enrollmentData: {
-                           fullName: student?.name || storedName,
-                           email: student?.email || '',
-                           cnic: student?.cnic || ''
-                       }
-                   } 
-               })}>
-            <div className="sm-pro-icon-box"><FaPlayCircle /></div>
-            <div className="sm-pro-info">
-              <h4>Recorded</h4>
-              <p>Learn at your pace</p>
-            </div>
-            <div className="sm-pro-action"><FaChevronRight /></div>
-          </div>
+                        {/* RECORDED CARD */}
+                        <div className="sm-pro-card recorded" 
+                             onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
+                                 state: { 
+                                     course: selectedCourse,
+                                     mode: 'recorded',
+                                     enrollmentData: {
+                                         fullName: student?.name || storedName,
+                                         email: student?.email || '',
+                                         cnic: student?.cnic || ''
+                                     }
+                                 } 
+                             })}>
+                          <div className="sm-pro-icon-box"><FaPlayCircle /></div>
+                          <div className="sm-pro-info">
+                            <h4>Recorded</h4>
+                            <p>Learn at your pace</p>
+                          </div>
+                          <div className="sm-pro-action"><FaChevronRight /></div>
+                        </div>
 
-        </div>
-      </div>
-      <div className="sm-pro-footer"><p>Joined by 10,000+ students globally</p></div>
-    </motion.div>
-  </div>
-)}
-</AnimatePresence>
+                      </div>
+                    </div>
+                    <div className="sm-pro-footer"><p>Joined by 10,000+ students globally</p></div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
 
             {/* UPGRADED: COMPRESSED BANNER */}
             <div className="course-detail-banner-compressed" style={{ backgroundImage: `url(${getImageUrl(selectedCourse.thumbnail)})` }}>
@@ -574,7 +555,7 @@ const handleEnroll = (courseId) => {
                             <img 
                               src={getImageUrl(selectedCourse.instructor?.profilePic)} 
                               alt="Mentor" 
-                              onError={(e)=>e.target.src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                              onError={(e)=>e.target.src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png "}
                             />
                             <div className="ins-meta-v2">
                                 <span className="expert-tag">Official SkillsMind Instructor</span>

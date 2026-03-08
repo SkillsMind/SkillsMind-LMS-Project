@@ -1086,4 +1086,636 @@
     padding: 6px 12px;
     font-size: 12px;
   }
+}/* Existing vs New row styles */
+.table-row.existing {
+  border-left: 3px solid #10b981;
+}
+
+.table-row.new {
+  border-left: 3px solid #3b82f6;
+}
+
+.table-row.existing::before {
+  content: '✓';
+  position: absolute;
+  left: -20px;
+  color: #10b981;
+  font-size: 12px;
+}
+
+/* Disabled input style */
+.disabled-input {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  cursor: not-allowed;
+  border-color: #d1d5db !important;
+}/* 🔥 NEW: Time Input Styles */
+.time-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.time-input-wrapper select,
+.time-input-wrapper input {
+  flex: 1;
+}
+
+.custom-time-input {
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-gray);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-dark);
+  background: var(--white);
+  width: 100%;
+}
+
+.custom-time-input:focus {
+  outline: none;
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(0, 11, 41, 0.08);
+}
+
+.btn-toggle-time {
+  padding: 12px 16px;
+  background: var(--primary-dark);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-toggle-time:hover {
+  background: var(--primary-red);
+}
+
+.time-hint,
+.zoom-hint {
+  font-size: 12px;
+  color: var(--text-gray);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.zoom-hint {
+  color: var(--primary-red);
+  font-weight: 500;
+}
+
+/* 🔥 Time Input in Table */
+.table-row .time-input {
+  padding: 10px 12px;
+  font-size: 14px;
+  text-align: center;
+  font-family: monospace;
+}
+
+/* 🔥 Existing vs New row styles */
+.table-row.existing {
+  border-left: 3px solid #10b981;
+  background: #f0fdf4;
+}
+
+.table-row.new {
+  border-left: 3px solid #3b82f6;
+}
+
+/* 🔥 Disabled input style */
+.disabled-input {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  cursor: not-allowed;
+  border-color: #d1d5db !important;
+}
+
+/* 🔥 Status toggle button */
+.status-toggle {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  transition: all 0.2s;
+}
+
+.status-toggle.active {
+  color: var(--success);
+}
+
+.status-toggle:hover {
+  transform: scale(1.1);
+}
+
+/* 🔥 Responsive for time inputs */
+@media (max-width: 768px) {
+  .time-input-wrapper {
+    flex-direction: column;
+  }
+  
+  .btn-toggle-time {
+    width: 100%;
+  }
+  
+  .table-row .td-time input {
+    min-width: 80px;
+  }
+}/* 🔥 NEW: Time Input Styles */
+.time-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.time-input-wrapper select,
+.time-input-wrapper input {
+  flex: 1;
+}
+
+.custom-time-input {
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-gray);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-dark);
+  background: var(--white);
+  width: 100%;
+}
+
+.custom-time-input:focus {
+  outline: none;
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(0, 11, 41, 0.08);
+}
+
+.btn-toggle-time {
+  padding: 12px 16px;
+  background: var(--primary-dark);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-toggle-time:hover {
+  background: var(--primary-red);
+}
+
+.time-hint,
+.zoom-hint {
+  font-size: 12px;
+  color: var(--text-gray);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.zoom-hint {
+  color: var(--primary-red);
+  font-weight: 500;
+}
+
+/* 🔥 Time Input in Table */
+.table-row .time-input {
+  padding: 10px 12px;
+  font-size: 14px;
+  text-align: center;
+  font-family: monospace;
+}
+
+/* 🔥 Existing vs New row styles */
+.table-row.existing {
+  border-left: 3px solid #10b981;
+  background: #f0fdf4;
+}
+
+.table-row.new {
+  border-left: 3px solid #3b82f6;
+}
+
+/* 🔥 Disabled input style */
+.disabled-input {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  cursor: not-allowed;
+  border-color: #d1d5db !important;
+}
+
+/* 🔥 Status toggle button */
+.status-toggle {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  transition: all 0.2s;
+}
+
+.status-toggle.active {
+  color: var(--success);
+}
+
+.status-toggle:hover {
+  transform: scale(1.1);
+}
+
+/* 🔥 Responsive for time inputs */
+@media (max-width: 768px) {
+  .time-input-wrapper {
+    flex-direction: column;
+  }
+  
+  .btn-toggle-time {
+    width: 100%;
+  }
+  
+  .table-row .td-time input {
+    min-width: 80px;
+  }
+}/* ==========================================
+   🔥 NEW: Enhanced Time & Date Styles
+   ========================================== */
+
+.time-select {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.time-select option {
+  padding: 4px;
+}
+
+.td-date input[type="date"] {
+  padding: 10px;
+  border: 1.5px solid var(--border-gray);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  width: 100%;
+}
+
+.td-date input[type="date"].required-field {
+  border-color: var(--danger);
+  background: #fff5f5;
+}
+
+.td-time {
+  position: relative;
+}
+
+.error-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--danger);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.error-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border: 6px solid transparent;
+  border-top-color: var(--danger);
+}
+
+.table-row.has-error {
+  border-left: 3px solid var(--danger);
+  background: #fff5f5;
+}
+
+.conflict-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.conflict-warning svg {
+  color: #ffc107;
+  font-size: 18px;
+}
+
+/* Add Week Button */
+.btn-add-week {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-week:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Delete Week Button */
+.btn-delete-week {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid var(--danger);
+  background: white;
+  color: var(--danger);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-right: 8px;
+}
+
+.btn-delete-week:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* Updated Table Header for Date Column */
+.table-header {
+  grid-template-columns: 80px 120px 140px 100px 100px 100px 1fr 60px;
+}
+
+.table-row {
+  grid-template-columns: 80px 120px 140px 100px 100px 100px 1fr 60px;
+}
+
+.th-date, .td-date {
+  text-align: left;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 70px 100px 120px 90px 90px 90px 1fr 50px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 992px) {
+  .days-table {
+    overflow-x: auto;
+  }
+  
+  .table-header,
+  .table-body {
+    min-width: 1000px;
+  }
+}/* ==========================================
+   🔥 NEW: Auto-Save Bar
+   ========================================== */
+.autosave-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bae6fd;
+  margin: -24px -24px 16px -24px;
+}
+
+.autosave-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #0369a1;
+}
+
+.btn-clear-draft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #0284c7;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear-draft:hover {
+  background: #f0f9ff;
+  border-color: #0ea5e9;
+}
+
+/* ==========================================
+   🔥 NEW: Custom Time Input
+   ========================================== */
+.custom-time-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-time-wrapper input[type="time"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border-gray);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-dark);
+  background: var(--white);
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+}
+
+.custom-time-wrapper input[type="time"]:focus {
+  outline: none;
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(0, 11, 41, 0.08);
+}
+
+/* ==========================================
+   🔥 NEW: Add Week Button
+   ========================================== */
+.btn-add-week {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-week:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==========================================
+   🔥 FIXED: Table Row Styles
+   ========================================== */
+.table-row.existing {
+  border-left: 4px solid #10b981;
+  background: #f0fdf4;
+}
+
+.table-row.new {
+  border-left: 4px solid #3b82f6;
+  background: #eff6ff;
+}
+
+.table-row.has-error {
+  border-left: 4px solid #dc2626;
+  background: #fef2f2;
+}
+
+/* ==========================================
+   🔥 NEW: Error Tooltip
+   ========================================== */
+.error-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #dc2626;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 100;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.error-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border: 6px solid transparent;
+  border-top-color: #dc2626;
+}
+
+/* ==========================================
+   🔥 NEW: Magic Auto-Calculate Badge
+   ========================================== */
+.magic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #f0f9ff;
+  color: #0369a1;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ==========================================
+   🔥 FIXED: Day Add Button
+   ========================================== */
+.btn-add-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  background: var(--white);
+  border: 2px dashed var(--primary-dark);
+  border-radius: var(--radius-md);
+  color: var(--primary-dark);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-day:hover {
+  background: var(--primary-dark);
+  color: var(--white);
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==========================================
+   🔥 FIXED: Delete Week Button
+   ========================================== */
+.btn-delete-week {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid #dc2626;
+  background: white;
+  color: #dc2626;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-right: 8px;
+}
+
+.btn-delete-week:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* ==========================================
+   🔥 NEW: Zoom Create Button
+   ========================================== */
+.btn-action.zoom-create {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  border: 1px dashed #9ca3af;
+}
+
+.btn-action.zoom-create:hover {
+  background: #2D8CFF !important;
+  color: white !important;
+  border-style: solid;
 }

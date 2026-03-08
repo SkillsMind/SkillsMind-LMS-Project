@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../../../services/api';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { 
   FaPlus, FaTrash, FaEdit, FaEye, FaArrowLeft, FaSpinner,
   FaCalendarAlt, FaClock, FaVideo, FaChalkboardTeacher,
@@ -10,9 +9,10 @@ import {
   FaChevronDown, FaChevronUp, FaGraduationCap, FaLayerGroup,
   FaTrashAlt, FaExpandAlt, FaCompressAlt, FaCalendarCheck,
   FaPlayCircle, FaHistory, FaRegCalendarCheck, FaCalendarWeek,
-  FaDownload, FaFilePdf
+  FaDownload, FaFilePdf, FaVideoSlash, FaExternalLinkAlt
 } from 'react-icons/fa';
 import ScheduleCreator from './ScheduleCreator';
+import ZoomMeetingModal from './ZoomMeetingModal';
 import './ScheduleManager.css';
 
 const ScheduleManager = () => {
@@ -26,6 +26,10 @@ const ScheduleManager = () => {
   const [expandedCourses, setExpandedCourses] = useState([]);
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [expandAll, setExpandAll] = useState(false);
+  
+  // Zoom Modal State
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [zoomSchedule, setZoomSchedule] = useState(null);
 
   const [stats, setStats] = useState({
     totalSessions: 0,
@@ -42,12 +46,20 @@ const ScheduleManager = () => {
     borderRadius: '6px'
   };
 
+  // 🔥 REAL-TIME: Setup Socket.IO or polling for live updates
   useEffect(() => {
     fetchData();
+    
+    // Poll every 30 seconds for updates
+    const interval = setInterval(() => {
+      fetchData(false); // Silent refresh
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const schedulesRes = await adminAPI.getSchedules();
       let schedulesData = [];
@@ -74,16 +86,16 @@ const ScheduleManager = () => {
       setCourses(coursesData);
       calculateStats(schedulesData);
       
-      if (coursesData.length > 0) {
+      if (coursesData.length > 0 && expandedCourses.length === 0) {
         setExpandedCourses([coursesData[0]._id]);
       }
     } catch (err) {
       console.error('Fetch error:', err);
-      toast.error('Failed to load schedules', { style: toastStyle });
-      setSchedules([]);
-      setCourses([]);
+      if (showLoading) {
+        toast.error('Failed to load schedules', { style: toastStyle });
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -109,20 +121,69 @@ const ScheduleManager = () => {
     });
   };
 
-  // Generate PDF using jsPDF
+  // 🔥 FIXED: Open Zoom Modal without page refresh
+  const handleOpenZoomModal = (schedule, e) => {
+    e.stopPropagation();
+    setZoomSchedule(schedule);
+    setShowZoomModal(true);
+  };
+
+  // 🔥 FIXED: Close Zoom Modal and refresh data
+  const handleCloseZoomModal = useCallback((refresh = false) => {
+    setShowZoomModal(false);
+    setZoomSchedule(null);
+    if (refresh) {
+      fetchData(false); // Refresh without loading spinner
+    }
+  }, []);
+
+  // 🔥 FIXED: Handle Edit Week - Properly passes all data
+  const handleEditWeek = (courseId, weekNum, weekClasses, e) => {
+    e.stopPropagation();
+    
+    const weekSchedule = {
+      _id: `week-${courseId}-${weekNum}`,
+      courseId: courseId,
+      weekNumber: parseInt(weekNum),
+      isWeekEdit: true,
+      weekClasses: weekClasses,
+      title: `Week ${weekNum}`,
+      topic: `Week ${weekNum} Schedule`
+    };
+    
+    setSelectedSchedule(weekSchedule);
+    setView('creator');
+  };
+
+  // 🔥 NEW: Quick Zoom Actions without modal
+  const handleQuickZoomAction = async (schedule, action, e) => {
+    e.stopPropagation();
+    
+    if (action === 'create') {
+      try {
+        const res = await adminAPI.createZoomMeeting(schedule._id);
+        if (res.data.success) {
+          toast.success('Zoom meeting created!', { style: toastStyle });
+          fetchData(false);
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.error || 'Failed to create meeting', { style: toastStyle });
+      }
+    } else if (action === 'join') {
+      if (schedule.meetingLink) {
+        window.open(schedule.meetingLink, '_blank');
+      }
+    }
+  };
+
   const generatePDF = async (courseName, weeks) => {
     try {
-      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape
-      
-      // SkillMind Colors
+      const pdf = new jsPDF('l', 'mm', 'a4');
       const primaryColor = '#000B29';
-      const accentColor = '#E30613';
       
-      // Header with Logo placeholder
       pdf.setFillColor(0, 11, 41);
       pdf.rect(0, 0, 297, 35, 'F');
       
-      // Logo text (since we can't easily load image)
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(22);
       pdf.setFont('helvetica', 'bold');
@@ -132,17 +193,14 @@ const ScheduleManager = () => {
       pdf.setFontSize(10);
       pdf.text('●', 75, 22);
       
-      // Course Title
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
       pdf.text(courseName.toUpperCase(), 150, 22);
       
-      // Date
       pdf.setFontSize(10);
       pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, 250, 22);
       
-      // Summary Box
       const totalClasses = Object.values(weeks).flat().length;
       const totalWeeks = Object.keys(weeks).length;
       
@@ -160,17 +218,14 @@ const ScheduleManager = () => {
       
       let yPosition = 80;
       
-      // Sort weeks
       const sortedWeeks = Object.entries(weeks).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
       
       sortedWeeks.forEach(([weekNum, classes], weekIndex) => {
-        // Check if new page needed
         if (yPosition > 180) {
           pdf.addPage();
           yPosition = 20;
         }
         
-        // Week Header
         pdf.setFillColor(0, 11, 41);
         pdf.rect(10, yPosition, 277, 12, 'F');
         
@@ -183,7 +238,6 @@ const ScheduleManager = () => {
         
         yPosition += 15;
         
-        // Table Header
         pdf.setFillColor(240, 240, 240);
         pdf.rect(10, yPosition, 277, 10, 'F');
         pdf.setDrawColor(200, 200, 200);
@@ -202,14 +256,12 @@ const ScheduleManager = () => {
         
         yPosition += 12;
         
-        // Classes
         classes.forEach((cls, idx) => {
           if (yPosition > 190) {
             pdf.addPage();
             yPosition = 20;
           }
           
-          // Alternate row colors
           if (idx % 2 === 0) {
             pdf.setFillColor(250, 250, 250);
             pdf.rect(10, yPosition - 2, 277, 10, 'F');
@@ -222,14 +274,12 @@ const ScheduleManager = () => {
           pdf.text(`S${idx + 1}`, 15, yPosition + 5);
           pdf.text((cls.day || 'TBD').substring(0, 3).toUpperCase(), 50, yPosition + 5);
           
-          // Topic (truncate if too long)
           const topic = (cls.title || cls.topic || 'Untitled');
           const truncatedTopic = topic.length > 35 ? topic.substring(0, 35) + '...' : topic;
           pdf.text(truncatedTopic, 80, yPosition + 5);
           
           pdf.text(cls.time || '--:--', 180, yPosition + 5);
           
-          // Type with color
           if (cls.type === 'live') {
             pdf.setTextColor(198, 40, 40);
             pdf.text('LIVE', 210, yPosition + 5);
@@ -239,7 +289,6 @@ const ScheduleManager = () => {
           }
           pdf.setTextColor(50, 50, 50);
           
-          // Status
           if (cls.status === 'upcoming') {
             pdf.setTextColor(21, 101, 192);
             pdf.text('UPCOMING', 240, yPosition + 5);
@@ -259,7 +308,6 @@ const ScheduleManager = () => {
         yPosition += 8;
       });
       
-      // Footer
       const pageCount = pdf.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         pdf.setPage(i);
@@ -274,17 +322,9 @@ const ScheduleManager = () => {
         pdf.text('This schedule is subject to changes.', 120, 214);
       }
       
-      // Save PDF
       pdf.save(`${courseName.replace(/\s+/g, '_')}_Schedule.pdf`);
       
-      toast.success('PDF downloaded successfully!', {
-        style: {
-          border: '1px solid #000B29',
-          padding: '16px',
-          color: '#000B29',
-          background: '#ffffff',
-        }
-      });
+      toast.success('PDF downloaded successfully!', { style: toastStyle });
       
     } catch (error) {
       console.error('PDF generation error:', error);
@@ -473,6 +513,14 @@ const ScheduleManager = () => {
 
   return (
     <div className="schedule-manager">
+      {/* Zoom Meeting Modal */}
+      {showZoomModal && (
+        <ZoomMeetingModal 
+          schedule={zoomSchedule}
+          onClose={handleCloseZoomModal}
+        />
+      )}
+
       {/* Header */}
       <div className="manager-header">
         <div>
@@ -480,7 +528,7 @@ const ScheduleManager = () => {
           <p>Manage class schedules for all courses</p>
         </div>
         <div className="header-actions">
-          <button className="btn-refresh" onClick={fetchData}>
+          <button className="btn-refresh" onClick={() => fetchData()}>
             <FaSync /> Refresh
           </button>
           <button className="btn-create" onClick={handleCreateNew}>
@@ -621,7 +669,7 @@ const ScheduleManager = () => {
                   </div>
                 </div>
 
-                {/* Course Content - Shows Weeks */}
+                {/* Course Content */}
                 {isExpanded && (
                   <div className="course-content">
                     {weekNumbers.map(weekNum => {
@@ -638,12 +686,21 @@ const ScheduleManager = () => {
                               <span className="week-title">Week {weekNum}</span>
                               <span className="week-count">{weekClasses.length} classes</span>
                             </div>
-                            <div className="week-toggle">
-                              {isWeekExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                            <div className="week-actions">
+                              <button
+                                className="btn-edit-week"
+                                onClick={(e) => handleEditWeek(courseId, weekNum, weekClasses, e)}
+                                title="Edit Entire Week"
+                              >
+                                <FaEdit /> Edit Week
+                              </button>
+                              <div className="week-toggle">
+                                {isWeekExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                              </div>
                             </div>
                           </div>
                           
-                          {/* Week Content - Shows Classes */}
+                          {/* Week Content */}
                           {isWeekExpanded && (
                             <div className="week-content">
                               <div className="classes-table">
@@ -689,6 +746,28 @@ const ScheduleManager = () => {
                                       </div>
                                       
                                       <div className="td-actions">
+                                        {/* 🔥 FIXED: Zoom Button Logic */}
+                                        {schedule.type === 'live' && (
+                                          <>
+                                            {schedule.isZoomEnabled || schedule.meetingLink ? (
+                                              <button 
+                                                className="btn-action zoom"
+                                                onClick={(e) => handleOpenZoomModal(schedule, e)}
+                                                title="Manage Zoom Meeting"
+                                              >
+                                                <FaVideo /> Zoom
+                                              </button>
+                                            ) : (
+                                              <button 
+                                                className="btn-action zoom-create"
+                                                onClick={(e) => handleQuickZoomAction(schedule, 'create', e)}
+                                                title="Create Zoom Meeting"
+                                              >
+                                                <FaVideoSlash /> Create
+                                              </button>
+                                            )}
+                                          </>
+                                        )}
                                         <button className="btn-action view" onClick={() => handleViewDetail(schedule)}>
                                           <FaEye /> View
                                         </button>
@@ -719,7 +798,7 @@ const ScheduleManager = () => {
   );
 };
 
-// FIXED Schedule Detail View Component
+// Schedule Detail View Component
 const ScheduleDetail = ({ schedule, onBack }) => {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -753,7 +832,6 @@ const ScheduleDetail = ({ schedule, onBack }) => {
     }
   };
 
-  // If no schedule, show error
   if (!schedule) {
     return (
       <div className="detail-view">

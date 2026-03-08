@@ -9,7 +9,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  z-index: 1000;
+  z-index: 999;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
@@ -23,81 +23,49 @@
 .mobile-menu-btn {
   display: none;
   position: fixed;
-  top: 15px;
+  top: 20px;
   left: 15px;
-  z-index: 900;
-  background: #000B29;
-  color: white;
+  z-index: 1001;
+  background: transparent;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 8px;
   cursor: pointer;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-close-btn {
   display: none;
-  position: absolute;
-  top: 15px;
-  right: 15px;
   background: #E30613;
   border: none;
   border-radius: 50%;
-  padding: 5px;
+  width: 36px;
+  height: 36px;
   color: #ffffff;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 1001;
+  flex-shrink: 0;
 }
 
 .sidebar-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 999;
+  z-index: 998;
 }
 
 /* ======== HEADER ======== */
 .sidebar-header {
-  height: 90px;
+  height: 80px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 10px;
-  border-bottom: 1px solid #f3f4f6;
+  justify-content: flex-end;
+  padding: 0 15px;
   flex-shrink: 0;
-  position: relative;
-}
-
-.skills-sidebar.expanded .sidebar-header {
-  justify-content: flex-start;
-  padding: 0 20px;
-  gap: 12px;
-}
-
-.logo-container {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid #000B29;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.logo-text {
-  font-size: 16px;
-  font-weight: 800;
-  color: #000B29;
-  white-space: nowrap;
+  border-bottom: none;
 }
 
 /* ======== NAVIGATION ======== */
@@ -188,18 +156,6 @@
 }
 
 /* ======== BADGES ======== */
-.item-badge {
-  font-size: 8px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  margin-left: auto;
-  font-weight: 700;
-}
-
-.item-badge.pro { background: #E30613; color: white; }
-.item-badge.new { background: #10b981; color: white; }
-.item-badge.ai { background: #8b5cf6; color: white; }
-
 .item-badge-small {
   font-size: 8px;
   padding: 2px 6px;
@@ -212,68 +168,12 @@
 .item-badge-small.new { background: #10b981; color: white; }
 .item-badge-small.ai { background: #8b5cf6; color: white; }
 
-/* ======== HOVER DROPDOWN (Side Panel Effect) ======== */
-.hover-section {
-  position: relative;
-}
-
-.hover-dropdown {
-  position: absolute;
-  left: 100%;
-  top: 30px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 8px;
-  min-width: 200px;
-  z-index: 1001;
-  margin-left: 10px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-10px);
-  transition: all 0.2s ease;
-}
-
-.hover-section:hover .hover-dropdown {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(0);
-}
-
-.hover-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  margin: 2px 0;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #64748b;
-  font-size: 13px;
-  width: 100%;
-  text-align: left;
-}
-
-.hover-dropdown-item:hover {
-  background: #f1f5f9;
-  color: #000B29;
-}
-
-.hover-dropdown-item.active {
-  background: #DBEAFE;
-  color: #1E40AF;
-  font-weight: 600;
-}
-
 /* ======== FOOTER & LOGOUT ======== */
 .sidebar-footer {
   padding: 12px 8px;
   border-top: 1px solid #f3f4f6;
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 .logout-btn {
@@ -304,10 +204,7 @@
   margin-top: 8px;
 }
 
-/* ==========================================
-   DROPDOWN STYLES (Pro Features)
-   ========================================== */
-
+/* ======== DROPDOWN STYLES ======== */
 .dropdown-toggle {
   display: flex;
   align-items: center;
@@ -360,7 +257,6 @@
   transform: rotate(180deg);
 }
 
-/* Dropdown Menu */
 .dropdown-menu {
   max-height: 0;
   overflow: hidden;
@@ -379,7 +275,6 @@
   display: none;
 }
 
-/* Dropdown Item */
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -408,37 +303,47 @@
   font-weight: 600;
 }
 
-/* Dropdown Badge */
-.dropdown-badge {
-  margin-left: auto;
-  background: #DC2626;
-  color: white;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 700;
-  min-width: 18px;
-  text-align: center;
-}
-
 /* ======== RESPONSIVE MOBILE ======== */
 @media (max-width: 768px) {
-  .mobile-menu-btn { display: flex; }
-  .mobile-close-btn { display: block; }
+  .mobile-menu-btn { 
+    display: flex !important;
+  }
+  
+  .mobile-close-btn { 
+    display: flex !important;
+  }
   
   .skills-sidebar {
     width: 280px;
+    /* Topbar ke neeche se start */
+    top: 80px;
+    height: calc(100vh - 80px);
+    /* ===== NO ROUNDED CORNERS ===== */
+    border-radius: 0;
+    /* ===== SMOOTH SLIDE ANIMATION ===== */
     transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1000;
+    box-shadow: 4px 4px 24px rgba(0, 0, 0, 0.15);
   }
 
   .skills-sidebar.mobile-open {
     transform: translateX(0);
   }
 
+  /* ===== CLOSE BUTTON UPAR SHIFT - NO EXTRA SPACE ===== */
   .sidebar-header {
-    justify-content: flex-start !important;
-    padding: 0 20px !important;
-    gap: 16px !important;
+    height: auto; /* Auto height instead of fixed */
+    min-height: 50px; /* Minimum height */
+    padding: 10px 15px 5px 15px; /* Kam padding top se, zyada bottom se */
+    justify-content: flex-end;
+    align-items: flex-start; /* Top se align */
+  }
+
+  .mobile-close-btn {
+    width: 32px; /* Thoda chota */
+    height: 32px;
+    margin-top: 0; /* No extra margin */
   }
 
   .nav-item {
@@ -462,8 +367,11 @@
     margin: 0 !important;
   }
 
-  .nav-label, .logo-text, .section-label, .logout-btn .nav-label, 
-  .dropdown-toggle .nav-label, .toggle-icon {
+  .nav-label, 
+  .section-label, 
+  .logout-btn .nav-label, 
+  .dropdown-toggle .nav-label, 
+  .toggle-icon {
     display: block !important;
   }
 
@@ -475,9 +383,17 @@
     padding: 10px 12px;
     font-size: 14px;
   }
-
-  /* Mobile mein hover dropdown hide karna */
-  .hover-dropdown {
-    display: none;
+  
+  /* ===== OVERLAY SMOOTH FADE ===== */
+  .sidebar-overlay {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    animation: fadeIn 0.3s forwards;
+  }
+  
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
   }
 }

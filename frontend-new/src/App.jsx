@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
+// i18n Import
+import './i18n';
+
 // 1. Components Imports
 import Navbar from './components/Navbar/Navbar';
 import ContactSidebar from './components/ContactSidebar/ContactSidebar';
@@ -8,6 +11,9 @@ import LoginSignup from './components/LoginSignup/LoginSignup';
 
 // AI Chatbot Import
 import SkillsMindBot from './components/AIChat/SkillsMindBot';
+
+// --- Profile Context Provider ---
+import { ProfileProvider } from './context/ProfileContext.jsx';
 
 // --- Student Profile & Dashboard ---
 import StudentProfileForm from './components/StudentProfile/StudentProfileForm';
@@ -63,6 +69,18 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Wrapper component for routes that need ProfileProvider
+const ProfileProviderWrapper = ({ children }) => {
+  const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
+  
+  return (
+    <ProfileProvider userId={userId} token={token}>
+      {children}
+    </ProfileProvider>
+  );
+};
+
 function App() {
   return (
     <Router>
@@ -90,9 +108,16 @@ function App() {
             element={<ProtectedRoute><StudentProfileForm /></ProtectedRoute>} 
           />
 
+          {/* Get Enrollment with ProfileProvider for real-time sync */}
           <Route 
             path="/get-enrolment" 
-            element={<ProtectedRoute><GetEnrollment /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <GetEnrollment />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
 
           {/* Enrollment Flows with Dynamic Parameters */}
@@ -124,59 +149,120 @@ function App() {
             element={<ProtectedRoute><MyLearning /></ProtectedRoute>} 
           />
 
-          {/* --- STEP 2: Student Dashboard (Nested Routes) --- */}
-          {/* Isme sab kuch included hai: DashboardHome, Notice Board Pages, etc. */}
+          {/* --- STEP 2: Student Dashboard (Nested Routes with ProfileProvider) --- */}
           <Route 
             path="/student-dashboard/*" 
             element={
               <ProtectedRoute>
-                <StudentDashboardPortal />
+                <ProfileProviderWrapper>
+                  <StudentDashboardPortal />
+                </ProfileProviderWrapper>
               </ProtectedRoute>
             } 
           />
 
           {/* ============================================
-              🆕 NEW: 10 Student Dashboard Pages Routes
+              🆕 NEW: 10 Student Dashboard Pages Routes (with ProfileProvider)
               ============================================ */}
           <Route 
             path="/student/assignments" 
-            element={<ProtectedRoute><Assignments /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Assignments />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/attendance" 
-            element={<ProtectedRoute><Attendance /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Attendance />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/homework" 
-            element={<ProtectedRoute><Homework /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Homework />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/notebook" 
-            element={<ProtectedRoute><Notebook /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Notebook />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/notices" 
-            element={<ProtectedRoute><Notices /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Notices />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/profile" 
-            element={<ProtectedRoute><Profile /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Profile />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/progress" 
-            element={<ProtectedRoute><Progress /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Progress />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/quizzes" 
-            element={<ProtectedRoute><Quizzes /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Quizzes />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/results" 
-            element={<ProtectedRoute><Results /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Results />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/student/schedule" 
-            element={<ProtectedRoute><Schedule /></ProtectedRoute>} 
+            element={
+              <ProtectedRoute>
+                <ProfileProviderWrapper>
+                  <Schedule />
+                </ProfileProviderWrapper>
+              </ProtectedRoute>
+            } 
           />
 
           {/* Admin Main Dashboard */}

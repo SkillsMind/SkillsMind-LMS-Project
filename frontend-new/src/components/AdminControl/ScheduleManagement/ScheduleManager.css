@@ -1033,4 +1033,175 @@
 
 .mb-20 {
   margin-bottom: 20px;
+}/* 🔥 NEW: Zoom Button Styles */
+.btn-action.zoom {
+  background: #2D8CFF !important;  /* Zoom blue */
+  color: white !important;
+  border: none;
+}
+
+.btn-action.zoom:hover {
+  background: #1a73e8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 140, 255, 0.3);
+}
+
+/* Adjust action buttons layout for more buttons */
+.td-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 1200px) {
+  .td-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .btn-action {
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+  }
+}/* 🔥 NEW: Sub-Tab Navigation Styles */
+.sub-tab-nav {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e0e0e0;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.sub-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: white;
+  color: #666;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+
+.sub-tab-btn:hover {
+  background: #000B29;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 11, 41, 0.2);
+}
+
+.sub-tab-btn.active {
+  background: #000B29;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 11, 41, 0.3);
+}
+
+.sub-tab-btn svg {
+  font-size: 16px;
+}
+
+.sub-tab-content {
+  padding: 24px;
+  min-height: 500px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sub-tab-nav {
+    padding: 12px;
+    gap: 6px;
+  }
+  
+  .sub-tab-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}/* 🔥 Zoom Button Styles - Add at the end of file */
+.btn-action.zoom {
+  background: #2D8CFF !important;
+  color: white !important;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-action.zoom:hover {
+  background: #1a73e8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(45, 140, 255, 0.4);
+}
+
+.btn-action.zoom svg {
+  font-size: 10px;
+}/* Edit Week Button Styles */
+.week-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-edit-week {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit-week:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.btn-edit-week svg {
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .btn-edit-week {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }

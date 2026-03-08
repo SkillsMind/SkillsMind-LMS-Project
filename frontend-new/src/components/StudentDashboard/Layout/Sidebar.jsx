@@ -3,7 +3,8 @@ import {
   LayoutDashboard, BookOpen, ClipboardList, Calendar, User, LogOut, 
   Award, Brain, Users, Map, Briefcase, Zap, Share2, Clock, 
   MessageCircle, FileText, ChevronRight, Menu, X, ChevronDown,
-  CheckCircle, Edit3, Target, BarChart3, TrendingUp, Bell
+  CheckCircle, Edit3, Target, BarChart3, TrendingUp, Bell,
+  Clock3, FileCheck, NotebookPen
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -11,12 +12,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [proFeaturesOpen, setProFeaturesOpen] = useState(false);
-  const [hoveredSection, setHoveredSection] = useState(null);
   
-  // Ref for click outside
   const sidebarRef = useRef(null);
 
-  // Click outside to close mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
@@ -28,10 +26,24 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Dashboard separate rahega
+  // ===== PROPER FLOW ORDER =====
+  
+  // 1. MAIN - Dashboard (Sabse upar)
   const dashboardItem = { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard };
 
-  // My Learning section - ab yeh open rahega (dropdown nahi)
+  // 2. QUICK ACCESS - Dashboard ke neeche (Yeh pehle aaenge)
+  const quickAccessItems = [
+    { id: 'schedule', label: 'Schedule', icon: Clock3 },
+    { id: 'homework', label: 'Homework', icon: FileText },
+    { id: 'assignments', label: 'Assignments', icon: FileCheck },
+    { id: 'quizzes', label: 'Quizzes', icon: Target },
+    { id: 'attendance', label: 'Attendance', icon: CheckCircle },
+    { id: 'results', label: 'Results', icon: Award },
+    { id: 'notebook', label: 'Notebook', icon: NotebookPen },
+    { id: 'progress', label: 'Progress', icon: TrendingUp },
+  ];
+
+  // 3. MY LEARNING - Quick Access ke baad
   const myLearningItems = [
     { id: 'courses', label: 'My Courses', icon: BookOpen },
     { id: 'tasks', label: 'Tasks & Grades', icon: ClipboardList },
@@ -39,21 +51,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'profile', label: 'My Profile', icon: User },
   ];
 
-  // Quick Tools section - yeh bhi open rahega
-  const quickToolsItems = [
-    { id: 'schedule', label: 'Schedule', icon: Clock },
-    { id: 'homework', label: 'Homework', icon: FileText },
-    { id: 'assignments', label: 'Assignments', icon: ClipboardList },
-    { id: 'quizzes', label: 'Quizzes', icon: Target },
-    { id: 'attendance', label: 'Attendance', icon: CheckCircle },
-    { id: 'results', label: 'Results', icon: Award },
-    { id: 'notebook', label: 'Notebook', icon: Edit3 },
-    { id: 'progress', label: 'Progress', icon: TrendingUp },
-    { id: 'timeline', label: 'Timeline', icon: BarChart3 },
-    { id: 'notices', label: 'Notices', icon: Bell, badge: '3' },
-  ];
-
-  // Pro Features - ab yeh dropdown mein hoga
+  // 4. PREMIUM/PRO - Last mein
   const proFeaturesItems = [
     { id: 'skilltree', label: 'Skill Tree', icon: Map, badge: 'PRO' },
     { id: 'focusmode', label: 'Focus Mode', icon: Clock, badge: 'NEW' },
@@ -78,43 +76,40 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   };
 
   const isProFeaturesActive = proFeaturesItems.some(item => item.id === activeTab);
-  
-  // Check if any learning item is active
-  const isLearningActive = myLearningItems.some(item => item.id === activeTab);
-  
-  // Check if any tools item is active
-  const isToolsActive = quickToolsItems.some(item => item.id === activeTab);
 
   return (
     <>
-      <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)}>
+      {/* Mobile Menu Button - Topbar ke upar */}
+      <button 
+        className="mobile-menu-btn" 
+        onClick={() => setMobileOpen(true)}
+      >
         <Menu size={24} />
       </button>
 
-      {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && (
+        <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />
+      )}
 
       <aside 
         ref={sidebarRef}
         className={`skills-sidebar ${isExpanded ? 'expanded' : ''} ${mobileOpen ? 'mobile-open' : ''}`}
         onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => {
-          setIsExpanded(false);
-          setHoveredSection(null);
-        }}
+        onMouseLeave={() => setIsExpanded(false)}
       >
+        {/* Header - Only Close Button (No Logo) */}
         <div className="sidebar-header">
-          <button className="mobile-close-btn" onClick={() => setMobileOpen(false)}>
+          <button 
+            className="mobile-close-btn" 
+            onClick={() => setMobileOpen(false)}
+          >
             <X size={20} />
           </button>
-          
-          <div className="logo-container">
-            <img src="/Skillsmind logo with blue.png" alt="Logo" className="logo-image" />
-          </div>
-          {(isExpanded || mobileOpen) && <span className="logo-text">Student LMS</span>}
         </div>
 
         <div className="sidebar-content">
-          {/* Dashboard - Always Visible */}
+          
+          {/* ===== 1. MAIN - Dashboard ===== */}
           <div className="menu-section">
             <span className="section-label">Main</span>
             <nav className="sidebar-nav">
@@ -130,12 +125,31 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             </nav>
           </div>
 
-          {/* My Learning Section - Always Open (Not Dropdown) */}
-          <div 
-            className="menu-section hover-section"
-            onMouseEnter={() => setHoveredSection('learning')}
-            onMouseLeave={() => setHoveredSection(null)}
-          >
+          {/* ===== 2. QUICK ACCESS - Dashboard ke neeche ===== */}
+          <div className="menu-section">
+            <span className="section-label">Quick Access</span>
+            <nav className="sidebar-nav">
+              {quickAccessItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button 
+                    key={item.id} 
+                    onClick={() => handleMenuClick(item.id)} 
+                    className={`nav-item ${isActive ? 'active' : ''}`}
+                  >
+                    <div className="nav-icon-wrapper">
+                      <Icon size={20} />
+                    </div>
+                    <span className="nav-label">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* ===== 3. MY LEARNING - Quick Access ke baad ===== */}
+          <div className="menu-section">
             <span className="section-label">My Learning</span>
             <nav className="sidebar-nav">
               {myLearningItems.map((item) => {
@@ -155,78 +169,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
                 );
               })}
             </nav>
-            
-            {/* Hover Menu for My Learning (Desktop Expanded) */}
-            {(isExpanded || mobileOpen) && hoveredSection === 'learning' && (
-              <div className="hover-dropdown">
-                {quickToolsItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button 
-                      key={item.id} 
-                      onClick={() => handleMenuClick(item.id)} 
-                      className={`hover-dropdown-item ${isActive ? 'active' : ''}`}
-                    >
-                      <Icon size={16} />
-                      <span>{item.label}</span>
-                      {item.badge && <span className="dropdown-badge">{item.badge}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
-          {/* Quick Tools Section - Always Open (Not Dropdown) */}
-          <div 
-            className="menu-section hover-section"
-            onMouseEnter={() => setHoveredSection('tools')}
-            onMouseLeave={() => setHoveredSection(null)}
-          >
-            <span className="section-label">Quick Tools</span>
-            <nav className="sidebar-nav">
-              {quickToolsItems.slice(0, 4).map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button 
-                    key={item.id} 
-                    onClick={() => handleMenuClick(item.id)} 
-                    className={`nav-item ${isActive ? 'active' : ''}`}
-                  >
-                    <div className="nav-icon-wrapper">
-                      <Icon size={20} />
-                    </div>
-                    <span className="nav-label">{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-            
-            {/* Hover Menu for Quick Tools (Desktop Expanded) */}
-            {(isExpanded || mobileOpen) && hoveredSection === 'tools' && (
-              <div className="hover-dropdown">
-                {quickToolsItems.slice(4).map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button 
-                      key={item.id} 
-                      onClick={() => handleMenuClick(item.id)} 
-                      className={`hover-dropdown-item ${isActive ? 'active' : ''}`}
-                    >
-                      <Icon size={16} />
-                      <span>{item.label}</span>
-                      {item.badge && <span className="dropdown-badge">{item.badge}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Pro Features Dropdown */}
+          {/* ===== 4. PREMIUM - Last mein ===== */}
           <div className="menu-section">
             <span className="section-label">Premium</span>
             <button 
@@ -254,14 +199,20 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
                   >
                     <Icon size={16} />
                     <span>{item.label}</span>
-                    {item.badge && <span className={`item-badge-small ${item.badge.toLowerCase()}`}>{item.badge}</span>}
+                    {item.badge && (
+                      <span className={`item-badge-small ${item.badge.toLowerCase()}`}>
+                        {item.badge}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
+
         </div>
 
+        {/* Footer - Logout */}
         <div className="sidebar-footer">
           <button className="logout-btn">
             <div className="nav-icon-wrapper red-bg">
@@ -269,7 +220,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             </div>
             <span className="nav-label">Logout</span>
           </button>
-          {(isExpanded || mobileOpen) && <div className="version-info">SkillsMind LMS v2.0</div>}
+          {(isExpanded || mobileOpen) && (
+            <div className="version-info">SkillsMind LMS v2.0</div>
+          )}
         </div>
       </aside>
     </>
