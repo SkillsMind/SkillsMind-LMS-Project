@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const { launchBrowser } = require('./browser');
 const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
@@ -439,11 +439,8 @@ const generateResultPDF = async (data) => {
     // Generate HTML
     const html = template(templateData);
     
-    // Launch puppeteer
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    // 🔥 USE UNIFIED BROWSER LAUNCHER
+    const browser = await launchBrowser();
     
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });

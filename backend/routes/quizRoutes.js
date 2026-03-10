@@ -5,16 +5,12 @@ const Quiz = require('../models/Quiz');
 const Course = require('../models/Course');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const puppeteer = require('puppeteer');
+const { launchBrowser } = require('../utils/browser');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
-// 🔥 FORCE SET CHROME PATH - Windows Local Development
-const CHROME_PATH = "C:\\Users\\Anas Iftikhar\\.cache\\puppeteer\\chrome\\win64-145.0.7632.77\\chrome-win64\\chrome.exe";
-process.env.PUPPETEER_EXECUTABLE_PATH = CHROME_PATH;
 
-console.log('🔧 Chrome Path Configured:', process.env.PUPPETEER_EXECUTABLE_PATH);
 
 // Admin check helper
 const isAdmin = (req) => {
