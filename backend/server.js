@@ -362,4 +362,4 @@ server.listen(PORT, () => {
     console.log(`📢 Notices System Active at: /api/notices`);
     console.log(`💼 Jobs & Internships System Active at: /api/jobs`);
     console.log(`👤 Student Profile Dashboard Active at: /api/student-profile`);
-});
+}); 
