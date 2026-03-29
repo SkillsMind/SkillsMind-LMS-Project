@@ -395,21 +395,38 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   padding: 20px 0;
-  margin-bottom: 30px;
-  gap: 16px;
+  margin: 0 0 30px 0;
 }
 
 .mobile-cards-container::-webkit-scrollbar {
   display: none;
 }
 
+.mobile-cards-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  padding: 0 20px;
+  gap: 20px;
+  width: max-content;
+}
+
+.mobile-cards-wrapper::after {
+  content: '';
+  flex: 0 0 20px;
+  min-width: 20px;
+}
+
 .mobile-card {
-  flex: 0 0 85%;
-  max-width: 320px;
+  flex: 0 0 300px;
+  width: 300px;
+  min-width: 300px;
+  max-width: 300px;
   background: white;
   border: 2px solid #000B29;
   border-radius: 16px;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   position: relative;
   overflow: hidden;
   opacity: 0;
@@ -536,7 +553,6 @@
   background: #E30613;
 }
 
-/* Mobile Scroll Indicators */
 .mobile-scroll-indicator {
   display: none;
   justify-content: center;
@@ -544,6 +560,7 @@
   gap: 8px;
   margin-top: 10px;
   margin-bottom: 20px;
+  padding: 0 20px;
 }
 
 .mobile-scroll-dot {
@@ -1392,25 +1409,52 @@
 
 @media (max-width: 768px) {
   .course-section-simple {
-    padding: 60px 5%;
+    padding: 60px 0;
   }
   
-  /* Desktop slider hide on mobile */
+  .section-header-simple {
+    padding: 0 5%;
+  }
+  
+  .category-tabs-wrapper {
+    padding: 0 5%;
+  }
+  
   .desktop-only {
     display: none !important;
   }
   
-  /* Mobile cards show on mobile - HORIZONTAL SCROLL */
   .mobile-cards-container {
     display: flex;
     flex-direction: row;
-    padding: 20px 5%;
-    margin: 0 -5% 30px -5%;
-    width: calc(100% + 10%);
+    width: 100%;
+    margin: 0 0 30px 0;
+    padding: 20px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mobile-cards-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding: 0 20px;
+    gap: 20px;
+    width: max-content;
+  }
+  
+  .mobile-cards-wrapper::after {
+    content: '';
+    flex: 0 0 20px;
+    min-width: 20px;
   }
   
   .mobile-scroll-indicator {
     display: flex;
+    padding: 0 20px;
   }
   
   .section-title-simple {
@@ -1429,6 +1473,7 @@
   .dual-buttons-wrapper {
     flex-direction: column;
     align-items: center;
+    padding: 0 5%;
   }
   
   .view-all-link,
@@ -1483,7 +1528,6 @@
     padding: 20px 24px;
   }
   
-  /* Mobile result card stack */
   .ai-rec-card-inner {
     flex-direction: column;
   }
@@ -1504,11 +1548,13 @@
 
 @media (max-width: 480px) {
   .course-section-simple {
-    padding: 50px 4%;
+    padding: 50px 0;
   }
   
   .mobile-card {
-    flex: 0 0 90%;
+    flex: 0 0 280px;
+    width: 280px;
+    min-width: 280px;
     height: 380px;
   }
   

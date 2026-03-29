@@ -122,9 +122,7 @@ const categories = [
 
 const categoryTabs = ['All', 'Development', 'Design', 'Marketing', 'Business'];
 
-// Enhanced AI Questions - 4 Sections
 const aiQuestions = [
-  // Section 1: Basic & Educational Background
   {
     id: 1,
     section: "Basic & Educational Background",
@@ -149,8 +147,6 @@ const aiQuestions = [
     icon: Lightbulb,
     options: ["Yes, I know coding basics", "Yes, design/marketing basics", "No, I'm a complete beginner", "Some self-taught skills"]
   },
-  
-  // Section 2: Career Goals & Interests
   {
     id: 4,
     section: "Career Goals & Interests",
@@ -175,8 +171,6 @@ const aiQuestions = [
     icon: Monitor,
     options: ["Web Developer", "Graphic Designer", "SEO/Digital Marketer", "Data Analyst", "App Developer", "UI/UX Designer"]
   },
-  
-  // Section 3: Practical Constraints
   {
     id: 7,
     section: "Practical Constraints",
@@ -201,8 +195,6 @@ const aiQuestions = [
     icon: Languages,
     options: ["Urdu/Hindi", "English", "Mix of Both", "Any Language"]
   },
-  
-  // Section 4: Behavioral Questions
   {
     id: 10,
     section: "Behavioral Assessment",
@@ -279,7 +271,6 @@ const CourseSection = () => {
     setMobileIndex(0);
   }, [activeTab]);
 
-  // Desktop autoplay only - NO mobile autoplay
   useEffect(() => {
     if (isMobile || !isVisible || showAIAssistant) return;
     
@@ -332,11 +323,10 @@ const CourseSection = () => {
     }
   };
 
-  // Handle horizontal scroll for mobile
   const handleMobileScroll = (e) => {
     const container = e.target;
     const scrollLeft = container.scrollLeft;
-    const cardWidth = container.offsetWidth * 0.85 + 16; // card width + gap
+    const cardWidth = 320; // 300px card + 20px gap
     const newIndex = Math.round(scrollLeft / cardWidth);
     setMobileIndex(Math.min(newIndex, filteredCategories.length - 1));
   };
@@ -380,15 +370,12 @@ const CourseSection = () => {
     let bestMatch = null;
     let highestScore = 0;
 
-    const education = userAnswers[0];
-    const fieldOfStudy = userAnswers[1];
-    const priorKnowledge = userAnswers[2];
-    const careerGoal = userAnswers[3];
-    const interest = userAnswers[4];
     const idealJob = userAnswers[5];
+    const interest = userAnswers[4];
+    const careerGoal = userAnswers[3];
     const device = userAnswers[7];
-    const problemSolving = userAnswers[9];
     const patience = userAnswers[10];
+    const priorKnowledge = userAnswers[2];
 
     categories.forEach(course => {
       let score = 0;
@@ -456,7 +443,6 @@ const CourseSection = () => {
     >
       <div className="course-container-simple">
         
-        {/* Section Header */}
         <div className="section-header-simple">
           <div className="section-badge-simple">
             <GraduationCap size={20} />
@@ -468,7 +454,6 @@ const CourseSection = () => {
           </h2>
         </div>
 
-        {/* Category Tabs */}
         <div className="category-tabs-wrapper">
           <div className="category-tabs">
             {categoryTabs.map((tab) => (
@@ -483,7 +468,6 @@ const CourseSection = () => {
           </div>
         </div>
 
-        {/* Desktop Slider - Only show on desktop */}
         {!isMobile && (
           <div className="slider-outer desktop-only">
             <button 
@@ -544,7 +528,6 @@ const CourseSection = () => {
           </div>
         )}
 
-        {/* Mobile Cards - Horizontal Scroll Professional Design */}
         {isMobile && (
           <>
             <div 
@@ -552,43 +535,44 @@ const CourseSection = () => {
               className="mobile-cards-container"
               onScroll={handleMobileScroll}
             >
-              {filteredCategories.map((category, index) => {
-                const IconComponent = category.icon;
-                return (
-                  <div 
-                    key={category.id} 
-                    className="mobile-card"
-                    style={{ '--delay': `${index * 0.1}s` }}
-                  >
+              <div className="mobile-cards-wrapper">
+                {filteredCategories.map((category, index) => {
+                  const IconComponent = category.icon;
+                  return (
                     <div 
-                      className="mobile-card-bg" 
-                      style={{ backgroundImage: `url(${category.image})` }}
-                    />
-                    <div className="mobile-card-content">
-                      <div className="mobile-card-icon">
-                        <IconComponent size={28} strokeWidth={1.5} />
+                      key={category.id} 
+                      className="mobile-card"
+                      style={{ '--delay': `${index * 0.1}s` }}
+                    >
+                      <div 
+                        className="mobile-card-bg" 
+                        style={{ backgroundImage: `url(${category.image})` }}
+                      />
+                      <div className="mobile-card-content">
+                        <div className="mobile-card-icon">
+                          <IconComponent size={28} strokeWidth={1.5} />
+                        </div>
+                        <h3 className="mobile-card-title">{category.title}</h3>
+                        <p className="mobile-card-desc">{category.description}</p>
+                        <div className="mobile-card-meta">
+                          <span>
+                            <BookOpen size={14} />
+                            {category.courses} Courses
+                          </span>
+                          <span>•</span>
+                          <span>{category.category}</span>
+                        </div>
+                        <Link to={`/courses/${category.title.toLowerCase().replace(' ', '-')}`} className="mobile-read-more">
+                          Explore Course
+                          <ArrowRight size={16} />
+                        </Link>
                       </div>
-                      <h3 className="mobile-card-title">{category.title}</h3>
-                      <p className="mobile-card-desc">{category.description}</p>
-                      <div className="mobile-card-meta">
-                        <span>
-                          <BookOpen size={14} />
-                          {category.courses} Courses
-                        </span>
-                        <span>•</span>
-                        <span>{category.category}</span>
-                      </div>
-                      <Link to={`/courses/${category.title.toLowerCase().replace(' ', '-')}`} className="mobile-read-more">
-                        Explore Course
-                        <ArrowRight size={16} />
-                      </Link>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
             
-            {/* Mobile Scroll Indicators */}
             <div className="mobile-scroll-indicator">
               {filteredCategories.map((_, idx) => (
                 <div 
@@ -600,7 +584,6 @@ const CourseSection = () => {
           </>
         )}
 
-        {/* Dual Buttons */}
         <div className="dual-buttons-wrapper">
           <Link to="/courses" className="view-all-link">
             View All Courses
@@ -619,7 +602,6 @@ const CourseSection = () => {
           )}
         </div>
 
-        {/* AI Course Suggestion */}
         <div 
           ref={aiRef}
           className={`ai-assistant-container ${showAIAssistant ? 'expanded' : ''}`}
