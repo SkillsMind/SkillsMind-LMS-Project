@@ -14,11 +14,12 @@ const app = express();
 const server = http.createServer(app);
 
 // ==========================================
-// 🔧 FIXED: Socket.IO Configuration
+// 🔧 FIXED: Socket.IO Configuration (Production Ready)
 // ==========================================
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173"],
+        // Humne yahan aapki live domain add kar di hai
+        origin: ["https://www.skillsmind.online", "https://skillsmind.online", "http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173"],
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["Authorization", "Content-Type"]
@@ -33,7 +34,8 @@ app.set('io', io);
 
 // --- 1. MIDDLEWARE ---
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173"],
+    // Humne yahan bhi live domain add kar di hai taake login block na ho
+    origin: ["https://www.skillsmind.online", "https://skillsmind.online", "http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:5173"],
     credentials: true
 })); 
 
@@ -362,4 +364,4 @@ server.listen(PORT, () => {
     console.log(`📢 Notices System Active at: /api/notices`);
     console.log(`💼 Jobs & Internships System Active at: /api/jobs`);
     console.log(`👤 Student Profile Dashboard Active at: /api/student-profile`);
-}); 
+});
