@@ -238,7 +238,7 @@ const CourseSection = () => {
   const sectionRef = useRef(null);
   const aiRef = useRef(null);
   const autoPlayRef = useRef(null);
-  const mobileAutoPlayRef = useRef(null);
+  const mobileContainerRef = useRef(null);
 
   const filteredCategories = activeTab === 'All' 
     ? categories 
@@ -279,6 +279,7 @@ const CourseSection = () => {
     setMobileIndex(0);
   }, [activeTab]);
 
+  // Desktop autoplay only - NO mobile autoplay
   useEffect(() => {
     if (isMobile || !isVisible || showAIAssistant) return;
     
@@ -290,26 +291,6 @@ const CourseSection = () => {
 
     return () => clearInterval(autoPlayRef.current);
   }, [totalCards, isMobile, isVisible, activeTab, showAIAssistant]);
-
-  useEffect(() => {
-    if (!isMobile || !isVisible || showAIAssistant) return;
-    
-    mobileAutoPlayRef.current = setInterval(() => {
-      setMobileIndex((prev) => {
-        const next = prev + 1 >= totalCards ? 0 : prev + 1;
-        const container = document.querySelector('.mobile-cards-container');
-        if (container) {
-          container.scrollTo({
-            top: next * 300,
-            behavior: 'smooth'
-          });
-        }
-        return next;
-      });
-    }, 3000);
-
-    return () => clearInterval(mobileAutoPlayRef.current);
-  }, [isMobile, isVisible, totalCards, activeTab, showAIAssistant]);
 
   useEffect(() => {
     if (showAIAssistant && aiRef.current) {
@@ -351,12 +332,13 @@ const CourseSection = () => {
     }
   };
 
+  // Handle horizontal scroll for mobile
   const handleMobileScroll = (e) => {
     const container = e.target;
-    const scrollTop = container.scrollTop;
-    const cardHeight = 300;
-    const newIndex = Math.round(scrollTop / cardHeight);
-    setMobileIndex(newIndex);
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.offsetWidth * 0.85 + 16; // card width + gap
+    const newIndex = Math.round(scrollLeft / cardWidth);
+    setMobileIndex(Math.min(newIndex, filteredCategories.length - 1));
   };
 
   const openAIAssistant = () => {
@@ -562,40 +544,60 @@ const CourseSection = () => {
           </div>
         )}
 
-        {/* Mobile Cards - Only show on mobile */}
+        {/* Mobile Cards - Horizontal Scroll Professional Design */}
         {isMobile && (
-          <div 
-            className="mobile-cards-container"
-            onScroll={handleMobileScroll}
-          >
-            {filteredCategories.map((category, index) => {
-              const IconComponent = category.icon;
-              const isActive = index === mobileIndex;
-              return (
-                <div 
-                  key={category.id} 
-                  className={`mobile-card ${isActive ? 'active' : ''}`}
-                  style={{ '--delay': `${index * 0.1}s` }}
-                >
+          <>
+            <div 
+              ref={mobileContainerRef}
+              className="mobile-cards-container"
+              onScroll={handleMobileScroll}
+            >
+              {filteredCategories.map((category, index) => {
+                const IconComponent = category.icon;
+                return (
                   <div 
-                    className="mobile-card-bg" 
-                    style={{ backgroundImage: `url(${category.image})` }}
-                  />
-                  <div className="mobile-card-overlay"></div>
-                  <div className="mobile-card-content">
-                    <div className="mobile-card-icon">
-                      <IconComponent size={32} strokeWidth={1.5} />
+                    key={category.id} 
+                    className="mobile-card"
+                    style={{ '--delay': `${index * 0.1}s` }}
+                  >
+                    <div 
+                      className="mobile-card-bg" 
+                      style={{ backgroundImage: `url(${category.image})` }}
+                    />
+                    <div className="mobile-card-content">
+                      <div className="mobile-card-icon">
+                        <IconComponent size={28} strokeWidth={1.5} />
+                      </div>
+                      <h3 className="mobile-card-title">{category.title}</h3>
+                      <p className="mobile-card-desc">{category.description}</p>
+                      <div className="mobile-card-meta">
+                        <span>
+                          <BookOpen size={14} />
+                          {category.courses} Courses
+                        </span>
+                        <span>•</span>
+                        <span>{category.category}</span>
+                      </div>
+                      <Link to={`/courses/${category.title.toLowerCase().replace(' ', '-')}`} className="mobile-read-more">
+                        Explore Course
+                        <ArrowRight size={16} />
+                      </Link>
                     </div>
-                    <h3 className="mobile-card-title">{category.title}</h3>
-                    <p className="mobile-card-desc">{category.description}</p>
-                    <Link to={`/courses/${category.title.toLowerCase().replace(' ', '-')}`} className="mobile-read-more">
-                      Read More
-                    </Link>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            
+            {/* Mobile Scroll Indicators */}
+            <div className="mobile-scroll-indicator">
+              {filteredCategories.map((_, idx) => (
+                <div 
+                  key={idx} 
+                  className={`mobile-scroll-dot ${idx === mobileIndex ? 'active' : ''}`}
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {/* Dual Buttons */}
