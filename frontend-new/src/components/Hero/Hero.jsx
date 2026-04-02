@@ -31,7 +31,7 @@ const Hero = () => {
           </h1>
           <p>
             Join Pakistan's most advanced learning management system. 
-            Empowering youth with industry-leading digital skills.
+            Empowering youth with industry-leading digital skills. 
           </p>
           <div className="hero-action-btns">
             <button className="btn-browse-sharp">Browse Courses</button>
