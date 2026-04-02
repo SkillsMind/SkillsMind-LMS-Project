@@ -27,7 +27,7 @@ const Hero = () => {
         <div className="hero-text-content animate-from-right">
           <h1>
             Unlock Your Potential. <br />
-            <span className="blue-highlight">Master New Skills</span> With <span className="red-highlight">Anas Iftikhar</span>
+            <span className="blue-highlight">Master New Skills</span> With <span className="red-highlight">SkillsMind</span>
           </h1>
           <p>
             Join Pakistan's most advanced learning management system. 
