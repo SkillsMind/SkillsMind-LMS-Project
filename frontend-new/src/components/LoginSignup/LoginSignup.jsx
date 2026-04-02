@@ -254,7 +254,7 @@ const LoginSignup = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase(), password: formData.newPassword })
       });
-      const data = await res.json();
+      const data = await res.json(); 
       if (data.success) {
         toast.success("Password Updated! You can now Sign In.", { id: toastId });
         setTimeout(() => { setView('auth'); setIsLogin(true); }, 2000);
