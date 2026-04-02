@@ -45,7 +45,7 @@ const LoginSignup = () => {
       setLoading(true);
       const toastId = toast.loading("SkillsMind is sending your security code...");
       try {
-        const response = await fetch('http://localhost:5000/api/auth/send-otp', {
+        const response = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: cleanEmail })
@@ -74,7 +74,7 @@ const LoginSignup = () => {
     setLoading(true);
     const toastId = toast.loading("Verifying your identity...");
     try {
-      const verifyRes = await fetch('http://localhost:5000/api/auth/verify-otp', {
+      const verifyRes = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, otp: finalOtp })
@@ -82,7 +82,7 @@ const LoginSignup = () => {
       const verifyData = await verifyRes.json();
 
       if (verifyData.success) {
-        const registerRes = await fetch('http://localhost:5000/api/auth/register', {
+        const registerRes = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -116,7 +116,7 @@ const LoginSignup = () => {
     const toastId = toast.loading("Authenticating with SkillsMind...");
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password: formData.password })
@@ -165,7 +165,7 @@ const LoginSignup = () => {
       setLoading(true);
       const toastId = toast.loading("SkillsMind Google Syncing...");
       try {
-        const res = await fetch('http://localhost:5000/api/auth/google-login', {
+        const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/google-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: tokenResponse.access_token })
@@ -208,7 +208,7 @@ const LoginSignup = () => {
     setLoading(true);
     const toastId = toast.loading("Searching for your account...");
     try {
-      const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase() })
@@ -228,7 +228,7 @@ const LoginSignup = () => {
     setLoading(true);
     const toastId = toast.loading("Validating OTP...");
     try {
-      const res = await fetch('http://localhost:5000/api/auth/verify-reset-otp', {
+      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/verify-reset-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase(), otp: finalOtp })
@@ -249,7 +249,7 @@ const LoginSignup = () => {
     setLoading(true);
     const toastId = toast.loading("Updating SkillsMind credentials...");
     try {
-      const res = await fetch('http://localhost:5000/api/auth/reset-password', {
+      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase(), password: formData.newPassword })
