@@ -259,7 +259,7 @@ const LoginSignup = () => {
         toast.success("Password Updated! You can now Sign In.", { id: toastId });
         setTimeout(() => { setView('auth'); setIsLogin(true); }, 2000);
       }
-    } catch (err) { toast.error("Reset failed"); }
+    } catch (err) { toast.error("Reset failed"); } 
     finally { setLoading(false); }
   };
 
