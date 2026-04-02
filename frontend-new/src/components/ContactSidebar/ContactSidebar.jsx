@@ -7,8 +7,8 @@ const ContactSidebar = () => {
   const [activeItem, setActiveItem] = useState(null); // Clicked icon ki info ke liye
 
   const items = [
-    { id: 1, name: 'Phone', icon: <FaPhoneAlt />, val: '0304-111-1570', color: 'yellow-bg', link: 'tel:03041111570' },
-    { id: 2, name: 'Email', icon: <FaEnvelope />, val: 'info@skillsmind.com', color: 'orange-bg', link: 'mailto:info@skillsmind.com' },
+    { id: 1, name: 'Phone', icon: <FaPhoneAlt />, val: '03116735509', color: 'yellow-bg', link: 'tel:03041111570' },
+    { id: 2, name: 'Email', icon: <FaEnvelope />, val: 'skillsmind786@gmail.com', color: 'orange-bg', link: 'mailto:info@skillsmind.com' },
     { id: 3, name: 'FAQs', icon: <FaQuestionCircle />, val: 'Frequently Asked Questions', color: 'light-orange-bg', link: '/faqs' },
     { id: 4, name: 'About', icon: <FaInfoCircle />, val: 'Learn about SkillsMind', color: 'red-bg', link: '/about' }
   ];

@@ -2,27 +2,24 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // ==========================================
-// 🔧 FIXED: Dynamic Base URL (Environment Based)
+// 🔧 PRODUCTION READY: Hardcoded Railway URL
 // ==========================================
-const getBaseURL = () => {
-    // Production (Vercel)
-    if (import.meta.env.PROD) {
-        return import.meta.env.VITE_API_URL || 'https://your-railway-backend.up.railway.app/api';
-    }
-    // Development (Local)
-    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-};
+// Testing ke liye hardcoded URL - Environment variable baad mein wapas lagana
+
+const RAILWAY_API_URL = 'https://skillsmind-lms-project-production.up.railway.app/api';
 
 const API = axios.create({
-    baseURL: getBaseURL(),
-    withCredentials: true,  // Important for cookies/sessions
+    baseURL: RAILWAY_API_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
     },
-    timeout: 30000 // 30 seconds timeout
+    timeout: 30000
 });
 
-// Request Interceptor - Token add kare har request mein
+// ==========================================
+// Request Interceptor
+// ==========================================
 API.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token') || 
@@ -32,10 +29,8 @@ API.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
         
-        // Log requests in development
-        if (import.meta.env.DEV) {
-            console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
-        }
+        // Console log for debugging
+        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         
         return config;
     },
@@ -44,52 +39,35 @@ API.interceptors.request.use(
     }
 );
 
-// Response Interceptor - Token expire check kare
+// ==========================================
+// Response Interceptor
+// ==========================================
 API.interceptors.response.use(
     (response) => {
-        // Log responses in development
-        if (import.meta.env.DEV) {
-            console.log(`✅ API Response: ${response.config.url}`, response.data);
-        }
+        console.log(`✅ API Success: ${response.config.url}`);
         return response;
     },
     (error) => {
-        console.error('🔴 API Error:', error.response?.data || error.message);
+        console.error('🔴 API Error:', error.message);
         
-        // Agar 401 error hai (Unauthorized) ya token expired hai
+        // 401 Unauthorized
         if (error.response?.status === 401) {
-            const errorMessage = error.response?.data?.message || error.response?.data?.error || '';
+            const errorMessage = error.response?.data?.message || '';
             
-            console.log('🔴 401 Error:', errorMessage);
-            
-            // Check karein ke error token expired ka hai ya nahi
             const isTokenExpired = 
                 errorMessage.toLowerCase().includes('expired') || 
                 errorMessage.toLowerCase().includes('jwt expired') ||
                 errorMessage.toLowerCase().includes('token expired') ||
-                errorMessage.toLowerCase().includes('token is not valid') ||
                 errorMessage.toLowerCase().includes('authorization denied') ||
                 errorMessage.toLowerCase().includes('no token') ||
                 errorMessage.toLowerCase().includes('invalid token');
             
             if (isTokenExpired) {
-                console.log('🔴 Token Expired/Invalid! Logging out...');
-                
-                // Toast notification dikhaein
-                toast.error('Your session has expired. Please login again.', {
+                toast.error('Session expired. Please login again.', {
                     duration: 4000,
-                    position: 'top-center',
-                    style: {
-                        border: '1px solid #E30613',
-                        padding: '16px',
-                        color: '#000B29',
-                        background: '#ffffff',
-                        borderRadius: '8px',
-                        fontWeight: '600'
-                    }
+                    position: 'top-center'
                 });
                 
-                // LocalStorage clear karein
                 localStorage.removeItem('token');
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('adminToken');
@@ -97,7 +75,6 @@ API.interceptors.response.use(
                 localStorage.removeItem('user');
                 localStorage.removeItem('studentId');
                 
-                // Redirect to login page
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 1500);
@@ -105,15 +82,12 @@ API.interceptors.response.use(
                 return Promise.reject(error);
             }
             
-            // Agar sirf 401 hai (token invalid ya missing) - Generic case
             toast.error('Please login to continue', {
                 duration: 3000,
                 position: 'top-center'
             });
             
-            // Clear storage
             localStorage.clear();
-            
             setTimeout(() => {
                 window.location.href = '/login';
             }, 1000);
@@ -132,9 +106,9 @@ API.interceptors.response.use(
             console.warn('🔴 404 Error: Resource not found', error.config?.url);
         }
         
-        // Network errors / Server down
+        // Network error / Server down
         if (!error.response) {
-            toast.error('Network error! Please check your connection or server status.', {
+            toast.error('Cannot connect to server! Please try again.', {
                 duration: 3000,
                 position: 'top-center'
             });
