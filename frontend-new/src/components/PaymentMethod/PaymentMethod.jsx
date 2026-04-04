@@ -45,7 +45,7 @@ const PaymentMethod = () => {
         const fetchCourse = async () => {
             try {
                 setLoading(true);
-                const res = await axios.get(`http://localhost:5000/api/courses/${courseId}`);
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}`);
                 if (res.data) {
                     setCourse(res.data); 
                 }
@@ -71,7 +71,7 @@ const PaymentMethod = () => {
     const getImagePath = (path) => {
         if (!path) return "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=500"; 
         if (path.startsWith('http')) return path;
-        return `http://localhost:5000${path}`; 
+        return `${import.meta.env.VITE_API_URL}${path}`; 
     };
 
     const paymentMethods = [
@@ -124,7 +124,7 @@ const PaymentMethod = () => {
         localStorage.setItem('studentEmail', formData.studentEmail);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/payments/submit-payment', data, {
+            const response = await axios.post('${import.meta.env.VITE_API_URL}/api/payments/submit-payment', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 

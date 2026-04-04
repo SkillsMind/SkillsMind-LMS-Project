@@ -43,7 +43,7 @@ const BuildProfile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://localhost:5000/api/student-profile/submit', formData);
+            const res = await axios.post('${import.meta.env.VITE_API_URL}/api/student-profile/submit', formData);
             if (res.data.success) {
                 alert("SkillsMind: Profile Sync Successful!");
                 // Update local storage with new data

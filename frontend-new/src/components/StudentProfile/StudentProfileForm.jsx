@@ -64,7 +64,7 @@ const StudentProfileForm = () => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/student-profile/check/${storedUserId}`);
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/student-profile/check/${storedUserId}`);
         if (response.data.exists && !location.state?.isUpdating) {
           localStorage.setItem('studentProfileId', response.data.profileId);
           navigate('/get-enrolment');
@@ -111,7 +111,7 @@ const StudentProfileForm = () => {
         console.log("🚀 [FRONTEND] Sending data to SkillsMind:", finalPayload);
 
         // --- API CALL ---
-        const response = await axios.post('http://localhost:5000/api/student-profile/submit', finalPayload);
+        const response = await axios.post('${import.meta.env.VITE_API_URL}/api/student-profile/submit', finalPayload);
         
         if (response.data.success) {
           if(response.data.profile) {

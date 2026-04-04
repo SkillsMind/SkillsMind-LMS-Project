@@ -38,7 +38,7 @@ const ImportantLinksPage = ({ onBack }) => {
         return;
       }
 
-      const res = await axios.get('http://localhost:5000/api/important-links/student/my-links', {
+      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/important-links/student/my-links', {
         headers: { Authorization: `Bearer ${token}` }
       });
       

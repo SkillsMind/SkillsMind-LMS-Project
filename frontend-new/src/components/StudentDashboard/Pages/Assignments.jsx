@@ -135,7 +135,7 @@ const Assignments = ({ onNavigate }) => {
 
   const studentId = getUserId();
   const token = getToken();
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
 
   // Load notifications from localStorage on mount
   useEffect(() => {
@@ -345,7 +345,7 @@ const Assignments = ({ onNavigate }) => {
 
   const setupSocketConnection = () => {
     try {
-      const newSocket = io('http://localhost:5000', {
+      const newSocket = io('${import.meta.env.VITE_API_URL}', {
         transports: ['websocket', 'polling'],
         timeout: 10000,
         reconnection: true,
@@ -1090,7 +1090,7 @@ const openAssignmentBuilder = (assignment) => {
                                         {assignment.attachments.map((file, idx) => (
                                           <a 
                                             key={idx}
-                                            href={`http://localhost:5000${file.url}`}
+                                            href={`${import.meta.env.VITE_API_URL}${file.url}`}
                                             download
                                             className="pdf-file-item"
                                             target="_blank"
@@ -1243,7 +1243,7 @@ const openAssignmentBuilder = (assignment) => {
                     {viewingAssignment.attachments.map((file, idx) => (
                       <a 
                         key={idx}
-                        href={`http://localhost:5000${file.url}`}
+                        href={`${import.meta.env.VITE_API_URL}${file.url}`}
                         download
                         className="file-item"
                         target="_blank"

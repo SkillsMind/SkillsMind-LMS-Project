@@ -44,7 +44,7 @@ const AddCourse = () => {
     // --- Logic: Fetch All Courses (SkillsMind Sync) ---
     const fetchCourses = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/courses');
+            const res = await axios.get('${import.meta.env.VITE_API_URL}/api/courses');
             setCourses(res.data);
         } catch (err) {
             console.error("Fetch Error:", err);
@@ -60,7 +60,7 @@ const AddCourse = () => {
     const handleHideUnhide = async (id) => {
         const load = toast.loading("SkillsMind: Updating visibility...", { style: toastStyle });
         try {
-            const response = await axios.patch(`http://localhost:5000/api/courses/toggle-hide/${id}`);
+            const response = await axios.patch(`${import.meta.env.VITE_API_URL}/api/courses/toggle-hide/${id}`);
             if (response.data.success) {
                 toast.success(`SkillsMind: Course ${response.data.isHide ? 'Hidden' : 'Visible'}!`, { id: load, style: toastStyle });
                 fetchCourses(); 
@@ -97,7 +97,7 @@ const AddCourse = () => {
                             toast.dismiss(t.id);
                             const load = toast.loading("SkillsMind: Removing course...", { style: toastStyle });
                             try {
-                                await axios.delete(`http://localhost:5000/api/courses/${id}`);
+                                await axios.delete(`${import.meta.env.VITE_API_URL}/api/courses/${id}`);
                                 toast.success("SkillsMind: Course removed!", { id: load, style: toastStyle });
                                 fetchCourses();
                             } catch (err) {
@@ -215,10 +215,10 @@ const AddCourse = () => {
             formData.append('syllabus', JSON.stringify(courseData.syllabus));
 
             if (isEditing) {
-                await axios.put(`http://localhost:5000/api/courses/${isEditing}`, formData);
+                await axios.put(`${import.meta.env.VITE_API_URL}/api/courses/${isEditing}`, formData);
                 toast.success("SkillsMind: Course Updated!", { id: load, style: toastStyle });
             } else {
-                await axios.post('http://localhost:5000/api/courses/add', formData);
+                await axios.post('${import.meta.env.VITE_API_URL}/api/courses/add', formData);
                 toast.success("SkillsMind: Course Launched!", { id: load, style: toastStyle });
             }
 
@@ -261,7 +261,7 @@ const AddCourse = () => {
                         <tbody>
                             {courses.length > 0 ? courses.map(course => (
                                 <tr key={course._id} style={course.isHide ? { opacity: 0.6, background: '#f1f5f9' } : {}}>
-                                    <td><img src={`http://localhost:5000${course.thumbnail}`} alt="thumb" className="sm-row-img" /></td>
+                                    <td><img src={`${import.meta.env.VITE_API_URL}${course.thumbnail}`} alt="thumb" className="sm-row-img" /></td>
                                     <td><strong>{course.title}</strong> {course.isHide && <span style={{fontSize:'10px', color:'#e31e24', marginLeft:'5px'}}>(HIDDEN)</span>}</td>
                                     <td>{course.category}</td>
                                     <td>PKR {course.price}</td>

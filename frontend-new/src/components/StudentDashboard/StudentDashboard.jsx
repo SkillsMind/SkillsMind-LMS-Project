@@ -65,7 +65,7 @@ const StudentDashboard = () => {
       }
       
       try {
-        const res = await axios.get(`http://localhost:5000/api/payments/my-status/${studentEmail}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/payments/my-status/${studentEmail}`);
         
         if (!res.data || res.data.status.toLowerCase() !== 'approved') {
           navigate('/my-learning');

@@ -6,7 +6,7 @@ const ProfileContext = createContext();
 export const ProfileProvider = ({ children, userId, token }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const backendURL = "http://localhost:5000";
+  const backendURL = "${import.meta.env.VITE_API_URL}";
 
   const axiosConfig = {
     headers: { Authorization: `Bearer ${token}` }

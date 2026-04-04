@@ -50,7 +50,7 @@ const Profile = () => {
   const coverInputRef = useRef(null);
   const dpInputRef = useRef(null);
   
-  const backendURL = "http://localhost:5000";
+  const backendURL = "${import.meta.env.VITE_API_URL}";
   const userId = localStorage.getItem('userId');
 
   // Fetch all data

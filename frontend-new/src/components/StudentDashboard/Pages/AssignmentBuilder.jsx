@@ -13,7 +13,7 @@ import {
 import './AssignmentBuilder.css';
 
 // API configuration - Vite compatible
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '${import.meta.env.VITE_API_URL}/api';
 
 // 🔥 Custom Modal Component
 const CustomModal = ({ isOpen, onClose, title, children, onConfirm, confirmText = 'OK', cancelText = 'Cancel', showCancel = true }) => {

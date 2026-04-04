@@ -47,7 +47,7 @@ const SubmissionsView = ({ assignmentId, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
   const token = localStorage.getItem('token') || 
                 localStorage.getItem('authToken') || 
                 localStorage.getItem('adminToken');
@@ -645,7 +645,7 @@ const SubmissionsView = ({ assignmentId, onClose }) => {
   // ✅ Direct download function for files
   const handleFileDownload = (file) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:5000${file.url}`;
+    link.href = `${import.meta.env.VITE_API_URL}${file.url}`;
     link.download = file.filename;
     link.target = '_blank';
     document.body.appendChild(link);

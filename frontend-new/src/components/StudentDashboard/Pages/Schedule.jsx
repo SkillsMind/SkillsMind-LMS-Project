@@ -37,7 +37,7 @@ const Schedule = () => {
   const socketRef = useRef(null);
 
   const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: '${import.meta.env.VITE_API_URL}/api',
   });
 
   API.interceptors.request.use((config) => {
@@ -277,7 +277,7 @@ const Schedule = () => {
     if (socketRef.current) return;
 
     try {
-      const newSocket = io('http://localhost:5000', {
+      const newSocket = io('${import.meta.env.VITE_API_URL}', {
         transports: ['websocket', 'polling'],
         query: { studentId: user.id },
         reconnection: true,

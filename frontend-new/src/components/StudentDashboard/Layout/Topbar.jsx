@@ -41,7 +41,7 @@ const Topbar = ({
       const cleanPath = profile.profileImage.startsWith('/') 
         ? profile.profileImage.slice(1) 
         : profile.profileImage;
-      return `http://localhost:5000/${cleanPath}`;
+      return `${import.meta.env.VITE_API_URL}/${cleanPath}`;
     }
     
     // Default avatars based on gender

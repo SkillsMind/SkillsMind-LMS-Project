@@ -19,7 +19,7 @@ const RegistrationData = () => {
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/enroll/all'); 
+      const response = await fetch('${import.meta.env.VITE_API_URL}/api/enroll/all'); 
       const data = await response.json();
       setRegistrations(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -38,7 +38,7 @@ const RegistrationData = () => {
   const confirmDelete = async () => {
     if (!selectedId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/enroll/delete/${selectedId}`, { 
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/enroll/delete/${selectedId}`, { 
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });

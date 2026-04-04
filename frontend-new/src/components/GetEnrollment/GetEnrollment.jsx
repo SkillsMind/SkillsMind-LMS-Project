@@ -39,7 +39,7 @@ const GetEnrollment = () => {
   
   const userId = localStorage.getItem('userId');
   const storedName = localStorage.getItem('userName') || "Student";
-  const backendURL = "http://localhost:5000";
+  const backendURL = "${import.meta.env.VITE_API_URL}";
 
   const student = profile;
 

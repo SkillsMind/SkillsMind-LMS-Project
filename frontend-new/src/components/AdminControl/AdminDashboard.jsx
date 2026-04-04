@@ -63,8 +63,8 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const endpoint = activeTab === 'students' 
-        ? 'http://localhost:5000/api/auth/all-users' 
-        : 'http://localhost:5000/api/profile/all-submissions';
+        ? '${import.meta.env.VITE_API_URL}/api/auth/all-users' 
+        : '${import.meta.env.VITE_API_URL}/api/profile/all-submissions';
 
       const res = await fetch(endpoint);
       const data = await res.json();
@@ -119,7 +119,7 @@ const AdminDashboard = () => {
   const confirmDelete = async () => {
     try {
       const routePrefix = activeTab === 'students' ? 'auth/delete-user' : 'profile/delete-submission';
-      const res = await fetch(`http://localhost:5000/api/${routePrefix}/${deleteId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/${routePrefix}/${deleteId}`, {
         method: 'DELETE'
       });
 

@@ -143,7 +143,7 @@ const Settings = ({ studentName, onNavigate, userId }) => {
   const email = localStorage.getItem('studentEmail');
   const token = localStorage.getItem('token');
   const storedUserId = localStorage.getItem('userId');
-  const backendURL = "http://localhost:5000";
+  const backendURL = "${import.meta.env.VITE_API_URL}";
 
   const axiosConfig = {
     headers: { Authorization: `Bearer ${token}` }

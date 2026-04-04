@@ -19,7 +19,7 @@ const AttendanceManager = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
   const toastStyle = {
     border: '1px solid #e31e24',
     padding: '16px',

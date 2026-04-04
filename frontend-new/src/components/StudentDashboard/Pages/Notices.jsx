@@ -36,7 +36,7 @@ const NoticesPage = ({ onBack }) => {
   const fetchNotices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/notices/student/my-notices', {
+      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/notices/student/my-notices', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -57,7 +57,7 @@ const NoticesPage = ({ onBack }) => {
   const markAsRead = async (noticeId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/notices/${noticeId}/read`, {}, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/notices/${noticeId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

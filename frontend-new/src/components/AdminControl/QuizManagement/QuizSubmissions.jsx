@@ -22,7 +22,7 @@ const QuizSubmissions = ({ quiz, onBack, onRefresh }) => {
            localStorage.getItem('adminToken');
   };
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
 
   const toastStyle = {
     border: '1px solid #000B29',

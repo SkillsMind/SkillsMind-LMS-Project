@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import './DashboardHome.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '${import.meta.env.VITE_API_URL}/api';
 
 const DashboardHome = ({ onNavigate, showBackButton }) => {
   const [data, setData] = useState(null);
@@ -300,7 +300,7 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
               }}
             >
               {student?.avatar ? (
-                <img src={`http://localhost:5000/${student.avatar}`} alt={student?.name} />
+                <img src={`${import.meta.env.VITE_API_URL}/${student.avatar}`} alt={student?.name} />
               ) : (
                 <User size={20} />
               )}
@@ -311,7 +311,7 @@ const DashboardHome = ({ onNavigate, showBackButton }) => {
                 <div className="dropdown-user-info">
                   <div className="user-avatar">
                     {student?.avatar ? (
-                      <img src={`http://localhost:5000/${student.avatar}`} alt={student?.name} />
+                      <img src={`${import.meta.env.VITE_API_URL}/${student.avatar}`} alt={student?.name} />
                     ) : (
                       <User size={24} />
                     )}

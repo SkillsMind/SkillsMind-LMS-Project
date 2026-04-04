@@ -25,7 +25,7 @@ const ImportantLinks = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/important-links', {
+      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/important-links', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -45,7 +45,7 @@ const ImportantLinks = () => {
       const token = localStorage.getItem('token');
       
       // ✅ Use the correct endpoint that returns all courses
-      const res = await axios.get('http://localhost:5000/api/courses/', {
+      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/courses/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -93,9 +93,9 @@ const ImportantLinks = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/important-links/${editingId}`, formData, config);
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/important-links/${editingId}`, formData, config);
       } else {
-        await axios.post('http://localhost:5000/api/important-links', formData, config);
+        await axios.post('${import.meta.env.VITE_API_URL}/api/important-links', formData, config);
       }
       fetchLinks();
       resetForm();
@@ -133,7 +133,7 @@ const ImportantLinks = () => {
     if (window.confirm('Are you sure you want to delete this link?')) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/important-links/${id}`, {
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/important-links/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchLinks();

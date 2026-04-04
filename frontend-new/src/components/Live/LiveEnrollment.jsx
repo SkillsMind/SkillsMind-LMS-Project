@@ -80,7 +80,7 @@ const LiveEnrollment = () => {
 
         const fetchRealTimeStats = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/stats');
+                const response = await axios.get('${import.meta.env.VITE_API_URL}/api/stats');
                 setStats({
                     totalStudents: response.data.totalRegistered || 0,
                     profilesBuilt: response.data.profilesBuilt || 0,
@@ -113,7 +113,7 @@ const LiveEnrollment = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/enroll/live-register', formData);
+            const response = await axios.post('${import.meta.env.VITE_API_URL}/api/enroll/live-register', formData);
 
             if (response.status === 201 || response.status === 200) {
                 const amountToPay = coursePrice;
