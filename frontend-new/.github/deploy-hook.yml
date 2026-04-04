@@ -1,0 +1,27 @@
+name: Deploy to Vercel via Deploy Hook
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Manual trigger bhi allow hai
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Trigger Vercel Deployment via Deploy Hook
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          echo "🚀 Triggering Vercel deployment via Deploy Hook..."
+          curl -X POST "$VERCEL_DEPLOY_HOOK"
+          echo "✅ Vercel deployment hook triggered successfully!"
+      
+      - name: Wait for deployment to start
+        run: sleep 5
+      
+      - name: Log completion
+        run: echo "✅ Deployment workflow completed! Check Vercel dashboard."
