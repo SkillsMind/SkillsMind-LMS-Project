@@ -19,6 +19,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
     'https://www.skillsmind.online',
     'https://skillsmind.online',
+    'https://skillsmind-frontend-new.vercel.app',  // ← YEH LINE ADD KARO
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5174',
