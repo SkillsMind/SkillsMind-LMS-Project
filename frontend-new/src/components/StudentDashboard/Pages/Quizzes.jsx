@@ -46,8 +46,7 @@ const Quizzes = () => {
   const [socket, setSocket] = useState(null);
 
   const { userId, token, user } = getAuthData();
-  const API_URL = '${import.meta.env.VITE_API_URL}/api';
-
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
   function getAuthData() {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -258,7 +257,7 @@ const Quizzes = () => {
 
     loadNotifications();
 
-    const newSocket = io('${import.meta.env.VITE_API_URL}', {
+    const newSocket = io(`${import.meta.env.VITE_API_URL}`, {
       transports: ['websocket', 'polling'],
       reconnection: true
     });
