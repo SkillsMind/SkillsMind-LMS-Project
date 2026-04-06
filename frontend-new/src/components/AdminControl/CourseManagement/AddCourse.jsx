@@ -44,7 +44,7 @@ const AddCourse = () => {
     // --- Logic: Fetch All Courses (SkillsMind Sync) ---
     const fetchCourses = async () => {
         try {
-            const res = await axios.get('${import.meta.env.VITE_API_URL}/api/courses');
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/courses`);
             setCourses(res.data);
         } catch (err) {
             console.error("Fetch Error:", err);
@@ -218,7 +218,7 @@ const AddCourse = () => {
                 await axios.put(`${import.meta.env.VITE_API_URL}/api/courses/${isEditing}`, formData);
                 toast.success("SkillsMind: Course Updated!", { id: load, style: toastStyle });
             } else {
-                await axios.post('${import.meta.env.VITE_API_URL}/api/courses/add', formData);
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/courses/add`, formData);
                 toast.success("SkillsMind: Course Launched!", { id: load, style: toastStyle });
             }
 
