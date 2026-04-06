@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { 
   FaPlus, FaEdit, FaTrash, FaEye, FaCalendarAlt, 
@@ -15,6 +14,7 @@ import {
 import './QuizManager.css';
 import QuizCreator from './QuizCreator';
 import QuizSubmissions from './QuizSubmissions';
+import { adminAPI } from '../../../services/api';
 
 const QuizManager = ({ onViewReport }) => {
   const [quizzes, setQuizzes] = useState([]);
@@ -38,15 +38,6 @@ const QuizManager = ({ onViewReport }) => {
     pendingReviews: 0
   });
 
-  const getToken = () => {
-    return localStorage.getItem('token') || 
-           localStorage.getItem('authToken') || 
-           localStorage.getItem('adminToken') ||
-           localStorage.getItem('accessToken');
-  };
-
-  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
-
   const toastStyle = {
     border: '1px solid #000B29',
     padding: '16px',
@@ -56,12 +47,6 @@ const QuizManager = ({ onViewReport }) => {
   };
 
   useEffect(() => {
-    const currentToken = getToken();
-    if (!currentToken) {
-      toast.error('Please login first!', { style: toastStyle });
-      return;
-    }
-    
     fetchQuizzes();
     fetchCourses();
   }, []);
@@ -69,11 +54,7 @@ const QuizManager = ({ onViewReport }) => {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-      const token = getToken();
-      
-      const res = await axios.get(`${API_BASE}/quizzes`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await adminAPI.getAllQuizzes();
       
       if (res.data.success) {
         setQuizzes(res.data.quizzes || []);
@@ -89,16 +70,14 @@ const QuizManager = ({ onViewReport }) => {
   const fetchCourses = async () => {
     try {
       setCoursesLoading(true);
-      const token = getToken();
-      
-      const res = await axios.get(`${API_BASE}/courses/all`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await adminAPI.getCourses();
       
       let coursesData = [];
       if (Array.isArray(res.data)) {
         coursesData = res.data;
       } else if (res.data.success && Array.isArray(res.data.courses)) {
+        coursesData = res.data.courses;
+      } else if (res.data.courses) {
         coursesData = res.data.courses;
       }
 
@@ -175,10 +154,7 @@ const QuizManager = ({ onViewReport }) => {
     const loadId = toast.loading('Deleting...', { style: toastStyle });
     
     try {
-      await axios.delete(`${API_BASE}/quizzes/${id}`, {
-        headers: { Authorization: `Bearer ${getToken()}` }
-      });
-      
+      await adminAPI.deleteQuiz(id);
       toast.success('Quiz deleted!', { id: loadId, style: toastStyle });
       fetchQuizzes();
     } catch (err) {
@@ -189,13 +165,7 @@ const QuizManager = ({ onViewReport }) => {
   const toggleQuizStatus = async (quizId, currentStatus) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      const token = getToken();
-      
-      await axios.patch(`${API_BASE}/quizzes/${quizId}/status`, 
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      await adminAPI.toggleQuizStatus(quizId, newStatus);
       toast.success(`Quiz ${newStatus === 'active' ? 'activated' : 'paused'}!`, { style: toastStyle });
       fetchQuizzes();
     } catch (err) {
@@ -203,6 +173,7 @@ const QuizManager = ({ onViewReport }) => {
     }
   };
 
+  // Rest of the functions (getGroupedQuizzes, getStatusBadge, etc.) remain the same
   const getGroupedQuizzes = () => {
     let filtered = quizzes.filter(q => {
       const matchesSearch = 
@@ -243,81 +214,6 @@ const QuizManager = ({ onViewReport }) => {
     return Object.values(grouped);
   };
 
-  const getAllAttemptsByCourse = () => {
-    const courseAttempts = {};
-    
-    quizzes.forEach(quiz => {
-      const courseId = quiz.courseId?._id || quiz.courseId || 'unknown';
-      const courseName = quiz.courseName || 'Unknown Course';
-      
-      if (!courseAttempts[courseId]) {
-        courseAttempts[courseId] = {
-          courseId,
-          courseName,
-          attempts: []
-        };
-      }
-      
-      quiz.submissions?.forEach(sub => {
-        courseAttempts[courseId].attempts.push({
-          ...sub,
-          quizTitle: quiz.title,
-          totalMarks: quiz.totalMarks,
-          percentage: ((sub.obtainedMarks / quiz.totalMarks) * 100).toFixed(1)
-        });
-      });
-    });
-
-    // Sort attempts by date (newest first)
-    Object.values(courseAttempts).forEach(course => {
-      course.attempts.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-    });
-
-    return Object.values(courseAttempts).filter(c => c.attempts.length > 0);
-  };
-
-  const getScoresByCourse = () => {
-    const courseScores = {};
-    
-    quizzes.forEach(quiz => {
-      const courseId = quiz.courseId?._id || quiz.courseId || 'unknown';
-      const courseName = quiz.courseName || 'Unknown Course';
-      
-      if (!courseScores[courseId]) {
-        courseScores[courseId] = {
-          courseId,
-          courseName,
-          quizzes: [],
-          totalAttempts: 0,
-          totalScore: 0
-        };
-      }
-      
-      const attempts = quiz.submissions || [];
-      const avgScore = attempts.length > 0 
-        ? attempts.reduce((acc, s) => acc + (s.obtainedMarks/quiz.totalMarks)*100, 0) / attempts.length
-        : 0;
-
-      courseScores[courseId].quizzes.push({
-        ...quiz,
-        avgScore: Math.round(avgScore),
-        attemptsCount: attempts.length
-      });
-      
-      courseScores[courseId].totalAttempts += attempts.length;
-      courseScores[courseId].totalScore += avgScore;
-    });
-
-    // Calculate course average
-    Object.values(courseScores).forEach(course => {
-      course.courseAvg = course.quizzes.length > 0 
-        ? Math.round(course.totalScore / course.quizzes.length)
-        : 0;
-    });
-
-    return Object.values(courseScores);
-  };
-
   const getStatusBadge = (status) => {
     const styles = {
       active: { bg: '#16a34a', color: '#fff' },
@@ -343,10 +239,12 @@ const QuizManager = ({ onViewReport }) => {
     );
   };
 
-  const getGradeColor = (percentage) => {
-    if (percentage >= 80) return 'high';
-    if (percentage >= 60) return 'medium';
-    return 'low';
+  const handleStatsClick = (type) => {
+    if (statsFilter === type) {
+      setStatsFilter(null);
+    } else {
+      setStatsFilter(type);
+    }
   };
 
   const groupedData = getGroupedQuizzes();
@@ -357,14 +255,6 @@ const QuizManager = ({ onViewReport }) => {
     const matchesFilter = filterStatus === 'all' || q.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
-
-  const handleStatsClick = (type) => {
-    if (statsFilter === type) {
-      setStatsFilter(null);
-    } else {
-      setStatsFilter(type);
-    }
-  };
 
   // Submissions View
   if (view === 'submissions' && selectedQuiz) {
@@ -645,7 +535,87 @@ const QuizManager = ({ onViewReport }) => {
     );
   }
 
-  // List View
+  // Helper functions for stats views
+  const getAllAttemptsByCourse = () => {
+    const courseAttempts = {};
+    
+    quizzes.forEach(quiz => {
+      const courseId = quiz.courseId?._id || quiz.courseId || 'unknown';
+      const courseName = quiz.courseName || 'Unknown Course';
+      
+      if (!courseAttempts[courseId]) {
+        courseAttempts[courseId] = {
+          courseId,
+          courseName,
+          attempts: []
+        };
+      }
+      
+      quiz.submissions?.forEach(sub => {
+        courseAttempts[courseId].attempts.push({
+          ...sub,
+          quizTitle: quiz.title,
+          totalMarks: quiz.totalMarks,
+          percentage: ((sub.obtainedMarks / quiz.totalMarks) * 100).toFixed(1)
+        });
+      });
+    });
+
+    Object.values(courseAttempts).forEach(course => {
+      course.attempts.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    });
+
+    return Object.values(courseAttempts).filter(c => c.attempts.length > 0);
+  };
+
+  const getScoresByCourse = () => {
+    const courseScores = {};
+    
+    quizzes.forEach(quiz => {
+      const courseId = quiz.courseId?._id || quiz.courseId || 'unknown';
+      const courseName = quiz.courseName || 'Unknown Course';
+      
+      if (!courseScores[courseId]) {
+        courseScores[courseId] = {
+          courseId,
+          courseName,
+          quizzes: [],
+          totalAttempts: 0,
+          totalScore: 0
+        };
+      }
+      
+      const attempts = quiz.submissions || [];
+      const avgScore = attempts.length > 0 
+        ? attempts.reduce((acc, s) => acc + (s.obtainedMarks/quiz.totalMarks)*100, 0) / attempts.length
+        : 0;
+
+      courseScores[courseId].quizzes.push({
+        ...quiz,
+        avgScore: Math.round(avgScore),
+        attemptsCount: attempts.length
+      });
+      
+      courseScores[courseId].totalAttempts += attempts.length;
+      courseScores[courseId].totalScore += avgScore;
+    });
+
+    Object.values(courseScores).forEach(course => {
+      course.courseAvg = course.quizzes.length > 0 
+        ? Math.round(course.totalScore / course.quizzes.length)
+        : 0;
+    });
+
+    return Object.values(courseScores);
+  };
+
+  const getGradeColor = (percentage) => {
+    if (percentage >= 80) return 'high';
+    if (percentage >= 60) return 'medium';
+    return 'low';
+  };
+
+  // Main List View Return
   return (
     <div className="quiz-manager">
       {/* Header */}
@@ -662,100 +632,99 @@ const QuizManager = ({ onViewReport }) => {
       </div>
 
       {/* Stats Dashboard */}
-{/* Stats Dashboard */}
-<div className="stats-dashboard">
-  <div 
-    className={`stat-card ${statsFilter === 'all' ? 'active' : ''}`}
-    onClick={() => handleStatsClick('all')}
-    style={{ cursor: 'pointer', position: 'relative' }}
-  >
-    <div style={{ 
-      width: '50px', 
-      height: '50px', 
-      borderRadius: '8px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: '#E30613'
-    }}>
-      <FaClipboardList color="white" size={24} />
-    </div>
-    <div className="stat-info">
-      <span className="stat-value">{stats.totalQuizzes}</span>
-      <span className="stat-label">Total Quizzes</span>
-    </div>
-    {statsFilter === 'all' && <div className="active-indicator" />}
-  </div>
-  
-  <div 
-    className={`stat-card ${statsFilter === 'attempts' ? 'active' : ''}`}
-    onClick={() => handleStatsClick('attempts')}
-    style={{ cursor: 'pointer', position: 'relative' }}
-  >
-    <div style={{ 
-      width: '50px', 
-      height: '50px', 
-      borderRadius: '8px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: '#E30613'
-    }}>
-      <FaUsers color="white" size={24} />
-    </div>
-    <div className="stat-info">
-      <span className="stat-value">{stats.totalSubmissions}</span>
-      <span className="stat-label">Total Attempts</span>
-    </div>
-    {statsFilter === 'attempts' && <div className="active-indicator" />}
-  </div>
-  
-  <div 
-    className={`stat-card ${statsFilter === 'active' ? 'active' : ''}`}
-    onClick={() => handleStatsClick('active')}
-    style={{ cursor: 'pointer', position: 'relative' }}
-  >
-    <div style={{ 
-      width: '50px', 
-      height: '50px', 
-      borderRadius: '8px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: '#E30613'
-    }}>
-      <FaPlay color="white" size={24} />
-    </div>
-    <div className="stat-info">
-      <span className="stat-value">{stats.activeQuizzes}</span>
-      <span className="stat-label">Active Quizzes</span>
-    </div>
-    {statsFilter === 'active' && <div className="active-indicator" />}
-  </div>
-  
-  <div 
-    className={`stat-card ${statsFilter === 'scores' ? 'active' : ''}`}
-    onClick={() => handleStatsClick('scores')}
-    style={{ cursor: 'pointer', position: 'relative' }}
-  >
-    <div style={{ 
-      width: '50px', 
-      height: '50px', 
-      borderRadius: '8px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: '#E30613'
-    }}>
-      <FaTrophy color="white" size={24} />
-    </div>
-    <div className="stat-info">
-      <span className="stat-value">{stats.avgScore}%</span>
-      <span className="stat-label">Avg Score</span>
-    </div>
-    {statsFilter === 'scores' && <div className="active-indicator" />}
-  </div>
-</div>
+      <div className="stats-dashboard">
+        <div 
+          className={`stat-card ${statsFilter === 'all' ? 'active' : ''}`}
+          onClick={() => handleStatsClick('all')}
+          style={{ cursor: 'pointer', position: 'relative' }}
+        >
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: '#E30613'
+          }}>
+            <FaClipboardList color="white" size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-value">{stats.totalQuizzes}</span>
+            <span className="stat-label">Total Quizzes</span>
+          </div>
+          {statsFilter === 'all' && <div className="active-indicator" />}
+        </div>
+        
+        <div 
+          className={`stat-card ${statsFilter === 'attempts' ? 'active' : ''}`}
+          onClick={() => handleStatsClick('attempts')}
+          style={{ cursor: 'pointer', position: 'relative' }}
+        >
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: '#E30613'
+          }}>
+            <FaUsers color="white" size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-value">{stats.totalSubmissions}</span>
+            <span className="stat-label">Total Attempts</span>
+          </div>
+          {statsFilter === 'attempts' && <div className="active-indicator" />}
+        </div>
+        
+        <div 
+          className={`stat-card ${statsFilter === 'active' ? 'active' : ''}`}
+          onClick={() => handleStatsClick('active')}
+          style={{ cursor: 'pointer', position: 'relative' }}
+        >
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: '#E30613'
+          }}>
+            <FaPlay color="white" size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-value">{stats.activeQuizzes}</span>
+            <span className="stat-label">Active Quizzes</span>
+          </div>
+          {statsFilter === 'active' && <div className="active-indicator" />}
+        </div>
+        
+        <div 
+          className={`stat-card ${statsFilter === 'scores' ? 'active' : ''}`}
+          onClick={() => handleStatsClick('scores')}
+          style={{ cursor: 'pointer', position: 'relative' }}
+        >
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: '#E30613'
+          }}>
+            <FaTrophy color="white" size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-value">{stats.avgScore}%</span>
+            <span className="stat-label">Avg Score</span>
+          </div>
+          {statsFilter === 'scores' && <div className="active-indicator" />}
+        </div>
+      </div>
 
       {/* Filters Bar */}
       <div className="filters-bar">
