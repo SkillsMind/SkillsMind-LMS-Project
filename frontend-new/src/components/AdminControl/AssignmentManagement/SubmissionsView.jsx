@@ -47,7 +47,7 @@ const SubmissionsView = ({ assignmentId, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
+  const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
   const token = localStorage.getItem('token') || 
                 localStorage.getItem('authToken') || 
                 localStorage.getItem('adminToken');
