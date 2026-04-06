@@ -63,8 +63,8 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const endpoint = activeTab === 'students' 
-        ? '${import.meta.env.VITE_API_URL}/api/auth/all-users' 
-        : '${import.meta.env.VITE_API_URL}/api/profile/all-submissions';
+  ? `${import.meta.env.VITE_API_URL}/api/auth/all-users` 
+  : `${import.meta.env.VITE_API_URL}/api/profile/all-submissions`;
 
       const res = await fetch(endpoint);
       const data = await res.json();
