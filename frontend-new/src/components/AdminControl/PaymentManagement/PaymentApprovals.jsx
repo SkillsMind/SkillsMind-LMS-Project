@@ -15,7 +15,7 @@ const PaymentApprovals = () => {
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(null);
 
-    const API_BASE_URL = '${import.meta.env.VITE_API_URL}';
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     useEffect(() => {
         fetchPayments();
