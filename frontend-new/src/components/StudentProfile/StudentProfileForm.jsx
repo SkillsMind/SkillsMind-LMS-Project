@@ -111,7 +111,7 @@ const StudentProfileForm = () => {
         console.log("🚀 [FRONTEND] Sending data to SkillsMind:", finalPayload);
 
         // --- API CALL ---
-        const response = await axios.post('${import.meta.env.VITE_API_URL}/api/student-profile/submit', finalPayload);
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/student-profile/submit`, finalPayload);
         
         if (response.data.success) {
           if(response.data.profile) {
