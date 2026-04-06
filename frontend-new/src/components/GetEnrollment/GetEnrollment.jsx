@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../config';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaClock, FaSignal, FaUserTie, FaTimes, FaUserGraduate,
@@ -28,7 +29,6 @@ const GetEnrollment = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [expandedWeek, setExpandedWeek] = useState(null);
   
-  // NEW: Class Mode Selection State
   const [showModeSelection, setShowModeSelection] = useState(false);
   
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -39,11 +39,12 @@ const GetEnrollment = () => {
   
   const userId = localStorage.getItem('userId');
   const storedName = localStorage.getItem('userName') || "Student";
-  const backendURL = "${import.meta.env.VITE_API_URL}";
+  
+  // ✅ CHANGE 1: Sahi backendURL set karo
+  const backendURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const student = profile;
 
-  // --- Dynamic Learning Points Logic (Based on Course Title) ---
   const getLearningPoints = (courseTitle) => {
     const title = courseTitle?.toLowerCase() || "";
     if(title.includes('web')) {
@@ -74,7 +75,6 @@ const GetEnrollment = () => {
         "Portfolio Building"
       ];
     }
-    // Default points
     return [
       "In-depth Topic Mastery",
       "Real-world Practical Projects",
@@ -89,7 +89,6 @@ const GetEnrollment = () => {
     ];
   };
 
-  // --- PDF Generation Helper Functions ---
   const getBase64ImageFromURL = (url) => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -120,7 +119,6 @@ const GetEnrollment = () => {
       console.error("Logo loading failed for PDF", e);
     }
 
-    // Watermark
     doc.setTextColor(240, 240, 240);
     doc.setFontSize(60);
     doc.setFont(undefined, 'bold');
@@ -129,7 +127,6 @@ const GetEnrollment = () => {
     doc.text("SKILLSMIND", pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
     doc.restoreGraphicsState();
 
-    // Header Info
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(24);
     doc.setFont(undefined, 'bold');
@@ -153,7 +150,6 @@ const GetEnrollment = () => {
     doc.text("Course Curriculum", 15, yPos);
     yPos += 10;
 
-    // Syllabus Items
     selectedCourse.syllabus?.forEach((item) => {
       if (yPos > pageHeight - 30) {
         doc.addPage();
@@ -179,7 +175,6 @@ const GetEnrollment = () => {
       yPos += 5;
     });
 
-    // Footer
     doc.setFontSize(9);
     doc.setTextColor(150);
     doc.text("© 2026 SkillsMind Learning Management System - All Rights Reserved", pageWidth / 2, pageHeight - 10, { align: 'center' });
@@ -190,9 +185,13 @@ const GetEnrollment = () => {
   const fetchCourses = async () => {
     try {
       const res = await axios.get(`${backendURL}/api/courses/all`);
-      setCourses(res.data);
+      // ✅ CHANGE 3: Safe array check
+      setCourses(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("SkillsMind Error:", err);
+      setCourses([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -233,7 +232,7 @@ const GetEnrollment = () => {
         }
       });
       if (res.data.success) {
-        // Profile context will auto-update, no need to manually fetch
+        // Profile context will auto-update
       }
     } catch (err) {
       console.error("Image Upload Error:", err);
@@ -248,10 +247,11 @@ const GetEnrollment = () => {
   const displayFirstName = student?.firstName || storedName.split(' ')[0] || "Student";
   const fullDisplayName = student?.firstName ? `${student.firstName} ${student.lastName || ''}` : storedName;
 
-  const filtered = courses.filter(c => 
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-    c.isHide !== true && 
-    c.isHide !== "true"
+  // ✅ CHANGE 2: Safe filter with optional chaining
+  const filtered = (courses || []).filter(c => 
+    c?.title?.toLowerCase().includes(searchQuery.toLowerCase()) && 
+    c?.isHide !== true && 
+    c?.isHide !== "true"
   );
 
   const handleBack = () => {
@@ -269,6 +269,15 @@ const GetEnrollment = () => {
     navigate(`/payment-method/${courseId}`);
   };
 
+  // Agar loading ho to loading show karo
+  if (loading) {
+    return (
+      <div className="sm-enroll-root" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div>Loading courses...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="sm-enroll-root">
       <input 
@@ -279,7 +288,6 @@ const GetEnrollment = () => {
         accept="image/*"
       />
 
-      {/* TOP NAVIGATION BAR */}
       <nav className="sm-navbar">
         <div className="nav-container-fluid">
           <div className="brand-logo" onClick={() => navigate('/')}>
@@ -338,7 +346,6 @@ const GetEnrollment = () => {
         </div>
       </nav>
 
-      {/* SECONDARY ACTION BAR (SUB-NAV) */}
       <div className="sm-sub-nav-bar">
         <div className="sub-nav-container">
             <div className="nav-action-btns">
@@ -357,7 +364,6 @@ const GetEnrollment = () => {
         </div>
       </div>
 
-      {/* MOBILE SEARCH BAR - REAL TIME FOR SKILLSMIND */}
       <AnimatePresence>
         {isSearchOpen && (
           <motion.div 
@@ -391,7 +397,6 @@ const GetEnrollment = () => {
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
           >
-            {/* HERO WELCOME SECTION */}
             <header className="enrolment-welcome-hero-container">
               <motion.div 
                 initial={{ x: -300, opacity: 0 }} 
@@ -453,7 +458,6 @@ const GetEnrollment = () => {
             className="sm-course-detail-page"
           >
             
-            {/* Mode Selection Modal Overlay */}
             <AnimatePresence>
               {showModeSelection && (
                 <div className="sm-pro-overlay" onClick={() => setShowModeSelection(false)}>
@@ -476,7 +480,6 @@ const GetEnrollment = () => {
 
                       <div className="sm-pro-options-grid">
                         
-                        {/* LIVE CARD */}
                         <div className="sm-pro-card live" 
                              onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
                                  state: { 
@@ -498,7 +501,6 @@ const GetEnrollment = () => {
                           <div className="sm-pro-action"><FaChevronRight /></div>
                         </div>
 
-                        {/* RECORDED CARD */}
                         <div className="sm-pro-card recorded" 
                              onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
                                  state: { 
@@ -527,7 +529,6 @@ const GetEnrollment = () => {
               )}
             </AnimatePresence>
 
-            {/* UPGRADED: COMPRESSED BANNER */}
             <div className="course-detail-banner-compressed" style={{ backgroundImage: `url(${getImageUrl(selectedCourse.thumbnail)})` }}>
                 <div className="banner-overlay"></div>
                 <div className="sm-content-wrapper-fixed banner-flex">
@@ -543,19 +544,16 @@ const GetEnrollment = () => {
                 </div>
             </div>
 
-            {/* UPGRADED: Main Details Grid with OVERLAP */}
             <div className="sm-content-wrapper-fixed detail-grid-v2 overlap-container">
                 
-                {/* Left Side Content Stack */}
                 <div className="left-stack-v2">
                     
-                    {/* UPGRADED: Professional Instructor Card - REAL FETCHED DATA */}
                     <div className="card-v2 instructor-profile-v2 detail-card-sharp">
                         <div className="ins-head-v2">
                             <img 
                               src={getImageUrl(selectedCourse.instructor?.profilePic)} 
                               alt="Mentor" 
-                              onError={(e)=>e.target.src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png "}
+                              onError={(e)=>e.target.src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
                             />
                             <div className="ins-meta-v2">
                                 <span className="expert-tag">Official SkillsMind Instructor</span>
@@ -568,7 +566,6 @@ const GetEnrollment = () => {
                         </div>
                     </div>
 
-                    {/* Preview Video Player Card */}
                     <div className="card-v2 video-card-v2 detail-card-sharp">
                         <h4 className="card-title-v2"><FaPlayCircle color="#dc2626"/> Course Preview</h4>
                         <div className="player-wrapper-v2">
@@ -587,7 +584,6 @@ const GetEnrollment = () => {
                         </div>
                     </div>
 
-                    {/* Learning Outcomes Card */}
                     <div className="card-v2 outcomes-card-v2 detail-card-sharp">
                       <h4 className="card-title-v2"><FaLightbulb color="#fbbf24"/> What you will learn</h4>
                       <div className="outcomes-list-v2">
@@ -599,7 +595,6 @@ const GetEnrollment = () => {
                       </div>
                     </div>
 
-                    {/* Why This Course Section */}
                     <div className="card-v2 why-join-v2 detail-card-sharp">
                         <h4 className="card-title-v2"><FaBullseye color="#dc2626"/> Why SkillsMind?</h4>
                         <div className="why-grid-v2">
@@ -611,7 +606,6 @@ const GetEnrollment = () => {
                     </div>
                 </div>
 
-                {/* Right Side Sticky Sidebar */}
                 <div className="right-stack-v2">
                     <div className="sticky-enroll-v2 detail-card-sharp">
                         <div className="side-preview-v2">
@@ -631,7 +625,6 @@ const GetEnrollment = () => {
                         </div>
                     </div>
 
-                    {/* Compact Overview Card */}
                     <div className="card-v2 overview-v2 detail-card-sharp">
                          <h4 className="card-title-v2"><FaBook color="#dc2626"/> Summary</h4>
                          <div className="quick-grid-v2">
@@ -641,7 +634,6 @@ const GetEnrollment = () => {
                          <p className="overview-text-v2">{selectedCourse.description}</p>
                     </div>
 
-                    {/* Compact Curriculum Accordion */}
                     <div className="card-v2 syllabus-v2 detail-card-sharp">
                          <div className="syl-header-v2">
                             <h4 className="card-title-v2">Curriculum</h4>
@@ -680,7 +672,6 @@ const GetEnrollment = () => {
                 </div>
             </div>
 
-            {/* Mobile View Sticky Action Bar */}
             <div className="mobile-sticky-action-bar">
               <div className="m-price-box">
                 <span className="m-price">Rs. {selectedCourse.price}</span>
@@ -694,7 +685,6 @@ const GetEnrollment = () => {
 
       <WelcomeNotice studentName={displayFirstName} />
 
-      {/* Profile Sidebar Panel */}
       <AnimatePresence>
         {showProfileSidebar && (
           <>
@@ -788,23 +778,21 @@ const GetEnrollment = () => {
         .sm-enroll-root { background: #f8fafc; min-height: 100vh; font-family: 'Inter', sans-serif; }
         .sm-content-wrapper-fixed { max-width: 1150px; margin: 0 auto; padding: 0 20px; width: 100%; }
         
-        /* FIX: White Text Visibility in Card Meta & Profile */
         .card-meta-v6 span {
-          color: #475569 !important; /* Dark Grey color for duration and level */
+          color: #475569 !important;
           font-weight: 600;
         }
         
         .student-name-box .s-tag {
-          color: #64748b !important; /* Visible color for member tag in navbar */
+          color: #64748b !important;
           font-size: 11px;
         }
 
         .sm-p-user-info .sm-p-badge {
-          color: #dc2626 !important; /* SkillsMind Red color for sidebar badge */
+          color: #dc2626 !important;
           font-weight: 700;
         }
 
-        /* UPGRADED: COMPRESSED BANNER & OVERLAP */
         .course-detail-banner-compressed { 
           height: 240px; 
           position: relative; 
@@ -821,7 +809,6 @@ const GetEnrollment = () => {
         .banner-flex h1 { font-size: 32px; font-weight: 900; margin: 10px 0; }
         .banner-meta-row { display: flex; gap: 20px; font-size: 14px; }
 
-        /* UPGRADED: SHARP UNIQUE CARD DESIGN */
         .card-v2 { 
           background: #fff; 
           border-radius: 4px; 
@@ -841,7 +828,6 @@ const GetEnrollment = () => {
 
         .card-title-v2 { font-size: 18px; font-weight: 800; color: var(--sm-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
 
-        /* Instructor Profiles */
         .ins-head-v2 { display: flex; gap: 20px; align-items: center; margin-bottom: 15px; }
         .ins-head-v2 img { width: 70px; height: 70px; border-radius: 4px; object-fit: cover; }
         .expert-tag { color: var(--sm-red-brand); font-size: 10px; font-weight: 800; text-transform: uppercase; }
@@ -849,20 +835,16 @@ const GetEnrollment = () => {
         .ins-meta-v2 p { color: #64748b; font-size: 13px; }
         .ins-bio-v2 p { font-size: 14px; color: #475569; line-height: 1.6; }
 
-        /* Video Player */
         .player-wrapper-v2 video { width: 100%; border-radius: 4px; }
         .no-preview-v2 { background: #f1f5f9; height: 200px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; }
 
-        /* Outcomes */
         .outcomes-list-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .outcome-item-v2 { display: flex; align-items: center; gap: 10px; font-size: 13px; background: #f8fafc; padding: 10px; border-radius: 4px; }
         .outcome-item-v2 svg { color: #10b981; flex-shrink: 0; }
 
-        /* Why Join */
         .why-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .why-item-v2 { background: #f8fafc; padding: 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; }
 
-        /* Sidebar Enroll Box */
         .sticky-enroll-v2 { background: #fff; padding: 20px; position: sticky; top: 100px; }
         .side-preview-v2 img { width: 100%; border-radius: 4px; margin-bottom: 15px; }
         .price-tag-v2 { margin-bottom: 20px; }
@@ -872,18 +854,15 @@ const GetEnrollment = () => {
         .enroll-btn-v2:hover { background: var(--sm-red-brand); }
         .perks-v2 { display: flex; justify-content: space-between; margin-top: 15px; font-size: 9px; color: #64748b; }
 
-        /* Compact Overview */
         .quick-grid-v2 { display: flex; gap: 10px; margin-bottom: 15px; }
         .q-item-v2 { background: #f1f5f9; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; }
 
-        /* Compact Syllabus */
         .syl-header-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .syl-dl-btn-v2 { border: none; background: #f1f5f9; padding: 8px; border-radius: 4px; cursor: pointer; }
         .accordion-item-v2 { border: 1px solid #f1f5f9; margin-bottom: 5px; border-radius: 4px; }
         .accordion-head-v2 { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
         .accordion-body-v2 { padding: 15px; background: #fcfcfc; border-top: 1px solid #f1f5f9; }
 
-        /* Layout Grid */
         .detail-grid-v2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
 
         @media (max-width: 950px) {
@@ -891,11 +870,11 @@ const GetEnrollment = () => {
             .overlap-container { margin-top: 0; }
             .course-detail-banner-compressed { height: 200px; }
         }
-            /* COMPRESSED SHARP SEARCH BAR FOR SKILLSMIND */
+
         .mobile-search-overlay-sm {
           background: rgba(255, 255, 255, 0.98); 
           backdrop-filter: blur(10px);
-          padding: 8px 15px; /* Height kam karne ke liye padding mazeed kam kar di */
+          padding: 8px 15px;
           width: 100%;
           position: sticky;
           top: 0;
@@ -908,9 +887,9 @@ const GetEnrollment = () => {
           display: flex;
           align-items: center;
           background: #f8fafc;
-          height: 40px; /* Fixed height for compressed look */
+          height: 40px;
           padding: 0 15px;
-          border-radius: 6px; /* Sleek sharp edges */
+          border-radius: 6px;
           gap: 12px;
           border: 1px solid #e2e8f0;
           transition: all 0.2s ease;
@@ -927,7 +906,7 @@ const GetEnrollment = () => {
           background: transparent;
           width: 100%;
           outline: none;
-          font-size: 14px; /* Text thora chota kiya compress look ke liye */
+          font-size: 14px;
           font-weight: 500;
           color: var(--sm-dark);
         }
