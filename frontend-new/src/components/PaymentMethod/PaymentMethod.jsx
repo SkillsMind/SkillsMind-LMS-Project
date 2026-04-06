@@ -124,9 +124,9 @@ const PaymentMethod = () => {
         localStorage.setItem('studentEmail', formData.studentEmail);
 
         try {
-            const response = await axios.post('${import.meta.env.VITE_API_URL}/api/payments/submit-payment', data, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/payments/submit-payment`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+});
 
             if (response.data.success) {
                 Swal.fire({
