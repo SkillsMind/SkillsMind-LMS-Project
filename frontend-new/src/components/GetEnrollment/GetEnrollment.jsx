@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { API_URL } from '../config';
+import { API_URL } from '../../config';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaClock, FaSignal, FaUserTie, FaTimes, FaUserGraduate,
