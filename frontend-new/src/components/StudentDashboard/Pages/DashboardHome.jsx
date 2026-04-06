@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import './DashboardHome.css';
 
-const API_URL = '${import.meta.env.VITE_API_URL}/api';
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 const DashboardHome = ({ onNavigate, showBackButton }) => {
   const [data, setData] = useState(null);
