@@ -135,7 +135,7 @@ const Assignments = ({ onNavigate }) => {
 
   const studentId = getUserId();
   const token = getToken();
-  const API_BASE = '${import.meta.env.VITE_API_URL}/api';
+  const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
 
   // Load notifications from localStorage on mount
   useEffect(() => {
@@ -345,7 +345,7 @@ const Assignments = ({ onNavigate }) => {
 
   const setupSocketConnection = () => {
     try {
-      const newSocket = io('${import.meta.env.VITE_API_URL}', {
+      const newSocket = io(`${import.meta.env.VITE_API_URL}`, {
         transports: ['websocket', 'polling'],
         timeout: 10000,
         reconnection: true,
