@@ -25,7 +25,8 @@ const ImportantLinks = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/important-links', {
+      // ✅ FIXED: Backticks use kiye
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/important-links`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -39,33 +40,27 @@ const ImportantLinks = () => {
     }
   };
 
-  // ✅ FIXED: Proper courses fetch using your existing endpoint
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('token');
       
-      // ✅ Use the correct endpoint that returns all courses
-      const res = await axios.get('${import.meta.env.VITE_API_URL}/api/courses/', {
+      // ✅ FIXED: Backticks use kiye
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/courses/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Raw courses response:', res.data); // Debug log
+      console.log('Raw courses response:', res.data);
       
-      // Handle different response formats
       let coursesData = [];
       
       if (Array.isArray(res.data)) {
-        // Direct array response
         coursesData = res.data;
       } else if (res.data?.data && Array.isArray(res.data.data)) {
-        // { data: [...] } format
         coursesData = res.data.data;
       } else if (res.data?.courses && Array.isArray(res.data.courses)) {
-        // { courses: [...] } format
         coursesData = res.data.courses;
       }
       
-      // Map courses to ensure they have required fields
       const formattedCourses = coursesData.map(course => ({
         _id: course._id,
         name: course.title || course.name || 'Unnamed Course',
@@ -92,10 +87,11 @@ const ImportantLinks = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
+      // ✅ FIXED: Backticks use kiye
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/important-links/${editingId}`, formData, config);
       } else {
-        await axios.post('${import.meta.env.VITE_API_URL}/api/important-links', formData, config);
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/important-links`, formData, config);
       }
       fetchLinks();
       resetForm();
@@ -133,6 +129,7 @@ const ImportantLinks = () => {
     if (window.confirm('Are you sure you want to delete this link?')) {
       try {
         const token = localStorage.getItem('token');
+        // ✅ FIXED: Backticks use kiye
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/important-links/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
