@@ -39,42 +39,20 @@ const MyLearning = () => {
 
     if (loading) {
         return (
-            <div style={{ textAlign: 'center', padding: '100px', background: '#fff', height: '100vh' }}>
-                <div style={{ 
-                    border: '4px solid #f3f3f3', 
-                    borderTop: '4px solid #000B29', 
-                    borderRadius: '50%', 
-                    width: '50px', 
-                    height: '50px', 
-                    animation: 'spin 1s linear infinite', 
-                    margin: 'auto' 
-                }}></div>
-                <h2 style={{ color: '#000B29', marginTop: '20px', fontWeight: '600' }}>
-                    Accessing SkillsMind Portal...
-                </h2>
+            <div className="mylearning-loading">
+                <div className="mylearning-spinner"></div>
+                <h2>Accessing SkillsMind Portal...</h2>
             </div>
         );
     }
 
     if (error || !paymentData) {
         return (
-            <div style={{ textAlign: 'center', padding: '100px', background: '#fff', height: '100vh' }}>
+            <div className="mylearning-error">
                 <FaLock size={60} color="#64748b" />
-                <h2 style={{ marginTop: '20px', color: '#000B29' }}>Access Restricted</h2>
-                <p style={{ color: '#64748b' }}>{error}</p>
-                <button 
-                    onClick={() => navigate('/courses')} 
-                    style={{ 
-                        marginTop: '20px', 
-                        padding: '12px 30px', 
-                        background: '#000B29', 
-                        color: 'white', 
-                        border: 'none', 
-                        borderRadius: '10px', 
-                        cursor: 'pointer', 
-                        fontWeight: 'bold' 
-                    }}
-                >
+                <h2>Access Restricted</h2>
+                <p>{error}</p>
+                <button className="mylearning-btn-browse" onClick={() => navigate('/courses')}>
                     Browse Courses
                 </button>
             </div>
@@ -86,76 +64,28 @@ const MyLearning = () => {
     const isRejected = currentStatus === 'rejected';
 
     return (
-        <div style={{ background: '#fff', minHeight: '100vh', padding: '40px 20px' }}>
-            <div style={{ maxWidth: '1100px', margin: 'auto', fontFamily: "'Segoe UI', Roboto, sans-serif" }}>
+        <div className="mylearning-container">
+            <div className="mylearning-inner">
                 
-                <header style={{ marginBottom: '40px' }}>
-                    <h1 style={{ color: '#000B29', fontSize: '32px', marginBottom: '10px' }}>
-                        Student Dashboard
-                    </h1>
-                    <p style={{ color: '#64748b', fontSize: '16px' }}>
-                        Welcome back, <b style={{ color: '#000B29' }}>{paymentData.studentName}</b>
-                    </p>
+                {/* Header */}
+                <header className="mylearning-header">
+                    <h1>Student Dashboard</h1>
+                    <p>Welcome back, <strong>{paymentData.studentName}</strong></p>
                 </header>
 
                 {/* REJECTED STATE */}
                 {isRejected && (
-                    <div style={{ 
-                        background: '#fff', 
-                        padding: '60px 40px', 
-                        borderRadius: '24px', 
-                        boxShadow: '0 20px 40px rgba(239, 68, 68, 0.1)', 
-                        border: '1px solid #fee2e2', 
-                        textAlign: 'center' 
-                    }}>
-                        <div style={{ 
-                            background: '#fef2f2', 
-                            width: '90px', 
-                            height: '90px', 
-                            borderRadius: '50%', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            margin: '0 auto 25px' 
-                        }}>
+                    <div className="mylearning-card mylearning-card-rejected">
+                        <div className="mylearning-icon-circle mylearning-icon-rejected">
                             <FaExclamationTriangle size={45} color="#ef4444" />
                         </div>
-                        <h2 style={{ color: '#000B29', fontSize: '28px' }}>
-                            Payment Verification Failed
-                        </h2>
-                        <p style={{ color: '#64748b', maxWidth: '600px', margin: '15px auto 30px', lineHeight: '1.8' }}>
-                            We couldn't verify the payment for <b>{paymentData.courseName}</b>.
-                        </p>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
-                            <button 
-                                onClick={() => navigate('/contact')} 
-                                style={{ 
-                                    padding: '15px 35px', 
-                                    background: '#ef4444', 
-                                    color: 'white', 
-                                    border: 'none', 
-                                    borderRadius: '12px', 
-                                    cursor: 'pointer', 
-                                    fontWeight: 'bold', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '10px' 
-                                }}
-                            >
+                        <h2>Payment Verification Failed</h2>
+                        <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
+                        <div className="mylearning-btn-group">
+                            <button className="mylearning-btn-contact" onClick={() => navigate('/contact')}>
                                 <FaHeadset /> Contact Support
                             </button>
-                            <button 
-                                onClick={() => navigate('/get-enrolment')} 
-                                style={{ 
-                                    padding: '15px 35px', 
-                                    background: 'white', 
-                                    color: '#ef4444', 
-                                    border: '2px solid #ef4444', 
-                                    borderRadius: '12px', 
-                                    cursor: 'pointer', 
-                                    fontWeight: 'bold' 
-                                }}
-                            >
+                            <button className="mylearning-btn-resubmit" onClick={() => navigate('/get-enrolment')}>
                                 Re-submit Payment
                             </button>
                         </div>
@@ -164,180 +94,47 @@ const MyLearning = () => {
 
                 {/* PENDING STATE */}
                 {!isApproved && !isRejected && (
-                    <div style={{ 
-                        background: '#fff', 
-                        padding: '60px 40px', 
-                        borderRadius: '24px', 
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.05)', 
-                        border: '1px solid #e2e8f0', 
-                        textAlign: 'center' 
-                    }}>
-                        <div style={{ 
-                            background: '#fff9db', 
-                            width: '90px', 
-                            height: '90px', 
-                            borderRadius: '50%', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            margin: '0 auto 25px' 
-                        }}>
+                    <div className="mylearning-card mylearning-card-pending">
+                        <div className="mylearning-icon-circle mylearning-icon-pending">
                             <FaClock size={45} color="#fab005" />
                         </div>
-                        <h2 style={{ color: '#000B29', fontSize: '28px' }}>
-                            Verification in Progress
-                        </h2>
-                        <p style={{ color: '#64748b', maxWidth: '600px', margin: '15px auto 30px', lineHeight: '1.8' }}>
-                            Our team is currently reviewing your payment for <b>{paymentData.courseName}</b>.
-                        </p>
-                        <div style={{ 
-                            display: 'inline-block', 
-                            padding: '10px 20px', 
-                            background: '#f8fafc', 
-                            borderRadius: '30px', 
-                            color: '#64748b', 
-                            fontSize: '14px', 
-                            border: '1px solid #e2e8f0' 
-                        }}>
-                           ⏳ Expected Time: 2 - 4 Business Hours
+                        <h2>Verification in Progress</h2>
+                        <p>Our team is currently reviewing your payment for <strong>{paymentData.courseName}</strong>.</p>
+                        <div className="mylearning-eta">
+                            ⏳ Expected Time: 2 - 4 Business Hours
                         </div>
                     </div>
                 )}
 
-                {/* APPROVED STATE - YAHAN SE NEW DASHBOARD KHULEGA */}
+                {/* APPROVED STATE */}
                 {isApproved && (
-                    <div style={{ animation: 'fadeIn 0.5s ease' }}>
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '12px', 
-                            marginBottom: '25px', 
-                            color: '#22c55e' 
-                        }}>
+                    <div className="mylearning-approved">
+                        <div className="mylearning-approved-header">
                             <FaCheckCircle size={28} />
-                            <h2 style={{ margin: 0, fontWeight: '700' }}>
-                                Course Active & Verified
-                            </h2>
+                            <h2>Course Active & Verified</h2>
                         </div>
 
-                        <div style={{ 
-                            background: '#fff', 
-                            borderRadius: '24px', 
-                            overflow: 'hidden', 
-                            display: 'flex', 
-                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', 
-                            border: '1px solid #e2e8f0', 
-                            minHeight: '380px' 
-                        }}>
+                        <div className="mylearning-approved-card">
                             {/* Left Banner */}
-                            <div style={{ 
-                                width: '320px', 
-                                background: '#000B29', 
-                                color: 'white', 
-                                padding: '40px', 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                justifyContent: 'center', 
-                                alignItems: 'center', 
-                                textAlign: 'center' 
-                            }}>
-                                <div style={{ 
-                                    background: 'rgba(34, 197, 94, 0.15)', 
-                                    padding: '25px', 
-                                    borderRadius: '50%', 
-                                    marginBottom: '20px' 
-                                }}>
+                            <div className="mylearning-banner">
+                                <div className="mylearning-banner-icon">
                                     <FaVideo size={50} color="#22c55e" />
                                 </div>
-                                <h3 style={{ fontSize: '20px', marginBottom: '10px' }}>
-                                    Live Class Ready
-                                </h3>
-                                <p style={{ fontSize: '14px', color: '#94a3b8' }}>
-                                    Welcome to SkillsMind. Your premium access is now active.
-                                </p>
+                                <h3>Live Class Ready</h3>
+                                <p>Welcome to SkillsMind. Your premium access is now active.</p>
                             </div>
 
                             {/* Right Content */}
-                            <div style={{ 
-                                padding: '50px', 
-                                flex: 1, 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                justifyContent: 'center' 
-                            }}>
-                                <div style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '10px', 
-                                    marginBottom: '15px' 
-                                }}>
-                                    <span style={{ 
-                                        background: '#dcfce7', 
-                                        color: '#16a34a', 
-                                        padding: '6px 16px', 
-                                        borderRadius: '30px', 
-                                        fontSize: '12px', 
-                                        fontWeight: '800', 
-                                        letterSpacing: '0.5px' 
-                                    }}>
-                                        PREMIUM ENROLLMENT
-                                    </span>
-                                </div>
-                                <h2 style={{ 
-                                    fontSize: '36px', 
-                                    color: '#000B29', 
-                                    margin: '0 0 15px 0' 
-                                }}>
-                                    {paymentData.courseName}
-                                </h2>
-                                <p style={{ 
-                                    color: '#64748b', 
-                                    fontSize: '17px', 
-                                    lineHeight: '1.7', 
-                                    marginBottom: '35px' 
-                                }}>
-                                    Your enrollment is successful. You now have full access to live 
-                                    interactive sessions, mentor support, and all exclusive learning resources.
-                                </p>
+                            <div className="mylearning-content">
+                                <div className="mylearning-badge">PREMIUM ENROLLMENT</div>
+                                <h2>{paymentData.courseName}</h2>
+                                <p>Your enrollment is successful. You now have full access to live interactive sessions, mentor support, and all exclusive learning resources.</p>
                                 
-                                <div style={{ display: 'flex', gap: '20px' }}>
-                                    {/* 🎯 YEH BUTTON AB NEW DASHBOARD PE LE JAYEGA */}
-                                    <button 
-                                        onClick={() => navigate('/student-dashboard')}
-                                        style={{ 
-                                            background: '#22c55e', 
-                                            color: 'white', 
-                                            padding: '18px 40px', 
-                                            border: 'none', 
-                                            borderRadius: '15px', 
-                                            fontWeight: 'bold', 
-                                            cursor: 'pointer', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            gap: '12px', 
-                                            fontSize: '16px', 
-                                            boxShadow: '0 10px 20px rgba(34, 197, 94, 0.2)',
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                    >
+                                <div className="mylearning-action-buttons">
+                                    <button className="mylearning-btn-start" onClick={() => navigate('/student-dashboard')}>
                                         <FaPlayCircle size={20} /> Start Live Learning
                                     </button>
-                                    
-                                    <button 
-                                        style={{ 
-                                            background: 'white', 
-                                            color: '#000B29', 
-                                            padding: '18px 30px', 
-                                            border: '2px solid #e2e8f0', 
-                                            borderRadius: '15px', 
-                                            fontWeight: 'bold', 
-                                            cursor: 'pointer', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            gap: '10px', 
-                                            fontSize: '16px' 
-                                        }}
-                                    >
+                                    <button className="mylearning-btn-resources">
                                         <FaFileDownload /> Resources
                                     </button>
                                 </div>
@@ -346,10 +143,545 @@ const MyLearning = () => {
                     </div>
                 )}
             </div>
-            
+
+            {/* CSS Styles */}
             <style>{`
-                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                /* ============================================
+                   MYLEARNING - FULLY RESPONSIVE
+                ============================================ */
+                
+                .mylearning-loading {
+                    text-align: center;
+                    padding: 100px 20px;
+                    background: #fff;
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .mylearning-spinner {
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #000B29;
+                    border-radius: 50%;
+                    width: 50px;
+                    height: 50px;
+                    animation: mylearning-spin 1s linear infinite;
+                    margin-bottom: 20px;
+                }
+                
+                @keyframes mylearning-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                .mylearning-loading h2 {
+                    color: #000B29;
+                    font-size: 20px;
+                    font-weight: 600;
+                }
+                
+                /* Error State */
+                .mylearning-error {
+                    text-align: center;
+                    padding: 100px 20px;
+                    background: #fff;
+                    min-height: 100vh;
+                }
+                
+                .mylearning-error h2 {
+                    margin-top: 20px;
+                    color: #000B29;
+                    font-size: 24px;
+                }
+                
+                .mylearning-error p {
+                    color: #64748b;
+                    margin: 10px 0;
+                }
+                
+                .mylearning-btn-browse {
+                    margin-top: 20px;
+                    padding: 12px 30px;
+                    background: #000B29;
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    transition: all 0.3s ease;
+                }
+                
+                .mylearning-btn-browse:hover {
+                    background: #E30613;
+                    transform: translateY(-2px);
+                }
+                
+                /* Main Container */
+                .mylearning-container {
+                    background: #fff;
+                    min-height: 100vh;
+                    padding: 40px 20px;
+                }
+                
+                .mylearning-inner {
+                    max-width: 1100px;
+                    margin: 0 auto;
+                    font-family: 'Segoe UI', Roboto, sans-serif;
+                }
+                
+                /* Header */
+                .mylearning-header {
+                    margin-bottom: 40px;
+                    text-align: left;
+                }
+                
+                .mylearning-header h1 {
+                    color: #000B29;
+                    font-size: 32px;
+                    margin-bottom: 10px;
+                }
+                
+                .mylearning-header p {
+                    color: #64748b;
+                    font-size: 16px;
+                }
+                
+                .mylearning-header strong {
+                    color: #000B29;
+                }
+                
+                /* Common Card Styles */
+                .mylearning-card {
+                    background: #fff;
+                    padding: 40px 30px;
+                    border-radius: 24px;
+                    text-align: center;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+                }
+                
+                .mylearning-card-rejected {
+                    box-shadow: 0 20px 40px rgba(239, 68, 68, 0.1);
+                    border: 1px solid #fee2e2;
+                }
+                
+                .mylearning-card-pending {
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+                    border: 1px solid #e2e8f0;
+                }
+                
+                .mylearning-icon-circle {
+                    width: 90px;
+                    height: 90px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 25px;
+                }
+                
+                .mylearning-icon-rejected {
+                    background: #fef2f2;
+                }
+                
+                .mylearning-icon-pending {
+                    background: #fff9db;
+                }
+                
+                .mylearning-card h2 {
+                    color: #000B29;
+                    font-size: 28px;
+                    margin-bottom: 15px;
+                }
+                
+                .mylearning-card p {
+                    color: #64748b;
+                    max-width: 600px;
+                    margin: 0 auto 30px;
+                    line-height: 1.8;
+                }
+                
+                .mylearning-btn-group {
+                    display: flex;
+                    justify-content: center;
+                    gap: 20px;
+                    flex-wrap: wrap;
+                }
+                
+                .mylearning-btn-contact {
+                    padding: 15px 35px;
+                    background: #ef4444;
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    transition: all 0.3s ease;
+                }
+                
+                .mylearning-btn-contact:hover {
+                    background: #dc2626;
+                    transform: translateY(-2px);
+                }
+                
+                .mylearning-btn-resubmit {
+                    padding: 15px 35px;
+                    background: white;
+                    color: #ef4444;
+                    border: 2px solid #ef4444;
+                    border-radius: 12px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    transition: all 0.3s ease;
+                }
+                
+                .mylearning-btn-resubmit:hover {
+                    background: #fef2f2;
+                    transform: translateY(-2px);
+                }
+                
+                .mylearning-eta {
+                    display: inline-block;
+                    padding: 10px 20px;
+                    background: #f8fafc;
+                    border-radius: 30px;
+                    color: #64748b;
+                    font-size: 14px;
+                    border: 1px solid #e2e8f0;
+                }
+                
+                /* Approved State */
+                .mylearning-approved {
+                    animation: fadeIn 0.5s ease;
+                }
+                
+                .mylearning-approved-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    margin-bottom: 25px;
+                    color: #22c55e;
+                }
+                
+                .mylearning-approved-header h2 {
+                    margin: 0;
+                    font-weight: 700;
+                    font-size: 24px;
+                }
+                
+                .mylearning-approved-card {
+                    background: #fff;
+                    border-radius: 24px;
+                    overflow: hidden;
+                    display: flex;
+                    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
+                    border: 1px solid #e2e8f0;
+                    min-height: 380px;
+                }
+                
+                .mylearning-banner {
+                    width: 320px;
+                    background: #000B29;
+                    color: white;
+                    padding: 40px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                }
+                
+                .mylearning-banner-icon {
+                    background: rgba(34, 197, 94, 0.15);
+                    padding: 25px;
+                    border-radius: 50%;
+                    margin-bottom: 20px;
+                }
+                
+                .mylearning-banner h3 {
+                    font-size: 20px;
+                    margin-bottom: 10px;
+                }
+                
+                .mylearning-banner p {
+                    font-size: 14px;
+                    color: #94a3b8;
+                }
+                
+                .mylearning-content {
+                    padding: 50px;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }
+                
+                .mylearning-badge {
+                    background: #dcfce7;
+                    color: #16a34a;
+                    padding: 6px 16px;
+                    border-radius: 30px;
+                    font-size: 12px;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                    display: inline-block;
+                    width: fit-content;
+                    margin-bottom: 15px;
+                }
+                
+                .mylearning-content h2 {
+                    font-size: 32px;
+                    color: #000B29;
+                    margin: 0 0 15px 0;
+                }
+                
+                .mylearning-content p {
+                    color: #64748b;
+                    font-size: 17px;
+                    line-height: 1.7;
+                    margin-bottom: 35px;
+                }
+                
+                .mylearning-action-buttons {
+                    display: flex;
+                    gap: 20px;
+                    flex-wrap: wrap;
+                }
+                
+                .mylearning-btn-start {
+                    background: #22c55e;
+                    color: white;
+                    padding: 14px 35px;
+                    border: none;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-size: 16px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2);
+                }
+                
+                .mylearning-btn-start:hover {
+                    background: #16a34a;
+                    transform: translateY(-2px);
+                    box-shadow: 0 15px 25px rgba(34, 197, 94, 0.3);
+                }
+                
+                .mylearning-btn-resources {
+                    background: white;
+                    color: #000B29;
+                    padding: 14px 30px;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 16px;
+                    transition: all 0.3s ease;
+                }
+                
+                .mylearning-btn-resources:hover {
+                    border-color: #000B29;
+                    transform: translateY(-2px);
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                /* ============================================
+                   RESPONSIVE BREAKPOINTS
+                ============================================ */
+                
+                /* Tablet (768px - 1024px) */
+                @media (max-width: 1024px) {
+                    .mylearning-approved-card {
+                        flex-direction: column;
+                    }
+                    
+                    .mylearning-banner {
+                        width: 100%;
+                        flex-direction: row;
+                        padding: 30px;
+                        gap: 30px;
+                    }
+                    
+                    .mylearning-banner-icon {
+                        margin-bottom: 0;
+                        padding: 20px;
+                    }
+                    
+                    .mylearning-banner h3 {
+                        font-size: 18px;
+                    }
+                    
+                    .mylearning-banner p {
+                        font-size: 13px;
+                    }
+                    
+                    .mylearning-content {
+                        padding: 40px;
+                    }
+                }
+                
+                /* Mobile (481px - 768px) */
+                @media (max-width: 768px) {
+                    .mylearning-container {
+                        padding: 30px 16px;
+                    }
+                    
+                    .mylearning-header h1 {
+                        font-size: 28px;
+                    }
+                    
+                    .mylearning-header p {
+                        font-size: 14px;
+                    }
+                    
+                    .mylearning-card {
+                        padding: 30px 20px;
+                    }
+                    
+                    .mylearning-card h2 {
+                        font-size: 24px;
+                    }
+                    
+                    .mylearning-card p {
+                        font-size: 14px;
+                    }
+                    
+                    .mylearning-btn-group {
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    
+                    .mylearning-btn-contact,
+                    .mylearning-btn-resubmit {
+                        width: 100%;
+                        justify-content: center;
+                    }
+                    
+                    .mylearning-approved-header h2 {
+                        font-size: 20px;
+                    }
+                    
+                    .mylearning-banner {
+                        flex-direction: column;
+                        text-align: center;
+                        padding: 30px 20px;
+                    }
+                    
+                    .mylearning-banner-icon {
+                        margin-bottom: 15px;
+                    }
+                    
+                    .mylearning-content {
+                        padding: 30px 20px;
+                        text-align: center;
+                    }
+                    
+                    .mylearning-badge {
+                        margin: 0 auto 15px;
+                    }
+                    
+                    .mylearning-content h2 {
+                        font-size: 24px;
+                    }
+                    
+                    .mylearning-content p {
+                        font-size: 15px;
+                    }
+                    
+                    .mylearning-action-buttons {
+                        justify-content: center;
+                    }
+                    
+                    .mylearning-btn-start,
+                    .mylearning-btn-resources {
+                        padding: 12px 25px;
+                        font-size: 14px;
+                    }
+                }
+                
+                /* Small Mobile (up to 480px) */
+                @media (max-width: 480px) {
+                    .mylearning-container {
+                        padding: 20px 12px;
+                    }
+                    
+                    .mylearning-header h1 {
+                        font-size: 24px;
+                    }
+                    
+                    .mylearning-card {
+                        padding: 25px 15px;
+                    }
+                    
+                    .mylearning-card h2 {
+                        font-size: 20px;
+                    }
+                    
+                    .mylearning-icon-circle {
+                        width: 70px;
+                        height: 70px;
+                    }
+                    
+                    .mylearning-icon-circle svg {
+                        width: 35px !important;
+                        height: 35px !important;
+                    }
+                    
+                    .mylearning-eta {
+                        font-size: 12px;
+                        padding: 8px 16px;
+                    }
+                    
+                    .mylearning-banner {
+                        padding: 25px 15px;
+                    }
+                    
+                    .mylearning-banner-icon {
+                        padding: 15px;
+                    }
+                    
+                    .mylearning-banner-icon svg {
+                        width: 35px !important;
+                        height: 35px !important;
+                    }
+                    
+                    .mylearning-banner h3 {
+                        font-size: 16px;
+                    }
+                    
+                    .mylearning-content {
+                        padding: 25px 15px;
+                    }
+                    
+                    .mylearning-content h2 {
+                        font-size: 20px;
+                    }
+                    
+                    .mylearning-action-buttons {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+                    
+                    .mylearning-btn-start,
+                    .mylearning-btn-resources {
+                        justify-content: center;
+                        width: 100%;
+                    }
+                }
             `}</style>
         </div>
     );
