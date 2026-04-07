@@ -36,7 +36,7 @@ const NoticesPage = ({ onBack }) => {
   const fetchNotices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/notices/student/my-notices`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/notices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
