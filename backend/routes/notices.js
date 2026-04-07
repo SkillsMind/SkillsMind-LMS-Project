@@ -24,7 +24,7 @@ router.get('/courses', auth, async (req, res) => {
       });
     }
 
-    // ✅ FIXED: isHide: false matlab course active hai (tumhare model mein isActive nahi hai)
+    // ✅ FIXED: isHide: false matlab course active hai
     const courses = await Course.find({ isHide: false })
       .select('_id title code name instructor category')
       .sort({ title: 1 });
@@ -104,7 +104,8 @@ router.post('/', auth, async (req, res) => {
       type: type || 'General',
       audience: audience || 'all',
       priority: priority || 0,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      isActive: true
     };
 
     // Handle course assignment
@@ -289,9 +290,6 @@ router.get('/student/my-notices', auth, async (req, res) => {
 
     const user = await User.findById(studentId).select('enrolledCourses email');
     
-    console.log('User found:', user ? 'YES' : 'NO');
-    console.log('User enrolledCourses:', user?.enrolledCourses);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -302,44 +300,48 @@ router.get('/student/my-notices', auth, async (req, res) => {
     const enrolledCourseIds = user.enrolledCourses?.map(id => id.toString()) || [];
     console.log('Enrolled course IDs:', enrolledCourseIds);
 
+    // ✅ FIXED: Simplified query without expiry date complexity
     let query = {
-      isActive: true,
-      $or: [
-        { course: null, targetCourses: { $size: 0 } }
-      ]
+      isActive: true
     };
 
+    // Build the course filter conditions
+    let courseConditions = [
+      { course: null, targetCourses: { $size: 0 } } // General notices
+    ];
+
     if (enrolledCourseIds.length > 0) {
-      query.$or.push(
-        { course: { $in: enrolledCourseIds } },
-        { targetCourses: { $in: enrolledCourseIds } }
+      courseConditions.push(
+        { course: { $in: enrolledCourseIds } }, // Specific course
+        { targetCourses: { $in: enrolledCourseIds } } // Multiple courses
       );
     }
 
-    const finalQuery = {
-      ...query,
-      $or: query.$or.map(condition => ({
-        ...condition,
-        $or: [
-          { expiryDate: null },
-          { expiryDate: { $gte: new Date() } }
-        ]
-      }))
-    };
+    query.$or = courseConditions;
 
-    const notices = await Notice.find(finalQuery)
+    console.log('Query conditions:', JSON.stringify(query, null, 2));
+
+    // Fetch notices
+    let notices = await Notice.find(query)
       .populate('course', 'name code title')
       .populate('createdBy', 'name')
       .sort({ priority: -1, createdAt: -1 });
 
-    console.log('Found notices for student:', notices.length);
+    // ✅ Filter expiry date in JavaScript (more reliable)
+    const now = new Date();
+    notices = notices.filter(notice => {
+      if (!notice.expiryDate) return true;
+      return new Date(notice.expiryDate) > now;
+    });
+
+    console.log('Found notices for student after expiry filter:', notices.length);
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const newCount = notices.filter(n => new Date(n.createdAt) > yesterday).length;
 
     const noticesWithReadStatus = notices.map(notice => ({
       ...notice.toObject(),
-      isRead: notice.readBy?.some(r => r.user.toString() === studentId)
+      isRead: notice.readBy?.some(r => r.user.toString() === studentId) || false
     }));
 
     res.json({
