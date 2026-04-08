@@ -30,6 +30,7 @@ const GetEnrollment = () => {
   const [expandedWeek, setExpandedWeek] = useState(null);
   
   const [showModeSelection, setShowModeSelection] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -40,7 +41,6 @@ const GetEnrollment = () => {
   const userId = localStorage.getItem('userId');
   const storedName = localStorage.getItem('userName') || "Student";
   
-  // ✅ CHANGE 1: Sahi backendURL set karo
   const backendURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const student = profile;
@@ -185,7 +185,6 @@ const GetEnrollment = () => {
   const fetchCourses = async () => {
     try {
       const res = await axios.get(`${backendURL}/api/courses/all`);
-      // ✅ CHANGE 3: Safe array check
       setCourses(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("SkillsMind Error:", err);
@@ -247,7 +246,6 @@ const GetEnrollment = () => {
   const displayFirstName = student?.firstName || storedName.split(' ')[0] || "Student";
   const fullDisplayName = student?.firstName ? `${student.firstName} ${student.lastName || ''}` : storedName;
 
-  // ✅ CHANGE 2: Safe filter with optional chaining
   const filtered = (courses || []).filter(c => 
     c?.title?.toLowerCase().includes(searchQuery.toLowerCase()) && 
     c?.isHide !== true && 
@@ -269,7 +267,6 @@ const GetEnrollment = () => {
     navigate(`/payment-method/${courseId}`);
   };
 
-  // Agar loading ho to loading show karo
   if (loading) {
     return (
       <div className="sm-enroll-root" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -307,9 +304,6 @@ const GetEnrollment = () => {
           </div>
 
           <div className="nav-user-actions">
-            <button className="my-learning-badge" onClick={() => navigate('/dashboard')}>
-              <FaUserGraduate /> <span>My Learning</span>
-            </button>
             <div className="profile-wrapper">
               <div className="profile-trigger-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
                 <div className="student-img">
@@ -502,17 +496,7 @@ const GetEnrollment = () => {
                         </div>
 
                         <div className="sm-pro-card recorded" 
-                             onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
-                                 state: { 
-                                     course: selectedCourse,
-                                     mode: 'recorded',
-                                     enrollmentData: {
-                                         fullName: student?.name || storedName,
-                                         email: student?.email || '',
-                                         cnic: student?.cnic || ''
-                                     }
-                                 } 
-                             })}>
+                             onClick={() => setShowComingSoon(true)}>
                           <div className="sm-pro-icon-box"><FaPlayCircle /></div>
                           <div className="sm-pro-info">
                             <h4>Recorded</h4>
@@ -524,6 +508,52 @@ const GetEnrollment = () => {
                       </div>
                     </div>
                     <div className="sm-pro-footer"><p>Joined by 10,000+ students globally</p></div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showComingSoon && (
+                <div className="sm-pro-overlay" onClick={() => setShowComingSoon(false)}>
+                  <motion.div 
+                    className="sm-pro-modal"
+                    initial={{ opacity: 0, scale: 0.5, rotateX: 45 }}
+                    animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button className="sm-pro-close" onClick={() => setShowComingSoon(false)}><FaTimes /></button>
+                    <div className="sm-pro-top-bar"></div>
+                    <div className="sm-pro-content">
+                      <div className="sm-pro-brand-icon" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', color: '#d97706', transform: 'rotate(0deg)' }}>
+                        <FaClock />
+                      </div>
+                      <h2 className="sm-pro-title" style={{ color: '#d97706' }}>Coming Soon</h2>
+                      <p className="sm-pro-subtitle">
+                        Recorded classes are currently under development.<br/>
+                        <span style={{ color: '#dc2626' }}>Join Live Classes</span> for now to start learning immediately!
+                      </p>
+                      <div style={{ marginTop: '20px', padding: '20px', background: '#f8fafc', borderRadius: '0px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#475569', fontWeight: '500' }}>
+                        🚀 We're working hard to bring you high-quality recorded content. Stay tuned!
+                      </div>
+                      <button 
+                        onClick={() => setShowComingSoon(false)}
+                        style={{ 
+                          marginTop: '20px', 
+                          padding: '12px 30px', 
+                          background: '#000B29', 
+                          color: 'white', 
+                          border: 'none', 
+                          fontWeight: '700', 
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Got it
+                      </button>
+                    </div>
                   </motion.div>
                 </div>
               )}
@@ -775,7 +805,7 @@ const GetEnrollment = () => {
           --card-hover-shadow: 0 15px 40px rgba(15, 23, 42, 0.1);
         }
 
-        .sm-enroll-root { background: #f8fafc; min-height: 100vh; font-family: 'Inter', sans-serif; }
+        .sm-enroll-root { background: #ffffff; min-height: 100vh; font-family: 'Inter', sans-serif; }
         .sm-content-wrapper-fixed { max-width: 1150px; margin: 0 auto; padding: 0 20px; width: 100%; }
         
         .card-meta-v6 span {

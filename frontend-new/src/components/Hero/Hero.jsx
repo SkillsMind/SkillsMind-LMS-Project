@@ -1,13 +1,72 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Hero.css';
-import img1 from '../../Pictures/Hero1.png'; 
+import img1 from '../../Pictures/Hero1.png';
+import LoginSignup from '../LoginSignup/LoginSignup'; // Your existing component
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [popupShown, setPopupShown] = useState(false);
+  const [redirectPath, setRedirectPath] = useState('');
+
+  // Check if user is logged in
+  const isLoggedIn = () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    return !!(token && userId);
+  };
+
+  // Handle navigation after login check
+  const handleNavigateToCourses = () => {
+    if (isLoggedIn()) {
+      navigate('/get-enrolment');
+    } else {
+      setRedirectPath('/get-enrolment');
+      setShowModal(true);
+    }
+  };
+
+  const handleJoinForFree = () => {
+    if (isLoggedIn()) {
+      navigate('/get-enrolment');
+    } else {
+      setRedirectPath('/get-enrolment');
+      setShowModal(true);
+    }
+  };
+
+  // Auto modal popup for non-logged in users (5 seconds)
+  useEffect(() => {
+    if (!isLoggedIn() && !popupShown) {
+      const timer = setTimeout(() => {
+        setPopupShown(true);
+        setRedirectPath('/get-enrolment');
+        setShowModal(true);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [popupShown]);
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setShowModal(false);
+  };
+
+  // Handle successful login
+  const handleLoginSuccess = () => {
+    setShowModal(false);
+    if (redirectPath) {
+      navigate(redirectPath);
+    }
+  };
+
   return (
     <section className="hero-bright">
       <div className="hero-container">
         
-        {/* Left Side: Image with Shapes (Mobile par ye compress hogi) */}
+        {/* Left Side: Image with Shapes */}
         <div className="hero-visual animate-from-left">
           <div className="shape-blob-red"></div>
           <div className="shape-polygon-blue"></div>
@@ -34,12 +93,35 @@ const Hero = () => {
             Empowering youth with industry-leading digital skills. 
           </p>
           <div className="hero-action-btns"> 
-            <button className="btn-browse-sharp">Browse Courses</button>
-            <button className="btn-join-sharp">Join For Free</button>
+            <button 
+              className="btn-browse-sharp" 
+              onClick={handleNavigateToCourses}
+            >
+              Browse Courses
+            </button>
+            <button 
+              className="btn-join-sharp" 
+              onClick={handleJoinForFree}
+            >
+              Join For Free
+            </button>
           </div>
         </div>
 
       </div>
+
+      {/* Modal with your existing LoginSignup component */}
+      {showModal && (
+        <div className="hero-modal-overlay" onClick={handleModalClose}>
+          <div className="hero-modal-container" onClick={(e) => e.stopPropagation()}>
+            <button className="hero-modal-close" onClick={handleModalClose}>✕</button>
+            <LoginSignup 
+              onSuccess={handleLoginSuccess}
+              isModalMode={true}
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 };

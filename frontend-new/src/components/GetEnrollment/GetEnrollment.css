@@ -44,12 +44,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--sm-bg); color: var(
 
 .nav-user-actions { display: flex; align-items: center; gap: 12px; position: relative; }
 
-.my-learning-badge { 
-    background: var(--sm-red); color: white; padding: 10px 20px; border-radius: 50px; 
-    font-weight: 700; cursor: pointer; font-size: 13px; transition: 0.3s;
-    display: flex; align-items: center; gap: 8px;
-}
-.my-learning-badge:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(231, 29, 54, 0.3); }
+/* My Learning badge removed as per request */
 
 .profile-wrapper { position: relative; }
 .profile-trigger-btn { 
@@ -149,8 +144,11 @@ body { font-family: 'Poppins', sans-serif; background: var(--sm-bg); color: var(
     gap: 25px; padding: 20px 0 60px;
 }
 .decent-card { 
-    background: white; border-radius: 24px; overflow: hidden; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.04); transition: 0.4s;
+    background: white; 
+    border-radius: 0px; /* SHARP CORNERS - No rounded corners */
+    overflow: hidden; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.04); 
+    transition: 0.4s;
     border: 1px solid rgba(226, 232, 240, 0.8);
     display: flex; flex-direction: column;
 }
@@ -160,18 +158,73 @@ body { font-family: 'Poppins', sans-serif; background: var(--sm-bg); color: var(
 .card-media-v6 img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
 .decent-card:hover .card-media-v6 img { transform: scale(1.08); }
 
-.elite-badge { position: absolute; top: 15px; left: 15px; background: var(--sm-red); color: white; padding: 5px 14px; border-radius: 10px; font-size: 10px; font-weight: 800; }
+.elite-badge { 
+    position: absolute; 
+    top: 15px; 
+    left: 15px; 
+    background: var(--sm-red); 
+    color: white; 
+    padding: 5px 14px; 
+    border-radius: 0px; /* SHARP CORNERS */
+    font-size: 10px; 
+    font-weight: 800; 
+}
 .card-content-v6 { padding: 22px; flex: 1; display: flex; flex-direction: column; }
 .card-meta-v6 { display: flex; align-items: center; gap: 10px; color: var(--sm-text-muted); font-size: 12px; margin-bottom: 10px; font-weight: 600; }
 .dot { width: 4px; height: 4px; background: #cbd5e1; border-radius: 50%; }
 
-.card-title-v6 { font-size: 19px; font-weight: 800; margin-bottom: 15px; height: 54px; color: var(--sm-navy); line-height: 1.4; overflow: hidden; }
+.card-title-v6 { 
+    font-size: 19px; 
+    font-weight: 800; 
+    margin-bottom: 15px; 
+    height: 54px; 
+    color: var(--sm-navy); 
+    line-height: 1.4; 
+    overflow: hidden; 
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+.card-title-v6:hover {
+    color: var(--sm-red); /* HOVER EFFECT - Title turns red */
+}
+
 .price-label-v6 { font-size: 24px; font-weight: 900; color: var(--sm-navy); margin-bottom: 20px; display: flex; align-items: center; gap: 4px; }
 .price-label-v6::before { content: 'Rs.'; font-size: 14px; color: var(--sm-red); }
 
 .card-btn-row-v6 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: auto; }
-.btn-v6-details { background: #f1f5f9; color: var(--sm-navy); border-radius: 14px; padding: 12px; font-weight: 700; cursor: pointer; text-align: center; font-size: 13px; }
-.btn-v6-enroll { background: var(--sm-navy); color: white; border-radius: 14px; padding: 12px; font-weight: 700; cursor: pointer; text-align: center; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.btn-v6-details { 
+    background: #f1f5f9; 
+    color: var(--sm-navy); 
+    border-radius: 0px; /* SHARP CORNERS */
+    padding: 12px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    text-align: center; 
+    font-size: 13px; 
+    transition: all 0.3s ease;
+}
+.btn-v6-details:hover {
+    background: #e2e8f0;
+}
+.btn-v6-enroll { 
+    background: var(--sm-navy); 
+    color: white; 
+    border-radius: 0px; /* SHARP CORNERS */
+    padding: 12px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    text-align: center; 
+    font-size: 13px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 5px; 
+    transition: all 0.3s ease;
+}
+.btn-v6-enroll:hover {
+    background: var(--sm-red);
+    box-shadow: 0 5px 15px rgba(231, 29, 54, 0.3);
+}
 
 /* --- 5. PROFILE SIDEBAR --- */
 .sm-p-sidebar-overlay { 
@@ -408,8 +461,10 @@ body { font-family: 'Poppins', sans-serif; background: var(--sm-bg); color: var(
     .sm-modal-header { padding: 20px; }
     .sm-details-body { padding: 20px; }
     .instructor-brief { flex-direction: column; text-align: center; }
-}.summary-card-v2 {
-    margin-top: -10px; /* Card gap handle karne ke liye */
+}
+
+.summary-card-v2 {
+    margin-top: -10px;
 }
 .summary-pills-v2 {
     display: flex;
@@ -432,7 +487,9 @@ body { font-family: 'Poppins', sans-serif; background: var(--sm-bg); color: var(
     line-height: 1.6;
     color: #475569;
     margin-top: 10px;
-}/* --- SKILLSMIND PRO MODAL DESIGN --- */
+}
+
+/* --- SKILLSMIND PRO MODAL DESIGN --- */
 .sm-pro-overlay {
     position: fixed !important;
     inset: 0 !important;
@@ -442,7 +499,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--sm-bg); color: var(
     align-items: center !important;
     justify-content: center !important;
     z-index: 1000000 !important;
-    perspective: 1000px; /* For 3D entry effect */
+    perspective: 1000px;
 }
 
 .sm-pro-modal {

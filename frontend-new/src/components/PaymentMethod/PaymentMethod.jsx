@@ -5,7 +5,7 @@ import {
     FaChevronLeft, FaShieldAlt, FaCloudUploadAlt, FaUser, 
     FaEnvelope, FaUsers, FaInfinity, FaRegClock, FaSignal,
     FaCreditCard, FaCalendarAlt, FaLock, 
-    FaHashtag, FaBook, FaIdCard 
+    FaHashtag, FaBook, FaIdCard, FaCcVisa, FaCcMastercard
 } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -16,10 +16,10 @@ const PaymentMethod = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
-    // 🔥 FIX: Enrollment data from LiveEnrollment or RecordedEnrollment
+    // Enrollment data from LiveEnrollment or RecordedEnrollment
     const enrollmentData = location.state?.enrollmentData || {};
     
-    // 🔥 NEW: Enrollment mode handle karo (live/recorded)
+    // Enrollment mode handle karo (live/recorded)
     const enrollmentMode = location.state?.mode || 'recorded';
     const modeTitle = enrollmentMode === 'live' ? 'Live Class' : 'Recorded Course';
     
@@ -33,7 +33,7 @@ const PaymentMethod = () => {
     const [formData, setFormData] = useState({
         studentName: enrollmentData.fullName || '',
         studentEmail: enrollmentData.email || '',
-        studentCnic: enrollmentData.cnic || '', // 🔥 CNIC from enrollment
+        studentCnic: enrollmentData.cnic || '',
         trxId: '',      
         receipt: null,
         cardNumber: '',
@@ -75,8 +75,8 @@ const PaymentMethod = () => {
     };
 
     const paymentMethods = [
-        { id: 'jazzcash', name: 'JazzCash', logo: '/jazzcashlogo.png', color: '#d71820', sub: 'Mobile Account', account: '0300-1234567', title: 'SkillsMind Edu' },
-        { id: 'easypaisa', name: 'EasyPaisa', logo: '/easypesalogo.png', color: '#37b34a', sub: 'Instant Transfer', account: '0345-7654321', title: 'SkillsMind Official' },
+        { id: 'jazzcash', name: 'JazzCash', logo: '/jazzcashlogo.png', color: '#d71820', sub: 'Mobile Account', account: '0311-6735509', title: 'Anas Iftikhar' },
+        { id: 'easypaisa', name: 'EasyPaisa', logo: '/easypesalogo.png', color: '#37b34a', sub: 'Instant Transfer', account: '0314-8498822', title: 'Anas iftikhar' },
         { id: 'card', name: 'Credit/Debit Card', logo: 'https://cdn-icons-png.flaticon.com/512/349/349221.png', color: '#6366f1', sub: 'International Secure Pay' },
         { id: 'bank', name: 'Bank Transfer', logo: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png', color: '#1e293b', sub: 'All Local Banks', account: '1234 5678 9012 01', title: 'SkillsMind Private Ltd', bankName: 'HBL Bank' }
     ];
@@ -114,25 +114,24 @@ const PaymentMethod = () => {
         data.append('courseName', course.title);
         data.append('amount', course.price);
         data.append('paymentMethod', selectedMethod.name);
-        data.append('enrollmentMode', enrollmentMode); // 🔥 Mode save karo
+        data.append('enrollmentMode', enrollmentMode);
         
         if (formData.receipt) {
             data.append('receipt', formData.receipt);
         }
 
-        // 🔥 IMPORTANT: Email ko localStorage mein save karo
         localStorage.setItem('studentEmail', formData.studentEmail);
 
         try {
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/payments/submit-payment`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
 
             if (response.data.success) {
                 Swal.fire({
                     title: '<span style="color: #000B29; font-weight: 800; letter-spacing: 1px;">PAYMENT SUBMITTED!</span>',
                     html: `
-                        <div style="text-align: center; font-family: 'Poppins', sans-serif; padding: 5px;">
+                        <div style="text-align: center; font-family: "Poppins", sans-serif; padding: 5px;">
                             <div style="margin: 15px 0;">
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Check_green_icon.svg" 
                                      alt="tick" 
@@ -197,9 +196,14 @@ const PaymentMethod = () => {
                             <div className="course-card-top">
                                 <div className="premium-badge">{course.badge || course.category || 'Premium'}</div>
                                 <img src={getImagePath(course.thumbnail)} alt={course.title} className="course-preview-img" onError={(e) => e.target.src = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=500"} />
-                                {/* 🔥 Mode show karo */}
-                                <div className="reserved-label" style={{ background: enrollmentMode === 'live' ? '#dc2626' : '#3b82f6' }}>
-                                    {enrollmentMode === 'live' ? '🔴 Live Class' : '▶️ Recorded'} - Reserved for {studentName}
+                                {/* Stamp Style Reserved Label */}
+                                <div className="reserved-stamp" style={{ 
+                                    background: enrollmentMode === 'live' ? '#dc2626' : '#000B29'
+                                }}>
+                                    <div className="stamp-inner">
+                                        <span className="stamp-text">RESERVED</span>
+                                        <span className="stamp-name">{studentName}</span>
+                                    </div>
                                 </div>
                             </div>
                             <div className="course-card-body-premium">
@@ -245,19 +249,23 @@ const PaymentMethod = () => {
                             </div>
 
                             {selectedMethod.id === 'card' ? (
-                                <form className="sm-verification-form" onSubmit={handleFinalSubmit}>
-                                    <div className="sm-field">
-                                        <label><FaUser /> Name on Card</label>
-                                        <input type="text" placeholder="John Doe" required style={{ background: '#ffffff' }} />
+                                <div className="coming-soon-card">
+                                    <div className="coming-soon-content">
+                                        <div className="card-logos">
+                                            <FaCcVisa size={50} color="#1a1f71" />
+                                            <FaCcMastercard size={50} color="#eb001b" />
+                                        </div>
+                                        <h3>International Payment Gateway</h3>
+                                        <div className="coming-soon-badge">COMING SOON</div>
+                                        <p>We're working hard to bring you seamless card payments. Stay tuned!</p>
+                                        <button 
+                                            className="back-to-methods-btn"
+                                            onClick={() => setSelectedMethod(null)}
+                                        >
+                                            ← Back to Payment Methods
+                                        </button>
                                     </div>
-                                    <div className="sm-field">
-                                        <label><FaCreditCard /> Card Number</label>
-                                        <input type="text" placeholder="xxxx xxxx xxxx xxxx" required maxLength="19" style={{ background: '#ffffff' }} />
-                                    </div>
-                                    <button type="submit" className="sm-submit-payment-btn" style={{ background: selectedMethod.color }}>
-                                        {isSubmitting ? 'Processing...' : `PAY RS. ${course.price}`}
-                                    </button>
-                                </form>
+                                </div>
                             ) : (
                                 <>
                                     <div className="sm-account-details">
@@ -269,6 +277,9 @@ const PaymentMethod = () => {
                                                 Swal.fire({ title: 'Copied!', toast: true, position: 'top-end', timer: 800, showConfirmButton: false, icon: 'success' });
                                             }}>{selectedMethod.account}</strong>
                                         </div>
+                                        {selectedMethod.bankName && (
+                                            <div className="detail-row"><span>Bank Name</span><strong>{selectedMethod.bankName}</strong></div>
+                                        )}
                                     </div>
 
                                     <form className="sm-verification-form" onSubmit={handleFinalSubmit}>
