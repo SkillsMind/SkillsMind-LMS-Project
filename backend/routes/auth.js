@@ -8,7 +8,7 @@ const User = require('../models/User');
 const StudentProfile = require('../models/StudentProfile'); 
 const auth = require('../middleware/auth');
 
-// --- Initialize Brevo API (For Email) ---
+// --- Initialize Brevo API (HTTPS - Working on Hobby Plan) ---
 let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 let apiKey = apiInstance.authentications['apiKey'];
 apiKey.apiKey = process.env.BREVO_API_KEY;
@@ -38,7 +38,7 @@ const getEmailLayout = (content) => `
 `;
 
 // ==========================================
-// HELPER: Send Email via Brevo API
+// HELPER: Send Email via Brevo HTTPS API (NOT SMTP)
 // ==========================================
 async function sendBrevoEmail(toEmail, subject, htmlContent, userName = 'Student') {
     try {
@@ -57,6 +57,7 @@ async function sendBrevoEmail(toEmail, subject, htmlContent, userName = 'Student
         sendSmtpEmail.subject = subject;
         sendSmtpEmail.htmlContent = htmlContent;
         
+        // This uses HTTPS API, NOT SMTP - Works on Hobby plan
         const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
         console.log(`✅ Email sent to ${toEmail}: ${response.messageId}`);
         return { success: true };
@@ -68,7 +69,7 @@ async function sendBrevoEmail(toEmail, subject, htmlContent, userName = 'Student
 }
 
 // ==========================================
-// 2. SEND OTP ROUTE (USING BREVO)
+// 2. SEND OTP ROUTE (Using Brevo HTTPS API)
 // ==========================================
 router.post('/send-otp', async (req, res) => {
     try {
@@ -114,7 +115,7 @@ router.post('/send-otp', async (req, res) => {
     }
 });
 
-// --- 3. VERIFY OTP ROUTE ---
+// --- 3. VERIFY OTP ROUTE (UNCHANGED) ---
 router.post('/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -142,7 +143,7 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 // ==========================================
-// 4. FORGOT PASSWORD - SEND OTP (USING BREVO)
+// 4. FORGOT PASSWORD - SEND OTP (Using Brevo HTTPS API)
 // ==========================================
 router.post('/forgot-password', async (req, res) => {
     try {
@@ -181,7 +182,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// --- 5. FORGOT PASSWORD - VERIFY OTP ---
+// --- 5. FORGOT PASSWORD - VERIFY OTP (UNCHANGED) ---
 router.post('/verify-reset-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -198,7 +199,7 @@ router.post('/verify-reset-otp', async (req, res) => {
     }
 });
 
-// --- 6. FORGOT PASSWORD - UPDATE PASSWORD ---
+// --- 6. FORGOT PASSWORD - UPDATE PASSWORD (UNCHANGED) ---
 router.post('/reset-password', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -217,7 +218,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // ==========================================
-// 7. GOOGLE LOGIN ROUTE (WORKING VERSION - SAME AS BEFORE)
+// 7. GOOGLE LOGIN ROUTE (ORIGINAL WORKING VERSION - NO CHANGES)
 // ==========================================
 router.post('/google-login', async (req, res) => {
     try {
@@ -261,7 +262,7 @@ router.post('/google-login', async (req, res) => {
 });
 
 // ==========================================
-// 8. REGISTER ROUTE (WITH WELCOME EMAIL - USING BREVO)
+// 8. REGISTER ROUTE (WITH WELCOME EMAIL - Using Brevo HTTPS API)
 // ==========================================
 router.post('/register', async (req, res) => {
     try {
@@ -276,7 +277,7 @@ router.post('/register', async (req, res) => {
         
         delete otpStore[cleanEmail]; 
 
-        // --- PREMIUM WELCOME EMAIL via Brevo ---
+        // --- PREMIUM WELCOME EMAIL via Brevo HTTPS API ---
         const welcomeHtml = getEmailLayout(`
             <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
             <p style="font-size: 16px;">Hello <b>${name}</b>,</p>
@@ -299,7 +300,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// --- 9. LOGIN ROUTE ---
+// --- 9. LOGIN ROUTE (UNCHANGED) ---
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -333,7 +334,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// --- 10. GET ALL USERS ---
+// --- 10. GET ALL USERS (UNCHANGED) ---
 router.get('/all-users', async (req, res) => {
     try {
         const users = await User.find().select('-password'); 
@@ -344,7 +345,7 @@ router.get('/all-users', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 FIX 1: UPDATED /user ROUTE WITH ENROLLED COURSES
+// /user ROUTE (UNCHANGED)
 // ==========================================
 router.get('/user', auth, async (req, res) => {
     try {
@@ -358,7 +359,7 @@ router.get('/user', auth, async (req, res) => {
     }
 });
 
-// --- 12. DELETE USER ---
+// --- DELETE USER (UNCHANGED) ---
 router.delete('/delete-user/:id', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -370,7 +371,7 @@ router.delete('/delete-user/:id', async (req, res) => {
     }
 });
 
-// --- 13. DELETE ENROLMENT/PROFILE ---
+// --- DELETE ENROLMENT/PROFILE (UNCHANGED) ---
 router.delete('/delete-enrolment/:id', async (req, res) => {
     try {
         const profileId = req.params.id;
@@ -382,7 +383,7 @@ router.delete('/delete-enrolment/:id', async (req, res) => {
     }
 });
 
-// --- 14. GET ALL STUDENT PROFILES ---
+// --- GET ALL STUDENT PROFILES (UNCHANGED) ---
 router.get('/all-profiles', async (req, res) => {
     try {
         const profiles = await StudentProfile.find().populate({
@@ -398,7 +399,7 @@ router.get('/all-profiles', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 FIX 2: NEW /me ROUTE FOR STUDENT DASHBOARD
+// /me ROUTE (UNCHANGED)
 // ==========================================
 router.get('/me', auth, async (req, res) => {
     try {
