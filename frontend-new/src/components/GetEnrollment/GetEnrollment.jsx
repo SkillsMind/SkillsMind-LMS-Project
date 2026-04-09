@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { API_URL } from '../../config';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaClock, FaSignal, FaUserTie, FaTimes, FaUserGraduate,
@@ -7,12 +7,13 @@ import {
   FaBook, FaBullseye, FaUniversity, FaCamera, FaArrowLeft,
   FaHome, FaStar, FaUsers, FaPlayCircle, FaCheckCircle, FaChevronDown,
   FaGlobe, FaUserCheck, FaLayerGroup, FaDownload, FaChalkboardTeacher, FaLightbulb,
-  FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp, FaInstagram, FaYoutube, FaCertificate, FaInfinity, FaMobileAlt,
-  FaAward, FaRocket, FaShieldAlt, FaVideo, FaMicrophone, FaEnvelope, FaPhone, FaTransgender, FaGraduationCap
+  FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp, FaInstagram, FaYoutube, FaCertificate, 
+  FaInfinity, FaMobileAlt, FaAward, FaRocket, FaShieldAlt, FaVideo, FaMicrophone, 
+  FaEnvelope, FaPhone, FaTransgender, FaGraduationCap, FaExclamationTriangle
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import jsPDF from 'jspdf';
+import Swal from 'sweetalert2';
 import './GetEnrollment.css';
 
 import WelcomeNotice from './WelcomeNotice';
@@ -35,15 +36,61 @@ const GetEnrollment = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // ACTIVE enrollments (payment approved)
+  const [activeEnrollments, setActiveEnrollments] = useState([]);
+  // PENDING enrollments (form filled, payment not approved)
+  const [pendingEnrollments, setPendingEnrollments] = useState([]);
 
   const { profile, loading: profileLoading } = useProfile();
   
   const userId = localStorage.getItem('userId');
   const storedName = localStorage.getItem('userName') || "Student";
+  const token = localStorage.getItem('token');
   
   const backendURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const student = profile;
+
+  // AUTHENTICATION CHECK
+  if (!token || !userId) {
+    localStorage.setItem('redirectAfterLogin', '/get-enrolment');
+    return <Navigate to="/login" replace />;
+  }
+
+  // Check ACTIVE enrollments
+  const checkActiveEnrollments = async () => {
+    try {
+      const response = await axios.get(`${backendURL}/api/enroll/check-enrollment/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setActiveEnrollments(response.data.enrolledCourses || []);
+      }
+    } catch (error) {
+      console.error("Active enrollment check error:", error);
+    }
+  };
+
+  // Check PENDING enrollments
+  const checkPendingEnrollments = async () => {
+    try {
+      const response = await axios.get(`${backendURL}/api/enroll/check-pending/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setPendingEnrollments(response.data.pendingCourses || []);
+      }
+    } catch (error) {
+      console.error("Pending enrollment check error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+    checkActiveEnrollments();
+    checkPendingEnrollments();
+  }, [userId]);
 
   const getLearningPoints = (courseTitle) => {
     const title = courseTitle?.toLowerCase() || "";
@@ -194,10 +241,6 @@ const GetEnrollment = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCourses();
-  }, [userId]);
-
   const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
@@ -263,8 +306,111 @@ const GetEnrollment = () => {
     }
   };
 
-  const handleEnroll = (courseId) => {
-    navigate(`/payment-method/${courseId}`);
+  // ============================================
+  // FIXED: Proper enrollment status check functions
+  // ============================================
+  
+  // Check if course has pending payment (returns the enrollment object or undefined)
+  const getPendingEnrollment = (courseId, courseTitle) => {
+    return pendingEnrollments.find(
+      p => p.courseId === courseId || p.courseTitle === courseTitle
+    );
+  };
+
+  // Check if course is already active enrolled (returns boolean)
+  const isActiveEnrolled = (courseId, courseTitle) => {
+    return activeEnrollments.some(
+      a => a.courseId === courseId || a.courseTitle === courseTitle
+    );
+  };
+
+  // Handle Live Class Enrollment with proper logic
+  const handleLiveEnrollment = async (course) => {
+    const isActive = isActiveEnrolled(course._id, course.title);
+    const pendingEnrollment = getPendingEnrollment(course._id, course.title);
+    
+    // CASE 1: Already fully enrolled (Active)
+    if (isActive) {
+      const result = await Swal.fire({
+        title: 'Already Enrolled!',
+        html: `You are already fully enrolled in <strong>${course.title}</strong>.<br/><br/>Do you want to go to your learning dashboard?`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Go to My Learning',
+        cancelButtonText: 'Stay Here'
+      });
+      
+      if (result.isConfirmed) {
+        navigate('/my-learning');
+      }
+      return;
+    }
+
+    // CASE 2: Pending enrollment exists (Form submitted, payment pending)
+    if (pendingEnrollment) {
+      const result = await Swal.fire({
+        title: 'Complete Your Payment!',
+        html: `You have already submitted registration for <strong>${course.title}</strong>.<br/><br/>Your payment is pending verification. What would you like to do?`,
+        icon: 'info',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonColor: '#22c55e',
+        denyButtonColor: '#f59e0b',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Go to Payment',
+        denyButtonText: 'Update Details',
+        cancelButtonText: 'Cancel'
+      });
+      
+      if (result.isConfirmed) {
+        // Direct payment page par le jao
+        navigate(`/payment-method/${course._id}`, {
+          state: {
+            course: course.title,
+            amount: course.price,
+            image: course.thumbnail,
+            duration: course.duration,
+            level: course.level,
+            enrollmentId: pendingEnrollment.enrollmentId,
+            enrollmentData: pendingEnrollment.formData
+          }
+        });
+        return;
+      } else if (result.isDenied) {
+        // Form par le jao pre-filled data ke saath
+        navigate('/enroll-live/' + course.title.replace(/\s+/g, '-').toLowerCase(), {
+          state: {
+            course: course,
+            mode: 'live',
+            existingEnrollment: pendingEnrollment,
+            enrollmentData: pendingEnrollment.formData || {
+              fullName: student?.firstName ? `${student.firstName} ${student.lastName || ''}` : storedName,
+              email: student?.email || '',
+              phone: student?.phone || ''
+            }
+          }
+        });
+        return;
+      }
+      // Agar cancel kare toh kuch mat karo
+      return;
+    }
+
+    // CASE 3: New enrollment (No active, no pending)
+    navigate('/enroll-live/' + course.title.replace(/\s+/g, '-').toLowerCase(), {
+      state: {
+        course: course,
+        mode: 'live',
+        existingEnrollment: null,
+        enrollmentData: {
+          fullName: student?.firstName ? `${student.firstName} ${student.lastName || ''}` : storedName,
+          email: student?.email || '',
+          phone: student?.phone || ''
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -409,36 +555,87 @@ const GetEnrollment = () => {
                 </div>
 
                 <div className="enroll-grid-v6">
-                  {filtered.map((course) => (
-                    <div key={course._id} className="decent-card">
-                      <div className="card-media-v6">
-                        <img src={getImageUrl(course.thumbnail)} alt={course.title} />
-                        <div className="elite-badge">{course.badge || 'PREMIUM'}</div>
-                      </div>
-                      <div className="card-content-v6">
-                        <div className="card-meta-v6">
-                          <span><FaClock /> {course.duration}</span>
-                          <span className="dot"></span>
-                          <span><FaSignal /> {course.level}</span>
+                  {filtered.map((course) => {
+                    // ============================================
+                    // FIXED: Priority Logic - Only ONE state possible
+                    // Priority: 1. Active > 2. Pending > 3. New
+                    // ============================================
+                    
+                    const isActive = isActiveEnrolled(course._id, course.title);
+                    const pendingEnrollment = getPendingEnrollment(course._id, course.title);
+                    
+                    return (
+                      <div key={course._id} className="decent-card">
+                        <div className="card-media-v6">
+                          <img src={getImageUrl(course.thumbnail)} alt={course.title} />
+                          <div className="elite-badge">{course.badge || 'PREMIUM'}</div>
+                          
+                          {/* ============================================
+                              MUTUALLY EXCLUSIVE BADGES
+                              Pehle Active check, phir Pending, phir kuch nahi
+                          ============================================ */}
+                          {isActive ? (
+                            <div className="enrolled-badge">
+                              <FaCheckCircle /> Enrolled
+                            </div>
+                          ) : pendingEnrollment ? (
+                            <div className="pending-badge">
+                              <FaExclamationTriangle /> Payment Pending
+                            </div>
+                          ) : null}
+                          
                         </div>
-                        <h3 className="card-title-v6">{course.title}</h3>
-                        <div className="price-label-v6">Rs. {course.price}</div>
-                        <div className="card-btn-row-v6">
-                          <button className="btn-v6-details" onClick={() => {
-                            setSelectedCourse(course);
-                            setViewMode('details');
-                            window.scrollTo(0,0);
-                          }}>Details</button>
-                          <button className="btn-v6-enroll" onClick={() => {
-                            setSelectedCourse(course);
-                            setViewMode('details');
-                            setShowModeSelection(true);
-                            window.scrollTo(0,0);
-                          }}>Enroll <FaChevronRight /></button>
+                        <div className="card-content-v6">
+                          <div className="card-meta-v6">
+                            <span><FaClock /> {course.duration}</span>
+                            <span className="dot"></span>
+                            <span><FaSignal /> {course.level}</span>
+                          </div>
+                          <h3 className="card-title-v6">{course.title}</h3>
+                          <div className="price-label-v6">Rs. {course.price}</div>
+                          <div className="card-btn-row-v6">
+                            <button className="btn-v6-details" onClick={() => {
+                              setSelectedCourse(course);
+                              setViewMode('details');
+                              window.scrollTo(0,0);
+                            }}>Details</button>
+                            
+                            {/* ============================================
+                                MUTUALLY EXCLUSIVE BUTTONS
+                                Same logic: Active > Pending > Enroll
+                            ============================================ */}
+                            {isActive ? (
+                              <button 
+                                className="btn-v6-enroll active-enrolled" 
+                                onClick={() => navigate('/my-learning')}
+                              >
+                                <FaCheckCircle /> Enrolled
+                              </button>
+                            ) : pendingEnrollment ? (
+                              <button 
+                                className="btn-v6-enroll pending-payment" 
+                                onClick={() => handleLiveEnrollment(course)}
+                              >
+                                Complete Payment <FaChevronRight />
+                              </button>
+                            ) : (
+                              <button 
+                                className="btn-v6-enroll" 
+                                onClick={() => {
+                                  setSelectedCourse(course);
+                                  setViewMode('details');
+                                  setShowModeSelection(true);
+                                  window.scrollTo(0,0);
+                                }}
+                              >
+                                Enroll <FaChevronRight />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </main>
             </div>
@@ -475,17 +672,7 @@ const GetEnrollment = () => {
                       <div className="sm-pro-options-grid">
                         
                         <div className="sm-pro-card live" 
-                             onClick={() => navigate('/payment-method/' + selectedCourse._id, { 
-                                 state: { 
-                                     course: selectedCourse,
-                                     mode: 'live',
-                                     enrollmentData: {
-                                         fullName: student?.name || storedName,
-                                         email: student?.email || '',
-                                         cnic: student?.cnic || ''
-                                     }
-                                 } 
-                             })}>
+                             onClick={() => handleLiveEnrollment(selectedCourse)}>
                           <div className="sm-pro-badge">Popular</div>
                           <div className="sm-pro-icon-box"><FaChalkboardTeacher /></div>
                           <div className="sm-pro-info">
@@ -645,9 +832,31 @@ const GetEnrollment = () => {
                             <span className="now-v2">Rs. {selectedCourse.price}</span>
                             <span className="was-v2">Rs. {Math.round(selectedCourse.price * 1.5)}</span>
                         </div>
-                        <button className="enroll-btn-v2" onClick={() => setShowModeSelection(true)}>
+                        
+                        {/* Detail View Buttons - Same Logic */}
+                        {isActiveEnrolled(selectedCourse._id, selectedCourse.title) ? (
+                          <button 
+                            className="enroll-btn-v2 enrolled-btn" 
+                            onClick={() => navigate('/my-learning')}
+                          >
+                            <FaCheckCircle /> Go to My Learning
+                          </button>
+                        ) : getPendingEnrollment(selectedCourse._id, selectedCourse.title) ? (
+                          <button 
+                            className="enroll-btn-v2 pending-btn" 
+                            onClick={() => handleLiveEnrollment(selectedCourse)}
+                          >
+                            Complete Payment <FaChevronRight />
+                          </button>
+                        ) : (
+                          <button 
+                            className="enroll-btn-v2" 
+                            onClick={() => setShowModeSelection(true)}
+                          >
                             Enroll Now <FaChevronRight />
-                        </button>
+                          </button>
+                        )}
+                        
                         <div className="perks-v2">
                             <div><FaInfinity/> Lifetime</div>
                             <div><FaCertificate/> Verified</div>
@@ -707,7 +916,30 @@ const GetEnrollment = () => {
                 <span className="m-price">Rs. {selectedCourse.price}</span>
                 <span className="m-old-price">Rs. {Math.round(selectedCourse.price * 1.5)}</span>
               </div>
-              <button className="m-enroll-btn" onClick={() => setShowModeSelection(true)}>Enroll Now</button>
+              
+              {/* Mobile Buttons - Same Logic */}
+              {isActiveEnrolled(selectedCourse._id, selectedCourse.title) ? (
+                <button 
+                  className="m-enroll-btn enrolled" 
+                  onClick={() => navigate('/my-learning')}
+                >
+                  <FaCheckCircle /> Enrolled
+                </button>
+              ) : getPendingEnrollment(selectedCourse._id, selectedCourse.title) ? (
+                <button 
+                  className="m-enroll-btn pending" 
+                  onClick={() => handleLiveEnrollment(selectedCourse)}
+                >
+                  Complete Payment
+                </button>
+              ) : (
+                <button 
+                  className="m-enroll-btn" 
+                  onClick={() => setShowModeSelection(true)}
+                >
+                  Enroll Now
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -880,8 +1112,45 @@ const GetEnrollment = () => {
         .price-tag-v2 { margin-bottom: 20px; }
         .now-v2 { font-size: 28px; font-weight: 900; color: var(--sm-dark); }
         .was-v2 { text-decoration: line-through; color: #94a3b8; margin-left: 10px; font-size: 16px; }
-        .enroll-btn-v2 { width: 100%; padding: 15px; background: var(--sm-dark); color: #fff; border: none; font-weight: 800; cursor: pointer; border-radius: 4px; }
-        .enroll-btn-v2:hover { background: var(--sm-red-brand); }
+        
+        .enroll-btn-v2 { 
+          width: 100%; 
+          padding: 15px; 
+          background: var(--sm-dark); 
+          color: #fff; 
+          border: none; 
+          font-weight: 800; 
+          cursor: pointer; 
+          border-radius: 4px;
+          transition: all 0.3s ease;
+        }
+        .enroll-btn-v2:hover { 
+          background: var(--sm-red-brand); 
+        }
+        
+        /* Enrolled State Button */
+        .enroll-btn-v2.enrolled-btn {
+          background: #10b981 !important;
+          cursor: default;
+        }
+        .enroll-btn-v2.enrolled-btn:hover {
+          background: #059669 !important;
+        }
+        
+        /* Pending State Button */
+        .enroll-btn-v2.pending-btn {
+          background: #f59e0b !important;
+          animation: pulse 2s infinite;
+        }
+        .enroll-btn-v2.pending-btn:hover {
+          background: #d97706 !important;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+        }
+
         .perks-v2 { display: flex; justify-content: space-between; margin-top: 15px; font-size: 9px; color: #64748b; }
 
         .quick-grid-v2 { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -963,6 +1232,61 @@ const GetEnrollment = () => {
 
         @media (min-width: 951px) {
           .mobile-search-overlay-sm { display: none; }
+        }
+
+        /* Badges - Positioned differently to avoid overlap */
+        .pending-badge {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          background: #f59e0b;
+          color: white;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        .enrolled-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #10b981;
+          color: white;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Button States */
+        .btn-v6-enroll.active-enrolled {
+          background: #10b981 !important;
+          cursor: default;
+        }
+        
+        .btn-v6-enroll.pending-payment {
+          background: #f59e0b !important;
+          animation: pulse 2s infinite;
+        }
+        
+        .m-enroll-btn.enrolled {
+          background: #10b981 !important;
+        }
+        
+        .m-enroll-btn.pending {
+          background: #f59e0b !important;
+          animation: pulse 2s infinite;
         }
       `}</style>
     </div>

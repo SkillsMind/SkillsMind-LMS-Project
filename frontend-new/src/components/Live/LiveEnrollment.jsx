@@ -16,13 +16,16 @@ const LiveEnrollment = () => {
     const location = useLocation(); 
     const { courseName } = useParams(); 
     
-    // --- DYNAMIC NAME, PRICE & ID LOGIC ---
-    const courseId = location.state?.course?._id; // <--- Yeh ID bohat zaroori hai
+    // Dynamic data from navigation state
+    const courseId = location.state?.course?._id;
     const realTimeTitle = location.state?.course?.title; 
     const coursePrice = location.state?.course?.price || "0";
     const courseImage = location.state?.course?.image || "https://via.placeholder.com/400x250";
     const courseDuration = location.state?.course?.duration || "3 Months";
     const courseLevel = location.state?.course?.level || "Beginner";
+    
+    // Pre-filled data agar pending enrollment ho
+    const existingEnrollment = location.state?.existingEnrollment;
 
     const formattedName = realTimeTitle 
         ? realTimeTitle 
@@ -33,24 +36,16 @@ const LiveEnrollment = () => {
     const [selectedCourse, setSelectedCourse] = useState(formattedName);
     
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        city: '',
-        phone: '',
-        address: '',
-        dob: '',
-        gender: 'male',
+        fullName: existingEnrollment?.formData?.fullName || location.state?.enrollmentData?.fullName || '',
+        email: existingEnrollment?.formData?.email || location.state?.enrollmentData?.email || '',
+        city: existingEnrollment?.formData?.city || '',
+        phone: existingEnrollment?.formData?.phone || location.state?.enrollmentData?.phone || '',
+        address: existingEnrollment?.formData?.address || '',
+        dob: existingEnrollment?.formData?.dob || '',
+        gender: existingEnrollment?.formData?.gender || 'male',
         agreeTerms: false,
         course: formattedName 
     });
-
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    };
 
     const [stats, setStats] = useState({
         totalStudents: 0,
@@ -68,6 +63,33 @@ const LiveEnrollment = () => {
     ];
 
     useEffect(() => {
+        // Agar already pending enrollment hai toh form pre-fill hoga upar se hi
+        if (existingEnrollment) {
+            Swal.fire({
+                title: 'Resume Registration?',
+                text: 'You already started registration for this course. Complete your payment now?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Go to Payment',
+                cancelButtonText: 'Update Details First'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    navigate(`/payment-method/${courseId || existingEnrollment.courseId}`, {
+                        state: {
+                            course: selectedCourse,
+                            amount: coursePrice,
+                            image: courseImage,
+                            duration: courseDuration,
+                            level: courseLevel,
+                            enrollmentId: existingEnrollment.enrollmentId,
+                            enrollmentData: existingEnrollment.formData
+                        }
+                    });
+                }
+                // Agar cancel kare toh yahin rahega form ke saath pre-filled data
+            });
+        }
+
         if (realTimeTitle) {
             setSelectedCourse(realTimeTitle);
             setFormData(prev => ({ ...prev, course: realTimeTitle }));
@@ -80,7 +102,7 @@ const LiveEnrollment = () => {
 
         const fetchRealTimeStats = async () => {
             try {
-                const response = await axios.get('${import.meta.env.VITE_API_URL}/api/stats');
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/stats`);
                 setStats({
                     totalStudents: response.data.totalRegistered || 0,
                     profilesBuilt: response.data.profilesBuilt || 0,
@@ -101,9 +123,16 @@ const LiveEnrollment = () => {
         fetchRealTimeStats();
         const interval = setInterval(fetchRealTimeStats, 10000);
         return () => clearInterval(interval);
-    }, [courseName, realTimeTitle]); 
+    }, [courseName, realTimeTitle, existingEnrollment]); 
 
-    // --- SUBMIT HANDLER (Updated for Payment Navigation) ---
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -112,11 +141,38 @@ const LiveEnrollment = () => {
             return;
         }
 
+        const userId = localStorage.getItem('userId');
+        
+        if (!userId) {
+            Swal.fire('Error', 'Please login again to continue.', 'error');
+            navigate('/login');
+            return;
+        }
+
+        const submitData = {
+            userId: userId,
+            fullName: formData.fullName,
+            email: formData.email,
+            city: formData.city,
+            phone: formData.phone,
+            address: formData.address,
+            dob: formData.dob,
+            gender: formData.gender,
+            course: selectedCourse,
+            courseId: courseId,
+            agreeTerms: formData.agreeTerms
+        };
+
+        console.log('📤 Sending to backend:', submitData);
+
         try {
-            const response = await axios.post('${import.meta.env.VITE_API_URL}/api/enroll/live-register', formData);
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/enroll/live-register`, submitData);
+
+            console.log('📥 Backend response:', response.data);
 
             if (response.status === 201 || response.status === 200) {
                 const amountToPay = coursePrice;
+                const enrollmentId = response.data.enrollmentId || response.data.data?._id;
 
                 Swal.fire({
                     title: '<span style="color: #0f172a; font-weight: 800; letter-spacing: -0.5px;">REGISTRATION SUCCESSFUL</span>',
@@ -134,6 +190,7 @@ const LiveEnrollment = () => {
                                     <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 10px;">Total Amount</small>
                                     <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Rs. ${amountToPay}</div>
                                 </div>
+                                ${response.data.isUpdate ? '<div style="color: #f59e0b; font-size: 12px; font-weight: 600;">* Your existing registration has been updated</div>' : ''}
                             </div>
                         </div>
                     `,
@@ -143,8 +200,6 @@ const LiveEnrollment = () => {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // FIX: Ab hum URL mein Course ID bhej rahe hain
-                        // Agar courseId nahi hai to 'id-missing' bhejega taake app crash na ho
                         const finalId = courseId || 'id-missing';
                         
                         navigate(`/payment-method/${finalId}`, { 
@@ -154,7 +209,8 @@ const LiveEnrollment = () => {
                                 image: courseImage,
                                 duration: courseDuration,
                                 level: courseLevel,
-                                enrollmentData: formData // Student ki details bhi bhej di
+                                enrollmentId: enrollmentId,
+                                enrollmentData: formData
                             } 
                         });
                     }
@@ -162,7 +218,10 @@ const LiveEnrollment = () => {
             }
         } catch (error) {
             console.error("Error submitting form:", error);
-            Swal.fire('Error', 'Registration failed. Please check your backend server.', 'error');
+            console.error("Error response:", error.response?.data);
+            
+            const errorMsg = error.response?.data?.message || 'Registration failed. Please check your backend server.';
+            Swal.fire('Error', errorMsg, 'error');
         }
     };
 
@@ -189,6 +248,20 @@ const LiveEnrollment = () => {
                                 <span>CURRENTLY ENROLLING IN:</span>
                                 <strong style={{ textTransform: 'uppercase' }}>{selectedCourse}</strong>
                             </div>
+                            {existingEnrollment && (
+                                <div style={{ 
+                                    background: '#fef3c7', 
+                                    border: '1px solid #f59e0b', 
+                                    color: '#92400e', 
+                                    padding: '10px', 
+                                    borderRadius: '6px', 
+                                    marginTop: '10px',
+                                    fontSize: '13px',
+                                    fontWeight: '600'
+                                }}>
+                                    ⚠️ You have a pending registration. Update details or proceed to payment.
+                                </div>
+                            )}
                         </div>
 
                         <div className="sm-journey-map-v2">
@@ -326,7 +399,7 @@ const LiveEnrollment = () => {
                                 type="submit" 
                                 className="sm-decent-btn brand-blue-btn"
                             >
-                                PROCEED TO PAYMENT <FaArrowRight />
+                                {existingEnrollment ? 'UPDATE & PROCEED TO PAYMENT' : 'PROCEED TO PAYMENT'} <FaArrowRight />
                             </motion.button>
                         </form>
                     </motion.div>

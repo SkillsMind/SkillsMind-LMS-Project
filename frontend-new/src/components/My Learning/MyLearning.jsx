@@ -74,23 +74,49 @@ const MyLearning = () => {
                 </header>
 
                 {/* REJECTED STATE */}
-                {isRejected && (
-                    <div className="mylearning-card mylearning-card-rejected">
-                        <div className="mylearning-icon-circle mylearning-icon-rejected">
-                            <FaExclamationTriangle size={45} color="#ef4444" />
-                        </div>
-                        <h2>Payment Verification Failed</h2>
-                        <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
-                        <div className="mylearning-btn-group">
-                            <button className="mylearning-btn-contact" onClick={() => navigate('/contact')}>
-                                <FaHeadset /> Contact Support
-                            </button>
-                            <button className="mylearning-btn-resubmit" onClick={() => navigate('/get-enrolment')}>
-                                Re-submit Payment
-                            </button>
-                        </div>
-                    </div>
-                )}
+                {/* REJECTED STATE */}
+{isRejected && (
+    <div className="mylearning-card mylearning-card-rejected">
+        <div className="mylearning-icon-circle mylearning-icon-rejected">
+            <FaExclamationTriangle size={45} color="#E13630" />
+        </div>
+        <h2>Payment Verification Failed</h2>
+        <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
+        {paymentData.rejectionReason && (
+            <div className="rejection-reason" style={{ 
+                background: '#fee2e2', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                marginBottom: '20px',
+                fontSize: '14px',
+                color: '#dc2626'
+            }}>
+                <strong>Reason:</strong> {paymentData.rejectionReason}
+            </div>
+        )}
+        <div className="mylearning-btn-group">
+            <button className="mylearning-btn-contact" onClick={() => navigate('/contact')}>
+                <FaHeadset /> Contact Support
+            </button>
+            <button className="mylearning-btn-resubmit" onClick={() => {
+                navigate('/payment-method/' + paymentData.courseId, {
+                    state: {
+                        enrollmentData: {
+                            fullName: paymentData.studentName,
+                            email: paymentData.studentEmail,
+                            cnic: paymentData.studentCnic
+                        },
+                        mode: paymentData.enrollmentMode || 'live',
+                        resubmit: true,
+                        previousPaymentId: paymentData._id
+                    }
+                });
+            }}>
+                Re-submit Payment
+            </button>
+        </div>
+    </div>
+)}
 
                 {/* PENDING STATE */}
                 {!isApproved && !isRejected && (

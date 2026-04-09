@@ -22,102 +22,28 @@ import {
   Briefcase,
   Lightbulb,
   Monitor,
-  Smartphone,
-  Globe,
-  Zap,
-  Search,
-  HelpCircle,
   Clock3,
   Laptop,
-  Phone,
   Languages,
   Puzzle,
   Coffee
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './CourseSection.css';
 
-const categories = [
-  {
-    id: 1,
-    title: 'Programming',
-    description: 'Master coding with Python, JavaScript, and modern frameworks.',
-    icon: Code,
-    courses: 24,
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80',
-    category: 'Development',
-    tags: ['Beginner', 'Career Change', 'High Salary', 'Remote Work']
-  },
-  {
-    id: 2,
-    title: 'Digital Marketing',
-    description: 'Learn SEO, SEM, and social media marketing strategies.',
-    icon: Megaphone,
-    courses: 18,
-    image: 'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800&q=80',
-    category: 'Marketing',
-    tags: ['Freelancing', 'Beginner', 'Quick Start', 'Business']
-  },
-  {
-    id: 3,
-    title: 'Photography',
-    description: 'Professional photography and photo editing techniques.',
-    icon: Camera,
-    courses: 12,
-    image: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=800&q=80',
-    category: 'Design',
-    tags: ['Creative', 'Freelancing', 'Personal Interest', 'Side Hustle']
-  },
-  {
-    id: 4,
-    title: 'Data Science',
-    description: 'Analytics, visualization, and machine learning basics.',
-    icon: BarChart3,
-    courses: 15,
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80',
-    category: 'Development',
-    tags: ['Advanced', 'High Salary', 'Career Change', 'Math Skills']
-  },
-  {
-    id: 5,
-    title: 'Graphic Design',
-    description: 'Create stunning visuals with industry-standard tools.',
-    icon: Palette,
-    courses: 20,
-    image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80',
-    category: 'Design',
-    tags: ['Creative', 'Freelancing', 'Beginner', 'Portfolio']
-  },
-  {
-    id: 6,
-    title: 'UI/UX Design',
-    description: 'Design beautiful interfaces and user experiences.',
-    icon: Palette,
-    courses: 16,
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80',
-    category: 'Design',
-    tags: ['Creative', 'High Demand', 'Remote Work', 'Tech']
-  },
-  {
-    id: 7,
-    title: 'Web Development',
-    description: 'Build modern websites with latest technologies.',
-    icon: Code,
-    courses: 22,
-    image: 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=800&q=80',
-    category: 'Development',
-    tags: ['High Demand', 'Freelancing', 'Remote Work', 'Career Change']
-  },
-  {
-    id: 8,
-    title: 'Database Management',
-    description: 'SQL, NoSQL, and cloud database administration.',
-    icon: Database,
-    courses: 14,
-    image: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&q=80',
-    category: 'Development',
-    tags: ['Advanced', 'Enterprise', 'High Salary', 'Backend']
-  }
+const iconMap = {
+  'Development': Code,
+  'Design': Palette,
+  'Marketing': Megaphone,
+  'Business': Briefcase,
+  'default': Code
+};
+
+const defaultImages = [
+  'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80',
+  'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800&q=80',
+  'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=800&q=80'
 ];
 
 const categoryTabs = ['All', 'Development', 'Design', 'Marketing', 'Business'];
@@ -160,7 +86,7 @@ const aiQuestions = [
     section: "Career Goals & Interests",
     sectionIcon: Target,
     question: "What interests you the most?",
-    icon: Zap,
+    icon: Brain,
     options: ["Logic & Problem Solving", "Creativity & Art", "Communication & Selling", "Data & Analysis", "Building Things"]
   },
   {
@@ -214,10 +140,11 @@ const aiQuestions = [
 ];
 
 const CourseSection = () => {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [mobileIndex, setMobileIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('All');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -227,18 +154,72 @@ const CourseSection = () => {
   const [showResult, setShowResult] = useState(false);
   const [recommendedCourse, setRecommendedCourse] = useState(null);
   
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const sectionRef = useRef(null);
   const aiRef = useRef(null);
   const autoPlayRef = useRef(null);
   const mobileContainerRef = useRef(null);
 
+  const backendURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${backendURL}/${cleanPath}`;
+  };
+
+  // Fetch courses from backend
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${backendURL}/api/courses/all`);
+        const fetchedCourses = Array.isArray(res.data) ? res.data : [];
+        
+        const transformedCourses = fetchedCourses.map((course, index) => ({
+          id: course._id,
+          _id: course._id,
+          title: course.title || 'Untitled Course',
+          description: course.description || course.shortDescription || 'Learn professional skills with this comprehensive course.',
+          icon: iconMap[course.category] || iconMap['default'],
+          courses: course.coursesCount || 12,
+          image: course.thumbnail ? getImageUrl(course.thumbnail) : defaultImages[index % defaultImages.length],
+          category: course.category || 'Development',
+          tags: course.tags || ['Beginner', 'Career Change', 'High Salary', 'Remote Work'],
+          price: course.price || 0,
+          duration: course.duration || '3 Months',
+          level: course.level || 'Beginner',
+          instructor: course.instructor,
+          syllabus: course.syllabus,
+          enrolledStudents: course.enrolledStudents || 0,
+          badge: course.badge || 'PREMIUM',
+          isHide: course.isHide
+        }));
+        
+        setCourses(transformedCourses);
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+        setError("Failed to load courses");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [backendURL]);
+
   const filteredCategories = activeTab === 'All' 
-    ? categories 
-    : categories.filter(cat => cat.category === activeTab);
+    ? courses.filter(c => !c.isHide) 
+    : courses.filter(cat => cat.category === activeTab && !cat.isHide);
 
   const cardsPerView = 4;
   const totalCards = filteredCategories.length;
 
+  // Intersection Observer for animations
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -247,7 +228,7 @@ const CourseSection = () => {
           observer.unobserve(entry.target);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.1 }
     );
 
     if (sectionRef.current) {
@@ -257,6 +238,7 @@ const CourseSection = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -266,23 +248,26 @@ const CourseSection = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Reset index when tab changes
   useEffect(() => {
     setCurrentIndex(0);
     setMobileIndex(0);
   }, [activeTab]);
 
+  // Auto-play slider
   useEffect(() => {
-    if (isMobile || !isVisible || showAIAssistant) return;
+    if (isMobile || !isVisible || showAIAssistant || loading || totalCards === 0) return;
     
     autoPlayRef.current = setInterval(() => {
       setCurrentIndex((prev) => 
-        prev + 1 >= totalCards - cardsPerView + 1 ? 0 : prev + 1
+        prev + 1 >= Math.max(1, totalCards - cardsPerView + 1) ? 0 : prev + 1
       );
     }, 2500);
 
     return () => clearInterval(autoPlayRef.current);
-  }, [totalCards, isMobile, isVisible, activeTab, showAIAssistant]);
+  }, [totalCards, isMobile, isVisible, activeTab, showAIAssistant, loading]);
 
+  // Scroll to AI assistant when opened
   useEffect(() => {
     if (showAIAssistant && aiRef.current) {
       setTimeout(() => {
@@ -292,7 +277,7 @@ const CourseSection = () => {
   }, [showAIAssistant]);
 
   const nextSlide = () => {
-    if (isAnimating || isMobile) return;
+    if (isAnimating || isMobile || totalCards === 0) return;
     setIsAnimating(true);
     setCurrentIndex((prev) => 
       prev + 1 >= totalCards - cardsPerView + 1 ? 0 : prev + 1
@@ -301,20 +286,20 @@ const CourseSection = () => {
   };
 
   const prevSlide = () => {
-    if (isAnimating || isMobile) return;
+    if (isAnimating || isMobile || totalCards === 0) return;
     setIsAnimating(true);
     setCurrentIndex((prev) => 
-      prev === 0 ? totalCards - cardsPerView : prev - 1
+      prev === 0 ? Math.max(0, totalCards - cardsPerView) : prev - 1
     );
     setTimeout(() => setIsAnimating(false), 500);
   };
 
   const handleMouseEnter = () => {
-    if (!isMobile) clearInterval(autoPlayRef.current);
+    if (!isMobile && autoPlayRef.current) clearInterval(autoPlayRef.current);
   };
 
   const handleMouseLeave = () => {
-    if (!isMobile && !showAIAssistant) {
+    if (!isMobile && !showAIAssistant && !loading && totalCards > 0) {
       autoPlayRef.current = setInterval(() => {
         setCurrentIndex((prev) => 
           prev + 1 >= totalCards - cardsPerView + 1 ? 0 : prev + 1
@@ -326,9 +311,9 @@ const CourseSection = () => {
   const handleMobileScroll = (e) => {
     const container = e.target;
     const scrollLeft = container.scrollLeft;
-    const cardWidth = 320; // 300px card + 20px gap
+    const cardWidth = 320;
     const newIndex = Math.round(scrollLeft / cardWidth);
-    setMobileIndex(Math.min(newIndex, filteredCategories.length - 1));
+    setMobileIndex(Math.min(newIndex, Math.max(0, filteredCategories.length - 1)));
   };
 
   const openAIAssistant = () => {
@@ -377,26 +362,27 @@ const CourseSection = () => {
     const patience = userAnswers[10];
     const priorKnowledge = userAnswers[2];
 
-    categories.forEach(course => {
+    courses.forEach(course => {
       let score = 0;
+      const title = (course.title || '').toLowerCase();
 
-      if (idealJob === "Web Developer" && course.title === "Web Development") score += 5;
-      if (idealJob === "Graphic Designer" && course.title === "Graphic Design") score += 5;
-      if (idealJob === "SEO/Digital Marketer" && course.title === "Digital Marketing") score += 5;
-      if (idealJob === "Data Analyst" && course.title === "Data Science") score += 5;
-      if (idealJob === "App Developer" && course.title === "Programming") score += 4;
-      if (idealJob === "UI/UX Designer" && course.title === "UI/UX Design") score += 5;
+      if (idealJob === "Web Developer" && title.includes('web')) score += 5;
+      if (idealJob === "Graphic Designer" && title.includes('graphic')) score += 5;
+      if (idealJob === "SEO/Digital Marketer" && title.includes('marketing')) score += 5;
+      if (idealJob === "Data Analyst" && title.includes('data')) score += 5;
+      if (idealJob === "App Developer" && title.includes('programming')) score += 4;
+      if (idealJob === "UI/UX Designer" && title.includes('ui/ux')) score += 5;
 
       if (interest === "Logic & Problem Solving" && course.category === "Development") score += 3;
       if (interest === "Creativity & Art" && course.category === "Design") score += 3;
       if (interest === "Communication & Selling" && course.category === "Marketing") score += 3;
-      if (interest === "Data & Analysis" && course.title === "Data Science") score += 3;
-      if (interest === "Building Things" && course.title === "Web Development") score += 3;
+      if (interest === "Data & Analysis" && title.includes('data')) score += 3;
+      if (interest === "Building Things" && title.includes('web')) score += 3;
 
-      if (careerGoal === "Get a Job" && course.tags.includes("High Demand")) score += 2;
-      if (careerGoal === "Start Freelancing" && course.tags.includes("Freelancing")) score += 3;
+      if (careerGoal === "Get a Job" && course.tags?.includes("High Demand")) score += 2;
+      if (careerGoal === "Start Freelancing" && course.tags?.includes("Freelancing")) score += 3;
       if (careerGoal === "Build my own Business" && course.category === "Marketing") score += 2;
-      if (careerGoal === "Skill Upgrade" && course.tags.includes("Advanced")) score += 2;
+      if (careerGoal === "Skill Upgrade" && course.tags?.includes("Advanced")) score += 2;
 
       if (device === "Only Mobile Phone" && course.category === "Design") score += 2;
       if (device === "Only Mobile Phone" && course.category === "Development") score -= 2;
@@ -406,7 +392,7 @@ const CourseSection = () => {
 
       if (priorKnowledge === "Yes, I know coding basics" && course.category === "Development") score += 2;
       if (priorKnowledge === "Yes, design/marketing basics" && course.category === "Design") score += 2;
-      if (priorKnowledge === "No, I'm a complete beginner" && course.tags.includes("Beginner")) score += 2;
+      if (priorKnowledge === "No, I'm a complete beginner" && course.tags?.includes("Beginner")) score += 2;
 
       if (score > highestScore) {
         highestScore = score;
@@ -414,11 +400,11 @@ const CourseSection = () => {
       }
     });
 
-    if (!bestMatch) {
-      if (careerGoal === "Start Freelancing") bestMatch = categories[4];
-      else if (interest === "Logic & Problem Solving") bestMatch = categories[6];
-      else if (interest === "Creativity & Art") bestMatch = categories[4];
-      else bestMatch = categories[0];
+    if (!bestMatch && courses.length > 0) {
+      if (careerGoal === "Start Freelancing") bestMatch = courses.find(c => c.category === 'Design') || courses[0];
+      else if (interest === "Logic & Problem Solving") bestMatch = courses.find(c => c.category === 'Development') || courses[0];
+      else if (interest === "Creativity & Art") bestMatch = courses.find(c => c.category === 'Design') || courses[0];
+      else bestMatch = courses[0];
     }
 
     return bestMatch;
@@ -431,9 +417,72 @@ const CourseSection = () => {
     setRecommendedCourse(null);
   };
 
+  // FIXED: Button ki jagah Link use karna taake page refresh na ho
+  const handleEnroll = (courseId) => {
+    navigate(`/get-enrollment?course=${courseId}&enroll=true`);
+  };
+
   const currentQuestion = aiQuestions[currentStep];
-  const CurrentSectionIcon = currentQuestion.sectionIcon;
-  const CurrentQuestionIcon = currentQuestion.icon;
+  const CurrentSectionIcon = currentQuestion?.sectionIcon || School;
+  const CurrentQuestionIcon = currentQuestion?.icon || GraduationCap;
+
+  if (loading) {
+    return (
+      <section className="course-section-simple is-visible" id="courses">
+        <div className="course-container-simple">
+          <div className="section-header-simple">
+            <div className="section-badge-simple">
+              <GraduationCap size={20} />
+              <span>EXPLORE COURSES</span>
+            </div>
+            <h2 className="section-title-simple">Our Courses</h2>
+          </div>
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div className="ai-analyzing-section">
+              <div className="ai-brain-animation">
+                <Brain size={48} />
+                <div className="ai-ripples">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+              <h4>Loading Courses...</h4>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="course-section-simple is-visible" id="courses">
+        <div className="course-container-simple">
+          <div className="section-header-simple">
+            <h2 className="section-title-simple">Our Courses</h2>
+          </div>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#dc2626' }}>
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: '20px',
+                padding: '12px 24px',
+                background: '#000B29',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section 
@@ -468,12 +517,13 @@ const CourseSection = () => {
           </div>
         </div>
 
-        {!isMobile && (
+        {!isMobile && filteredCategories.length > 0 && (
           <div className="slider-outer desktop-only">
             <button 
               className="slider-arrow outside prev" 
               onClick={prevSlide}
               aria-label="Previous"
+              disabled={totalCards <= cardsPerView}
             >
               <ChevronLeft size={20} />
             </button>
@@ -486,13 +536,13 @@ const CourseSection = () => {
               <div className="cards-wrapper-simple">
                 <div 
                   className="cards-track-simple"
-                  style={{ transform: `translateX(-${currentIndex * (100 / cardsPerView)}%)` }}
+                  style={{ transform: `translateX(-${currentIndex * (100 / Math.min(cardsPerView, Math.max(1, totalCards)))}%)` }}
                 >
                   {filteredCategories.map((category, index) => {
-                    const IconComponent = category.icon;
+                    const IconComponent = category.icon || Code;
                     return (
                       <div 
-                        key={category.id} 
+                        key={category.id || index} 
                         className="category-card-simple"
                         style={{ '--delay': `${index * 0.1}s` }}
                       >
@@ -506,10 +556,21 @@ const CourseSection = () => {
                             <IconComponent size={28} strokeWidth={1.5} />
                           </div>
                           <h3 className="card-title-simple">{category.title}</h3>
-                          <p className="card-desc-simple">{category.description}</p>
-                          <Link to={`/courses/${category.title.toLowerCase().replace(' ', '-')}`} className="read-more-link">
-                            Read More
-                          </Link>
+                          <p className="card-desc-simple line-clamp-3">{category.description}</p>
+                          <div className="card-footer-simple">
+                            <div className="card-meta-info">
+                              <span>Rs. {category.price}</span>
+                              <span>{category.duration}</span>
+                            </div>
+                            {/* FIXED: Button ko Link se replace kiya */}
+                            <Link 
+                              to={`/get-enrollment?course=${category._id}`}
+                              className="read-more-link"
+                            >
+                              Read More
+                              <ArrowRight size={16} />
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     );
@@ -522,6 +583,7 @@ const CourseSection = () => {
               className="slider-arrow outside next" 
               onClick={nextSlide}
               aria-label="Next"
+              disabled={totalCards <= cardsPerView}
             >
               <ChevronRight size={20} />
             </button>
@@ -537,10 +599,10 @@ const CourseSection = () => {
             >
               <div className="mobile-cards-wrapper">
                 {filteredCategories.map((category, index) => {
-                  const IconComponent = category.icon;
+                  const IconComponent = category.icon || Code;
                   return (
                     <div 
-                      key={category.id} 
+                      key={category.id || index} 
                       className="mobile-card"
                       style={{ '--delay': `${index * 0.1}s` }}
                     >
@@ -553,17 +615,21 @@ const CourseSection = () => {
                           <IconComponent size={28} strokeWidth={1.5} />
                         </div>
                         <h3 className="mobile-card-title">{category.title}</h3>
-                        <p className="mobile-card-desc">{category.description}</p>
+                        <p className="mobile-card-desc line-clamp-2">{category.description}</p>
                         <div className="mobile-card-meta">
                           <span>
                             <BookOpen size={14} />
-                            {category.courses} Courses
+                            Rs. {category.price}
                           </span>
                           <span>•</span>
                           <span>{category.category}</span>
                         </div>
-                        <Link to={`/courses/${category.title.toLowerCase().replace(' ', '-')}`} className="mobile-read-more">
-                          Explore Course
+                        {/* FIXED: Button ko Link se replace kiya */}
+                        <Link 
+                          to={`/get-enrollment?course=${category._id}`}
+                          className="mobile-read-more"
+                        >
+                          Read More
                           <ArrowRight size={16} />
                         </Link>
                       </div>
@@ -584,8 +650,20 @@ const CourseSection = () => {
           </>
         )}
 
+        {filteredCategories.length === 0 && !loading && (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '60px 20px',
+            color: '#64748b'
+          }}>
+            <BookOpen size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+            <h3>No courses found</h3>
+            <p>Try selecting a different category</p>
+          </div>
+        )}
+
         <div className="dual-buttons-wrapper">
-          <Link to="/courses" className="view-all-link">
+          <Link to="/get-enrollment" className="view-all-link">
             View All Courses
             <ChevronRight size={18} />
           </Link>
@@ -670,7 +748,7 @@ const CourseSection = () => {
                             <span>98% Match</span>
                           </div>
                           <div className="ai-rec-floating-icon">
-                            {React.createElement(recommendedCourse.icon, { size: 40 })}
+                            {React.createElement(recommendedCourse.icon || Code, { size: 40 })}
                           </div>
                         </div>
                         
@@ -685,11 +763,11 @@ const CourseSection = () => {
                           <div className="ai-rec-stats">
                             <div className="ai-stat">
                               <BookOpen size={16} />
-                              <span>{recommendedCourse.courses} Courses</span>
+                              <span>Rs. {recommendedCourse.price}</span>
                             </div>
                             <div className="ai-stat">
                               <Clock size={16} />
-                              <span>3-6 Months</span>
+                              <span>{recommendedCourse.duration}</span>
                             </div>
                             <div className="ai-stat">
                               <Award size={16} />
@@ -698,21 +776,21 @@ const CourseSection = () => {
                           </div>
                           
                           <div className="ai-rec-tags-premium">
-                            {recommendedCourse.tags.map((tag, idx) => (
+                            {recommendedCourse.tags?.map((tag, idx) => (
                               <span key={idx} className="ai-rec-tag-premium">{tag}</span>
                             ))}
                           </div>
                           
                           <div className="ai-rec-actions-premium">
-                            <Link 
-                              to={`/courses/${recommendedCourse.title.toLowerCase().replace(' ', '-')}`} 
+                            <button 
+                              onClick={() => handleEnroll(recommendedCourse._id)}
                               className="ai-enroll-btn-premium"
                             >
                               <span>Start Learning Now</span>
                               <ArrowRight size={18} />
-                            </Link>
+                            </button>
                             <button onClick={resetAI} className="ai-retake-btn-premium">
-                              <Search size={16} />
+                              <ArrowRight size={16} style={{ transform: 'rotate(-180deg)' }} />
                               <span>Retake Assessment</span>
                             </button>
                           </div>
@@ -728,10 +806,10 @@ const CourseSection = () => {
                       </div>
                       <div className="ai-section-info">
                         <span className="ai-section-label">Current Section</span>
-                        <span className="ai-section-name">{currentQuestion.section}</span>
+                        <span className="ai-section-name">{currentQuestion?.section}</span>
                       </div>
                       <div className="ai-section-progress">
-                        {aiQuestions.filter(q => q.section === currentQuestion.section).length} questions
+                        {aiQuestions.filter(q => q.section === currentQuestion?.section).length} questions
                       </div>
                     </div>
 
@@ -739,11 +817,11 @@ const CourseSection = () => {
                       <div className="ai-question-icon-wrapper">
                         <CurrentQuestionIcon size={32} />
                       </div>
-                      <h4>{currentQuestion.question}</h4>
+                      <h4>{currentQuestion?.question}</h4>
                     </div>
 
                     <div className="ai-options-grid-enhanced">
-                      {currentQuestion.options.map((option, idx) => (
+                      {currentQuestion?.options?.map((option, idx) => (
                         <button 
                           key={idx} 
                           className="ai-option-card-enhanced"

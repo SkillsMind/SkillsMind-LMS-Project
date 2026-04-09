@@ -5,7 +5,8 @@ import {
     FaChevronLeft, FaShieldAlt, FaCloudUploadAlt, FaUser, 
     FaEnvelope, FaUsers, FaInfinity, FaRegClock, FaSignal,
     FaCreditCard, FaCalendarAlt, FaLock, 
-    FaHashtag, FaBook, FaIdCard, FaCcVisa, FaCcMastercard
+    FaHashtag, FaBook, FaIdCard, FaCcVisa, FaCcMastercard,
+    FaExclamationTriangle
 } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -16,10 +17,12 @@ const PaymentMethod = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
-    // Enrollment data from LiveEnrollment or RecordedEnrollment
-    const enrollmentData = location.state?.enrollmentData || {};
+    // Get resubmit data if any
+    const isResubmit = location.state?.resubmit || false;
+    const previousPaymentId = location.state?.previousPaymentId || null;
     
-    // Enrollment mode handle karo (live/recorded)
+    // Enrollment data
+    const enrollmentData = location.state?.enrollmentData || {};
     const enrollmentMode = location.state?.mode || 'recorded';
     const modeTitle = enrollmentMode === 'live' ? 'Live Class' : 'Recorded Course';
     
@@ -27,6 +30,7 @@ const PaymentMethod = () => {
     const [loading, setLoading] = useState(true);
     const [selectedMethod, setSelectedMethod] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState(null);
 
     const studentName = enrollmentData.fullName || localStorage.getItem('userName') || "Student";
 
@@ -40,6 +44,23 @@ const PaymentMethod = () => {
         expiry: '',
         cvc: ''
     });
+
+    // Fetch previous payment rejection reason if resubmit
+    useEffect(() => {
+        const fetchRejectionReason = async () => {
+            if (isResubmit && previousPaymentId) {
+                try {
+                    const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/payments/rejection-reason/${previousPaymentId}`);
+                    if (response.data.rejectionReason) {
+                        setRejectionReason(response.data.rejectionReason);
+                    }
+                } catch (error) {
+                    console.error("Error fetching rejection reason:", error);
+                }
+            }
+        };
+        fetchRejectionReason();
+    }, [isResubmit, previousPaymentId]);
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -116,6 +137,10 @@ const PaymentMethod = () => {
         data.append('paymentMethod', selectedMethod.name);
         data.append('enrollmentMode', enrollmentMode);
         
+        if (isResubmit && previousPaymentId) {
+            data.append('previousPaymentId', previousPaymentId);
+        }
+        
         if (formData.receipt) {
             data.append('receipt', formData.receipt);
         }
@@ -178,6 +203,28 @@ const PaymentMethod = () => {
 
     return (
         <div className="sm-payment-page-v2" style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
+            {/* Rejection Reason Alert */}
+            {rejectionReason && (
+                <div className="rejection-alert" style={{
+                    background: '#fee2e2',
+                    borderLeft: '4px solid #dc2626',
+                    padding: '15px 20px',
+                    margin: '20px auto',
+                    maxWidth: '1200px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                }}>
+                    <FaExclamationTriangle size={24} color="#dc2626" />
+                    <div>
+                        <strong style={{ color: '#dc2626' }}>Previous Payment Rejected!</strong>
+                        <p style={{ margin: '5px 0 0', color: '#7f1a1a' }}>Reason: {rejectionReason}</p>
+                        <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#666' }}>Please correct the issue and resubmit your payment.</p>
+                    </div>
+                </div>
+            )}
+
             <div className="sm-payment-nav" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #f0f0f0' }}>
                 <button 
                     onClick={() => selectedMethod ? setSelectedMethod(null) : navigate(-1)} 
@@ -187,6 +234,7 @@ const PaymentMethod = () => {
                     <FaChevronLeft /> {selectedMethod ? 'Change Method' : 'Back'}
                 </button>
                 <div className="sm-brand-name">SkillsMind <span>Secure Pay</span></div>
+                {isResubmit && <div className="resubmit-badge" style={{ background: '#dc2626', color: 'white', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>Resubmission</div>}
             </div>
 
             <div className="sm-payment-wrapper">
@@ -196,10 +244,7 @@ const PaymentMethod = () => {
                             <div className="course-card-top">
                                 <div className="premium-badge">{course.badge || course.category || 'Premium'}</div>
                                 <img src={getImagePath(course.thumbnail)} alt={course.title} className="course-preview-img" onError={(e) => e.target.src = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=500"} />
-                                {/* Stamp Style Reserved Label */}
-                                <div className="reserved-stamp" style={{ 
-                                    background: enrollmentMode === 'live' ? '#dc2626' : '#000B29'
-                                }}>
+                                <div className="reserved-stamp" style={{ background: enrollmentMode === 'live' ? '#dc2626' : '#000B29' }}>
                                     <div className="stamp-inner">
                                         <span className="stamp-text">RESERVED</span>
                                         <span className="stamp-name">{studentName}</span>
@@ -258,10 +303,7 @@ const PaymentMethod = () => {
                                         <h3>International Payment Gateway</h3>
                                         <div className="coming-soon-badge">COMING SOON</div>
                                         <p>We're working hard to bring you seamless card payments. Stay tuned!</p>
-                                        <button 
-                                            className="back-to-methods-btn"
-                                            onClick={() => setSelectedMethod(null)}
-                                        >
+                                        <button className="back-to-methods-btn" onClick={() => setSelectedMethod(null)}>
                                             ← Back to Payment Methods
                                         </button>
                                     </div>

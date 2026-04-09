@@ -1,0 +1,490 @@
+/* FAQ Page Styles */
+.faq-page {
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Hero Section */
+.faq-hero {
+  position: relative;
+  background: linear-gradient(135deg, #000B29 0%, #001541 100%);
+  padding: 80px 20px 100px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.faq-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(227,6,19,0.1), transparent);
+}
+
+.faq-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.faq-hero-content h1 {
+  font-size: 48px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.faq-hero-content .red-text {
+  color: #e30613;
+}
+
+.faq-hero-content p {
+  font-size: 18px;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 40px;
+}
+
+/* Search Bar */
+.faq-search {
+  display: flex;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.faq-search input {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.search-btn {
+  padding: 14px 28px;
+  background: #e30613;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  background: #c00510;
+  transform: translateY(-2px);
+}
+
+/* Categories Section */
+.faq-categories {
+  background: white;
+  padding: 20px 0;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 70px;
+  z-index: 99;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+}
+
+.categories-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.categories-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.category-btn {
+  padding: 8px 20px;
+  background: #f0f2f5;
+  border: none;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.category-btn:hover {
+  background: #e0e4e9;
+}
+
+.category-btn.active {
+  background: #e30613;
+  color: white;
+}
+
+/* FAQ Main Section */
+.faq-main {
+  padding: 60px 0 80px;
+  background: white;
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 50px;
+}
+
+/* FAQ Cards */
+.faq-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.faq-card {
+  background: #f8f9fc;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #eef2f6;
+}
+
+.faq-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.faq-card.open {
+  background: white;
+  border-color: #e30613;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.faq-question-btn {
+  width: 100%;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.faq-question-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.faq-category-badge {
+  padding: 4px 12px;
+  background: #e30613;
+  color: white;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.faq-question-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000B29;
+}
+
+.faq-chevron {
+  color: #666;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.faq-chevron.rotated {
+  transform: rotate(180deg);
+  color: #e30613;
+}
+
+.faq-answer-container {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+
+.faq-card.open .faq-answer-container {
+  max-height: 300px;
+}
+
+.faq-answer-text {
+  padding: 0 24px 24px;
+  color: #555;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* No Results */
+.no-results {
+  text-align: center;
+  padding: 60px;
+  background: #f8f9fc;
+  border-radius: 16px;
+  color: #666;
+}
+
+/* Sidebar */
+.faq-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.support-card {
+  background: linear-gradient(135deg, #000B29 0%, #001541 100%);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  color: white;
+}
+
+.support-icon {
+  width: 60px;
+  height: 60px;
+  background: #e30613;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.support-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.support-card p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.contact-support-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 12px;
+  background: #e30613;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.contact-support-btn:hover {
+  background: #c00510;
+  transform: translateY(-2px);
+}
+
+.response-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  margin-top: 16px;
+}
+
+.response-time .dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Quick Links */
+.quick-links {
+  background: #f8f9fc;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #eef2f6;
+}
+
+.quick-links h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000B29;
+  margin-bottom: 16px;
+}
+
+.quick-links ul {
+  list-style: none;
+  padding: 0;
+}
+
+.quick-links ul li {
+  margin-bottom: 12px;
+}
+
+.quick-links ul li a {
+  color: #555;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  font-size: 14px;
+}
+
+.quick-links ul li a:hover {
+  color: #e30613;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .faq-sidebar {
+    order: -1;
+  }
+  
+  .support-card {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .quick-links {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .faq-hero {
+    padding: 60px 20px 80px;
+  }
+  
+  .faq-hero-content h1 {
+    font-size: 32px;
+  }
+  
+  .faq-hero-content p {
+    font-size: 15px;
+  }
+  
+  .faq-search {
+    flex-direction: column;
+  }
+  
+  .faq-question-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .faq-question-text {
+    font-size: 14px;
+  }
+  
+  .faq-question-btn {
+    padding: 16px;
+  }
+}/* Contact Methods Styles - Make sure they are visible */
+.contact-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.contact-method-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+
+.contact-method-btn:hover {
+  transform: translateX(5px);
+  background: var(--hover-color, #e30613);
+  border-color: transparent;
+}
+
+.contact-method-btn:hover .contact-icon {
+  color: white !important;
+}
+
+.contact-method-btn:hover .contact-name,
+.contact-method-btn:hover .contact-username {
+  color: white;
+}
+
+.contact-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.contact-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.contact-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.contact-username {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+/* Hover colors for each platform */
+.contact-method-btn[data-platform="whatsapp"]:hover {
+  background: #25D366;
+}
+
+.contact-method-btn[data-platform="instagram"]:hover {
+  background: #E4405F;
+}
+
+.contact-method-btn[data-platform="email"]:hover {
+  background: #e30613;
+}

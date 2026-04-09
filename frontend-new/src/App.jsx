@@ -40,6 +40,10 @@ import RegistrationData from './components/AdminControl/StudentRegisterRecords/R
 
 // 2. Pages Imports
 import Home from './pages/Home';
+import HowItWorks from './pages/HowItWorks';
+import FAQPage from './pages/FAQPage';
+import ContactUs from './pages/ContactUs';
+import NewsEvents from './pages/NewsEvents'; // ✅ NEW IMPORT FOR NEWS & EVENTS PAGE
 
 // ============================================
 // 🆕 NEW: Student Dashboard Pages Import (10 Files)
@@ -96,6 +100,18 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginSignup />} />
           <Route path="/signup" element={<LoginSignup />} />
+          
+          {/* ✅ NEW: How It Works Route */}
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          
+          {/* ✅ NEW: FAQ Page Route */}
+          <Route path="/faqs" element={<FAQPage />} />
+
+          {/* ✅ NEW: Contact Us Page Route */}
+          <Route path="/contact" element={<ContactUs />} />
+
+          {/* ✅ NEW: News & Events Page Route */}
+          <Route path="/news" element={<NewsEvents />} />
 
           {/* Profile & Enrollment Routes (Protected) */}
           <Route 

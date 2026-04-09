@@ -19,7 +19,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
     'https://www.skillsmind.online',
     'https://skillsmind.online',
-    'https://skillsmind-frontend-new.vercel.app',  // ← YEH LINE ADD KARO
+    'https://skillsmind-frontend-new.vercel.app',
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5174',
@@ -106,7 +106,10 @@ app.use('/api/auth', safeRoute('./routes/auth', 'Auth'));
 app.use('/api/student-profile', safeRoute('./routes/profile', 'Profile'));
 app.use('/api/profile', safeRoute('./routes/profile', 'Profile'));
 app.use('/api/students', safeRoute('./routes/studentRegisterRoutes', 'Students'));
-app.use('/api/enroll', safeRoute('./routes/LiveEnrollment', 'Enrollment'));
+
+// ✅ FIXED: Changed from './routes/LiveEnrollment' to './routes/liveEnrollRoute'
+app.use('/api/enroll', safeRoute('./routes/liveEnrollRoute', 'Enrollment'));
+
 app.use('/api/courses', safeRoute('./routes/course', 'Courses'));
 app.use('/api/payments', safeRoute('./routes/Paymentreceived', 'Payments'));
 app.use('/api/student-dashboard', safeRoute('./routes/studentDashboard', 'Student Dashboard'));
@@ -121,6 +124,9 @@ app.use('/api/notes', safeRoute('./routes/notes', 'Notes'));
 app.use('/api/schedules', safeRoute('./routes/schedules', 'Schedules'));
 app.use('/api/zoom', safeRoute('./routes/zoom', 'Zoom'));
 app.use('/api/attendance-new', safeRoute('./routes/attendance', 'Attendance New'));
+
+// ✅ NEW: Contact Routes (For Contact Form)
+app.use('/api/contact', safeRoute('./routes/contact', 'Contact'));
 
 // Important Links
 try {

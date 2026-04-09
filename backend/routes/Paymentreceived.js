@@ -42,9 +42,9 @@ router.get('/all-payments', async (req, res) => {
     }
 });
 
-// B. Update Status (Approve/Reject) - WITH AUTO ENROLLMENT
+// B. Update Status (Approve/Reject) - WITH AUTO ENROLLMENT & REJECTION REASON
 router.put('/update-status/:id', async (req, res) => {
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
     try {
         if (!['approved', 'rejected', 'pending'].includes(status.toLowerCase())) {
             return res.status(400).json({ success: false, message: "Invalid status value" });
@@ -56,6 +56,12 @@ router.put('/update-status/:id', async (req, res) => {
         }
 
         payment.status = status.toLowerCase();
+        
+        // ✅ Store rejection reason if rejected
+        if (status.toLowerCase() === 'rejected' && rejectionReason) {
+            payment.rejectionReason = rejectionReason;
+        }
+        
         if (status.toLowerCase() === 'approved') {
             payment.approvedAt = new Date();
         }
@@ -63,7 +69,7 @@ router.put('/update-status/:id', async (req, res) => {
 
         const updated = payment;
 
-        // 🔥 NEW: Auto-enrollment when approved
+        // 🔥 Auto-enrollment when approved
         let enrollmentMessage = '';
         if (status.toLowerCase() === 'approved') {
             try {
@@ -104,15 +110,13 @@ router.put('/update-status/:id', async (req, res) => {
                         throw new Error('Course not found');
                     }
                     
-                    // 🔥 CRITICAL: Student ke enrolledCourses mein add karo
-                    const userUpdateResult = await User.findByIdAndUpdate(
+                    await User.findByIdAndUpdate(
                         student._id,
                         { $addToSet: { enrolledCourses: courseObjectId } },
                         { new: true }
                     );
                     
-                    // 🔥 CRITICAL: Course ke enrolledStudentIds mein student add karo
-                    const courseUpdateResult = await Course.findByIdAndUpdate(
+                    await Course.findByIdAndUpdate(
                         courseObjectId,
                         { 
                             $addToSet: { enrolledStudentIds: student._id },
@@ -121,16 +125,10 @@ router.put('/update-status/:id', async (req, res) => {
                         { new: true }
                     );
                     
-                    if (userUpdateResult && courseUpdateResult) {
-                        enrollmentMessage = ' & Student Auto-Enrolled';
-                        console.log(`✅ [SkillsMind] Auto-enrolled: ${student.email} to course ${course.title}`);
-                        console.log(`✅ Student enrolledCourses:`, userUpdateResult.enrolledCourses);
-                        console.log(`✅ Course enrolledStudentIds:`, courseUpdateResult.enrolledStudentIds);
-                    }
+                    enrollmentMessage = ' & Student Auto-Enrolled';
+                    console.log(`✅ [SkillsMind] Auto-enrolled: ${student.email} to course ${course.title}`);
                 } else {
                     console.log('⚠️ Auto-enrollment skipped: Student or courseId not found');
-                    console.log('Student:', student ? 'Found' : 'Not Found');
-                    console.log('CourseId:', updated.courseId);
                     enrollmentMessage = ' (Student/Course Not Found)';
                 }
             } catch (enrollErr) {
@@ -142,7 +140,7 @@ router.put('/update-status/:id', async (req, res) => {
         // --- STATUS UPDATE EMAIL ---
         const isApproved = status.toLowerCase() === 'approved';
         const themeColor = isApproved ? '#5e6160' : '#e31e24'; 
-        const dashboardUrl = "http://localhost:5173/my-learning";
+        const dashboardUrl = process.env.FRONTEND_URL || "http://localhost:5173/my-learning";
 
         const statusMailOptions = {
             from: '"SkillsMind Education" <skillsmind786@gmail.com>',
@@ -165,6 +163,13 @@ router.put('/update-status/:id', async (req, res) => {
                                     : `We have completed the review of your payment submission for <strong>${updated.courseName}</strong>. Unfortunately, we could not verify your transaction at this time.`}
                             </p>
 
+                            ${!isApproved && updated.rejectionReason ? `
+                                <div style="margin: 20px 0; padding: 15px; background-color: #fee2e2; border-left: 4px solid #dc2626; border-radius: 8px;">
+                                    <strong style="color: #dc2626;">Reason for rejection:</strong>
+                                    <p style="margin: 8px 0 0 0; color: #7f1a1a;">${updated.rejectionReason}</p>
+                                </div>
+                            ` : ''}
+
                             <div style="margin: 30px 0; padding: 20px; background-color: #fcfcfc; border: 1px dashed #ddd; border-radius: 8px;">
                                 <table style="width: 100%; border-collapse: collapse;">
                                     <tr>
@@ -186,7 +191,7 @@ router.put('/update-status/:id', async (req, res) => {
 
                             ${isApproved ? 
                                 `<p style="color: #555; font-size: 15px;">Your journey towards excellence starts here. Log in to your dashboard to view your lectures, assignments, and resources.</p>` : 
-                                `<p style="color: #555; font-size: 15px;">Reason: Possible transaction mismatch or unreadable receipt. Please re-submit your details or contact our support team.</p>`
+                                `<p style="color: #555; font-size: 15px;">Please correct the issue and resubmit your payment. If you need assistance, contact our support team.</p>`
                             }
 
                             <div style="text-align: center; margin-top: 40px;">
@@ -239,13 +244,36 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
+// ✅ D. GET Rejection Reason for a payment
+router.get('/rejection-reason/:id', async (req, res) => {
+    try {
+        const payment = await Payment.findById(req.params.id);
+        if (!payment) {
+            return res.status(404).json({ success: false, message: "Payment not found" });
+        }
+        res.json({ 
+            success: true, 
+            rejectionReason: payment.rejectionReason || null,
+            courseId: payment.courseId,
+            courseName: payment.courseName,
+            studentName: payment.studentName,
+            studentEmail: payment.studentEmail,
+            studentCnic: payment.studentCnic,
+            enrollmentMode: payment.enrollmentMode
+        });
+    } catch (error) {
+        console.error("Error fetching rejection reason:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ==========================================
 // 4. STUDENT ROUTES
 // ==========================================
 
 router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
     try {
-        const { studentName, studentEmail, studentCnic, courseName, courseId, transactionId, amount, paymentMethod, enrollmentMode } = req.body;
+        const { studentName, studentEmail, studentCnic, courseName, courseId, transactionId, amount, paymentMethod, enrollmentMode, previousPaymentId } = req.body;
         
         let receiptPath = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
@@ -257,6 +285,16 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
                 success: false, 
                 message: 'Student not found. Please register first.' 
             });
+        }
+        
+        // ✅ If resubmitting, mark previous payment as replaced
+        if (previousPaymentId) {
+            const previousPayment = await Payment.findById(previousPaymentId);
+            if (previousPayment && previousPayment.status === 'rejected') {
+                previousPayment.isReplaced = true;
+                previousPayment.replacedBy = newPaymentId;
+                await previousPayment.save();
+            }
         }
         
         const newPayment = new Payment({
@@ -292,7 +330,7 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
                         <p>Status: <span style="color: #e31e24; font-weight: bold;">PENDING VERIFICATION</span></p>
                         <p>Our team will verify your receipt within 2-4 hours. You'll receive another email once your course is active.</p>
                         <div style="text-align: center; margin-top: 30px;">
-                            <a href="http://localhost:5173/my-learning" style="background-color: #000B29; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px;">Visit My Learning</a>
+                            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/my-learning" style="background-color: #000B29; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px;">Visit My Learning</a>
                         </div>
                     </div>
                 </div>
