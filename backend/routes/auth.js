@@ -11,24 +11,13 @@ const auth = require('../middleware/auth');
 // --- Memory storage for OTPs ---
 const otpStore = {}; 
 
-const SibApiV3Sdk = require('@getbrevo/brevo');
-
-// Initialize Brevo API (HTTPS, NOT SMTP)
-let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-let apiKey = apiInstance.authentications['apiKey'];
-apiKey.apiKey = process.env.BREVO_API_KEY;
-
-// Send email function
-async function sendEmail(toEmail, subject, htmlContent) {
-    let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-    sendSmtpEmail.sender = { email: 'skillsmind786@gmail.com', name: 'SkillsMind' };
-    sendSmtpEmail.to = [{ email: toEmail }];
-    sendSmtpEmail.subject = subject;
-    sendSmtpEmail.htmlContent = htmlContent;
-    
-    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    return response;
-}
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 // ==========================================
 // PRE-DEFINED PREMIUM TEMPLATES (SKILLSMIND)
@@ -71,18 +60,21 @@ router.post('/send-otp', async (req, res) => {
             expires: Date.now() + 10 * 60 * 1000 
         };
 
-                const emailHtml = getEmailLayout(`
-            <h2 style="color: #000B29; text-align: center;">Verify Your Account</h2>
-            <p style="text-align: center; font-size: 16px; color: #555;">Welcome to SkillsMind! Use the secure verification code below to complete your registration.</p>
-            <div style="text-align: center; margin: 40px 0;">
-                <div style="display: inline-block; padding: 20px 40px; background-color: #f1f1f1; border-radius: 12px; border: 2px dashed #000B29;">
-                    <h1 style="color: #E30613; letter-spacing: 12px; font-size: 50px; margin: 0; font-weight: 900;">${otp}</h1>
+        const mailOptions = {
+            from: `"SkillsMind Support" <${process.env.EMAIL_USER}>`,
+            to: cleanEmail,
+            subject: 'SkillsMind | Account Verification Code',
+            html: getEmailLayout(`
+                <h2 style="color: #000B29; text-align: center;">Verify Your Account</h2>
+                <p style="text-align: center; font-size: 16px; color: #555;">Welcome to SkillsMind! Use the secure verification code below to complete your registration.</p>
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="display: inline-block; padding: 20px 40px; background-color: #f1f1f1; border-radius: 12px; border: 2px dashed #000B29;">
+                        <h1 style="color: #E30613; letter-spacing: 12px; font-size: 50px; margin: 0; font-weight: 900;">${otp}</h1>
+                    </div>
                 </div>
-            </div>
-            <p style="text-align: center; font-size: 14px; color: #888;">This code will expire in 10 minutes for security reasons.</p>
-        `);
-
-        await sendEmail(cleanEmail, 'SkillsMind | Account Verification Code', emailHtml);
+                <p style="text-align: center; font-size: 14px; color: #888;">This code will expire in 10 minutes for security reasons.</p>
+            `)
+        };
 
         await transporter.sendMail(mailOptions);
         res.status(200).json({ success: true, message: 'OTP sent successfully!' });
@@ -135,16 +127,19 @@ router.post('/forgot-password', async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         otpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 };
 
-                const emailHtml = getEmailLayout(`
-            <h2 style="color: #000B29; text-align: center;">Password Reset Request</h2>
-            <p style="text-align: center; color: #555;">You requested to reset your password. Use the following code to proceed:</p>
-            <div style="text-align: center; margin: 40px 0;">
-                <h1 style="color: #000B29; letter-spacing: 10px; font-size: 45px; font-weight: 800; border-bottom: 4px solid #E30613; display: inline-block;">${otp}</h1>
-            </div>
-            <p style="text-align: center; font-size: 13px; color: #999;">If you didn't request this, please ignore this email or contact support.</p>
-        `);
-
-        await sendEmail(user.email, 'SkillsMind | Password Reset Request', emailHtml);
+        await transporter.sendMail({
+            from: `"SkillsMind Support" <${process.env.EMAIL_USER}>`,
+            to: user.email,
+            subject: 'SkillsMind | Password Reset Request',
+            html: getEmailLayout(`
+                <h2 style="color: #000B29; text-align: center;">Password Reset Request</h2>
+                <p style="text-align: center; color: #555;">You requested to reset your password. Use the following code to proceed:</p>
+                <div style="text-align: center; margin: 40px 0;">
+                    <h1 style="color: #000B29; letter-spacing: 10px; font-size: 45px; font-weight: 800; border-bottom: 4px solid #E30613; display: inline-block;">${otp}</h1>
+                </div>
+                <p style="text-align: center; font-size: 13px; color: #999;">If you didn't request this, please ignore this email or contact support.</p>
+            `)
+        });
 
         res.status(200).json({ success: true, message: 'Password reset OTP sent!' });
     } catch (error) {
@@ -245,20 +240,24 @@ router.post('/register', async (req, res) => {
         delete otpStore[cleanEmail]; 
 
         // --- NEW: PREMIUM WELCOME EMAIL ---
-                const welcomeHtml = getEmailLayout(`
-            <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
-            <p style="font-size: 16px;">Hello <b>${name}</b>,</p>
-            <p style="font-size: 16px;">We are thrilled to have you join <b>SkillsMind</b>. Our mission is to provide you with a world-class learning experience and help you master the skills of the future.</p>
-            <div style="background-color: #fff5f5; border-left: 5px solid #E30613; padding: 20px; margin: 30px 0;">
-                <p style="margin: 0; font-weight: bold; color: #333;">Start Your Journey:</p>
-                <p style="margin: 5px 0 0 0; color: #666;">Login to your dashboard to explore our premium courses and start learning today!</p>
-            </div>
-            <div style="text-align: center; margin-top: 30px;">
-                <a href="https://www.skillsmind.online/login" style="background-color: #000B29; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Go to Dashboard</a>
-            </div>
-        `);
-        
-        await sendEmail(cleanEmail, `Welcome to SkillsMind, ${name}! 🎉`, welcomeHtml).catch(e => console.log("Welcome Mail Error:", e));
+        const welcomeMailOptions = {
+            from: `"SkillsMind Education" <${process.env.EMAIL_USER}>`,
+            to: cleanEmail,
+            subject: `Welcome to SkillsMind, ${name}! 🎉`,
+            html: getEmailLayout(`
+                <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
+                <p style="font-size: 16px;">Hello <b>${name}</b>,</p>
+                <p style="font-size: 16px;">We are thrilled to have you join <b>SkillsMind</b>. Our mission is to provide you with a world-class learning experience and help you master the skills of the future.</p>
+                <div style="background-color: #fff5f5; border-left: 5px solid #E30613; padding: 20px; margin: 30px 0;">
+                    <p style="margin: 0; font-weight: bold; color: #333;">Start Your Journey:</p>
+                    <p style="margin: 5px 0 0 0; color: #666;">Login to your dashboard to explore our premium courses and start learning today!</p>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="http://localhost:5173/login" style="background-color: #000B29; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Go to Dashboard</a>
+                </div>
+            `)
+        };
+        await transporter.sendMail(welcomeMailOptions).catch(e => console.log("Welcome Mail Error:", e));
         
         res.status(201).json({ success: true, message: "SkillsMind registration successful!" });
     } catch (err) { 
