@@ -3,70 +3,26 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const StudentProfile = require('../models/StudentProfile'); 
 const auth = require('../middleware/auth');
 
-// ==========================================
-// BREVO HTTPS API SETUP (NOT SMTP)
-// ==========================================
-const SibApiV3Sdk = require('@getbrevo/brevo');
-
-// Check if API key exists
-console.log('🔍 Checking Brevo API Key:', process.env.BREVO_API_KEY ? '✅ Present' : '❌ MISSING!');
-
-// Force HTTPS API configuration
-const defaultClient = SibApiV3Sdk.ApiClient.instance;
-const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY;
-
-// Set timeout to 30 seconds
-defaultClient.timeout = 30000;
-
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-
-// Debug log
-console.log('🔑 Brevo API configured with key:', process.env.BREVO_API_KEY ? '✅ Yes' : '❌ No');
-
-// ==========================================
-// EMAIL SEND FUNCTION WITH DETAILED LOGS
-// ==========================================
-async function sendEmailViaBrevo(toEmail, subject, htmlContent, userName = 'Student') {
-    try {
-        console.log(`📧 [1] sendEmailViaBrevo called for: ${toEmail}`);
-        console.log(`📧 [2] Subject: ${subject}`);
-        
-        let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-        sendSmtpEmail.sender = { 
-            email: 'skillsmind786@gmail.com', 
-            name: 'SkillsMind' 
-        };
-        sendSmtpEmail.to = [{ 
-            email: toEmail, 
-            name: userName 
-        }];
-        sendSmtpEmail.subject = subject;
-        sendSmtpEmail.htmlContent = htmlContent;
-        
-        console.log(`📧 [3] Sending request to Brevo API...`);
-        const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-        console.log(`✅ [4] Email sent successfully! MessageId: ${response.messageId}`);
-        return { success: true, messageId: response.messageId };
-        
-    } catch (error) {
-        console.error(`❌ [ERROR] Email send failed:`);
-        console.error(`   - Error message: ${error.message}`);
-        console.error(`   - Response body: ${JSON.stringify(error.response?.body || {})}`);
-        return { success: false, error: error.message, details: error.response?.body };
-    }
-}
-
 // --- Memory storage for OTPs ---
-const otpStore = {};
+const otpStore = {}; 
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 // ==========================================
-// EMAIL TEMPLATE (UNCHANGED)
+// PRE-DEFINED PREMIUM TEMPLATES (SKILLSMIND)
 // ==========================================
+
 const getEmailLayout = (content) => `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #eee;">
         <div style="background-color: #000B29; padding: 40px 20px; text-align: center;">
@@ -85,83 +41,50 @@ const getEmailLayout = (content) => `
 `;
 
 // ==========================================
-// SEND OTP ROUTE (WITH DETAILED LOGS)
+// 2. SEND OTP ROUTE
 // ==========================================
 router.post('/send-otp', async (req, res) => {
     try {
-        console.log('='.repeat(50));
-        console.log('📨 /send-otp ROUTE CALLED');
-        console.log('='.repeat(50));
-        
         const { email } = req.body;
-        console.log(`📧 Request email: ${email}`);
-        
-        if (!email) {
-            console.log('❌ No email provided');
-            return res.status(400).json({ success: false, message: "Email is required" });
-        }
+        if (!email) return res.status(400).json({ success: false, message: "Email is required" });
 
         const cleanEmail = email.trim().toLowerCase();
-        console.log(`📧 Clean email: ${cleanEmail}`);
-        
-        // Check if user exists
         const existingUser = await User.findOne({ email: cleanEmail });
-        console.log(`📧 User exists: ${existingUser ? 'Yes' : 'No'}`);
-        
         if (existingUser && existingUser.password) {
-            console.log('❌ User already has password, cannot send OTP');
             return res.status(400).json({ success: false, message: "User already exists. Please login." });
         }
 
-        // Generate OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log(`🔢 Generated OTP: ${otp}`);
-        
-        // Store OTP
-        otpStore[cleanEmail] = { 
-            otp: otp, 
+        otpStore[cleanEmail] = {
+            otp: otp,
             expires: Date.now() + 10 * 60 * 1000 
         };
-        console.log(`💾 OTP stored, expires in 10 minutes`);
 
-        // Prepare email HTML
-        const emailHtml = getEmailLayout(`
-            <h2 style="color: #000B29; text-align: center;">Verify Your Account</h2>
-            <p style="text-align: center; font-size: 16px; color: #555;">Welcome to SkillsMind! Use the secure verification code below to complete your registration.</p>
-            <div style="text-align: center; margin: 40px 0;">
-                <div style="display: inline-block; padding: 20px 40px; background-color: #f1f1f1; border-radius: 12px; border: 2px dashed #000B29;">
-                    <h1 style="color: #E30613; letter-spacing: 12px; font-size: 50px; margin: 0; font-weight: 900;">${otp}</h1>
+        const mailOptions = {
+            from: `"SkillsMind Support" <${process.env.EMAIL_USER}>`,
+            to: cleanEmail,
+            subject: 'SkillsMind | Account Verification Code',
+            html: getEmailLayout(`
+                <h2 style="color: #000B29; text-align: center;">Verify Your Account</h2>
+                <p style="text-align: center; font-size: 16px; color: #555;">Welcome to SkillsMind! Use the secure verification code below to complete your registration.</p>
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="display: inline-block; padding: 20px 40px; background-color: #f1f1f1; border-radius: 12px; border: 2px dashed #000B29;">
+                        <h1 style="color: #E30613; letter-spacing: 12px; font-size: 50px; margin: 0; font-weight: 900;">${otp}</h1>
+                    </div>
                 </div>
-            </div>
-            <p style="text-align: center; font-size: 14px; color: #888;">This code will expire in 10 minutes for security reasons.</p>
-        `);
-        console.log(`📧 Email HTML prepared`);
+                <p style="text-align: center; font-size: 14px; color: #888;">This code will expire in 10 minutes for security reasons.</p>
+            `)
+        };
 
-        // Send email via Brevo
-        console.log(`📧 Calling sendEmailViaBrevo...`);
-        const emailResult = await sendEmailViaBrevo(cleanEmail, 'SkillsMind | Account Verification Code', emailHtml);
-        
-        console.log(`📧 Email result: ${JSON.stringify(emailResult)}`);
-        
-        if (emailResult.success) {
-            console.log(`✅ OTP sent successfully to: ${cleanEmail}`);
-            res.status(200).json({ success: true, message: 'OTP sent successfully!' });
-        } else {
-            console.error(`❌ OTP send failed: ${emailResult.error}`);
-            res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
-        }
-        
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ success: true, message: 'OTP sent successfully!' });
     } catch (error) {
-        console.error('='.repeat(50));
-        console.error('❌ FATAL ERROR in /send-otp:');
-        console.error(`Error message: ${error.message}`);
-        console.error(`Error stack: ${error.stack}`);
-        console.error('='.repeat(50));
+        console.error("SkillsMind OTP Error:", error);
         res.status(500).json({ success: false, message: 'SkillsMind server cannot send email right now.' });
     }
 });
 
-// --- VERIFY OTP (UNCHANGED) ---
+// --- 3. VERIFY OTP ROUTE ---
 router.post('/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -189,55 +112,42 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 // ==========================================
-// FORGOT PASSWORD - SEND OTP
+// 4. FORGOT PASSWORD - SEND OTP
 // ==========================================
 router.post('/forgot-password', async (req, res) => {
     try {
-        console.log('='.repeat(50));
-        console.log('📨 /forgot-password ROUTE CALLED');
-        console.log('='.repeat(50));
-        
         const { email } = req.body;
-        console.log(`📧 Request email: ${email}`);
-        
         const cleanEmail = email.trim().toLowerCase();
         const user = await User.findOne({ email: cleanEmail });
 
         if (!user) {
-            console.log('❌ Email not found');
             return res.status(404).json({ success: false, message: "Email not found in SkillsMind" });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log(`🔢 Generated reset OTP: ${otp}`);
-        
         otpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 };
 
-        const emailHtml = getEmailLayout(`
-            <h2 style="color: #000B29; text-align: center;">Password Reset Request</h2>
-            <p style="text-align: center; color: #555;">You requested to reset your password. Use the following code to proceed:</p>
-            <div style="text-align: center; margin: 40px 0;">
-                <h1 style="color: #000B29; letter-spacing: 10px; font-size: 45px; font-weight: 800; border-bottom: 4px solid #E30613; display: inline-block;">${otp}</h1>
-            </div>
-            <p style="text-align: center; font-size: 13px; color: #999;">If you didn't request this, please ignore this email or contact support.</p>
-        `);
+        await transporter.sendMail({
+            from: `"SkillsMind Support" <${process.env.EMAIL_USER}>`,
+            to: user.email,
+            subject: 'SkillsMind | Password Reset Request',
+            html: getEmailLayout(`
+                <h2 style="color: #000B29; text-align: center;">Password Reset Request</h2>
+                <p style="text-align: center; color: #555;">You requested to reset your password. Use the following code to proceed:</p>
+                <div style="text-align: center; margin: 40px 0;">
+                    <h1 style="color: #000B29; letter-spacing: 10px; font-size: 45px; font-weight: 800; border-bottom: 4px solid #E30613; display: inline-block;">${otp}</h1>
+                </div>
+                <p style="text-align: center; font-size: 13px; color: #999;">If you didn't request this, please ignore this email or contact support.</p>
+            `)
+        });
 
-        const emailResult = await sendEmailViaBrevo(user.email, 'SkillsMind | Password Reset Request', emailHtml, user.name);
-        
-        if (emailResult.success) {
-            console.log(`✅ Reset OTP sent to: ${cleanEmail}`);
-            res.status(200).json({ success: true, message: 'Password reset OTP sent!' });
-        } else {
-            console.error(`❌ Reset OTP failed: ${emailResult.error}`);
-            res.status(500).json({ success: false, message: 'Failed to send reset code' });
-        }
+        res.status(200).json({ success: true, message: 'Password reset OTP sent!' });
     } catch (error) {
-        console.error("Forgot password error:", error);
         res.status(500).json({ success: false, message: 'Error sending reset code' });
     }
 });
 
-// --- VERIFY RESET OTP (UNCHANGED) ---
+// --- 5. FORGOT PASSWORD - VERIFY OTP ---
 router.post('/verify-reset-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -254,7 +164,7 @@ router.post('/verify-reset-otp', async (req, res) => {
     }
 });
 
-// --- RESET PASSWORD (UNCHANGED) ---
+// --- 6. FORGOT PASSWORD - UPDATE PASSWORD ---
 router.post('/reset-password', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -272,13 +182,11 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// ==========================================
-// GOOGLE LOGIN (ORIGINAL - NO CHANGES)
-// ==========================================
+// --- 7. GOOGLE LOGIN ROUTE ---
 router.post('/google-login', async (req, res) => {
     try {
         const { token } = req.body;
-        const googleRes = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+        const googleRes = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token= ${token}`);
         const { name, email, picture, sub } = googleRes.data;
 
         let user = await User.findOne({ email: email.trim().toLowerCase() });
@@ -311,13 +219,12 @@ router.post('/google-login', async (req, res) => {
             });
         });
     } catch (err) {
-        console.error("Google login error:", err.message);
         res.status(500).json({ success: false, message: "Google login failed" });
     }
 });
 
 // ==========================================
-// REGISTER ROUTE
+// 8. REGISTER ROUTE (WITH WELCOME EMAIL)
 // ==========================================
 router.post('/register', async (req, res) => {
     try {
@@ -332,20 +239,25 @@ router.post('/register', async (req, res) => {
         
         delete otpStore[cleanEmail]; 
 
-        const welcomeHtml = getEmailLayout(`
-            <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
-            <p style="font-size: 16px;">Hello <b>${name}</b>,</p>
-            <p style="font-size: 16px;">We are thrilled to have you join <b>SkillsMind</b>. Our mission is to provide you with a world-class learning experience and help you master the skills of the future.</p>
-            <div style="background-color: #fff5f5; border-left: 5px solid #E30613; padding: 20px; margin: 30px 0;">
-                <p style="margin: 0; font-weight: bold; color: #333;">Start Your Journey:</p>
-                <p style="margin: 5px 0 0 0; color: #666;">Login to your dashboard to explore our premium courses and start learning today!</p>
-            </div>
-            <div style="text-align: center; margin-top: 30px;">
-                <a href="https://www.skillsmind.online/login" style="background-color: #000B29; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Go to Dashboard</a>
-            </div>
-        `);
-        
-        await sendEmailViaBrevo(cleanEmail, `Welcome to SkillsMind, ${name}! 🎉`, welcomeHtml, name).catch(e => console.log("Welcome Email Error:", e));
+        // --- NEW: PREMIUM WELCOME EMAIL ---
+        const welcomeMailOptions = {
+            from: `"SkillsMind Education" <${process.env.EMAIL_USER}>`,
+            to: cleanEmail,
+            subject: `Welcome to SkillsMind, ${name}! 🎉`,
+            html: getEmailLayout(`
+                <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
+                <p style="font-size: 16px;">Hello <b>${name}</b>,</p>
+                <p style="font-size: 16px;">We are thrilled to have you join <b>SkillsMind</b>. Our mission is to provide you with a world-class learning experience and help you master the skills of the future.</p>
+                <div style="background-color: #fff5f5; border-left: 5px solid #E30613; padding: 20px; margin: 30px 0;">
+                    <p style="margin: 0; font-weight: bold; color: #333;">Start Your Journey:</p>
+                    <p style="margin: 5px 0 0 0; color: #666;">Login to your dashboard to explore our premium courses and start learning today!</p>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="http://localhost:5173/login" style="background-color: #000B29; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Go to Dashboard</a>
+                </div>
+            `)
+        };
+        await transporter.sendMail(welcomeMailOptions).catch(e => console.log("Welcome Mail Error:", e));
         
         res.status(201).json({ success: true, message: "SkillsMind registration successful!" });
     } catch (err) { 
@@ -354,7 +266,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// --- LOGIN (UNCHANGED) ---
+// --- 9. LOGIN ROUTE ---
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -383,12 +295,11 @@ router.post('/login', async (req, res) => {
             });
         });
     } catch (err) { 
-        console.error("Login error:", err);
         res.status(500).json({ success: false, message: "Server Error during login" }); 
     }
 });
 
-// --- GET ALL USERS ---
+// --- 10. GET ALL USERS ---
 router.get('/all-users', async (req, res) => {
     try {
         const users = await User.find().select('-password'); 
@@ -398,7 +309,9 @@ router.get('/all-users', async (req, res) => {
     }
 });
 
-// --- USER ROUTE (AUTH) ---
+// ==========================================
+// 🔥 FIX 1: UPDATED /user ROUTE WITH ENROLLED COURSES
+// ==========================================
 router.get('/user', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
@@ -411,7 +324,7 @@ router.get('/user', auth, async (req, res) => {
     }
 });
 
-// --- DELETE USER ---
+// --- 12. DELETE USER ---
 router.delete('/delete-user/:id', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -423,7 +336,7 @@ router.delete('/delete-user/:id', async (req, res) => {
     }
 });
 
-// --- DELETE ENROLMENT ---
+// --- 13. DELETE ENROLMENT/PROFILE ---
 router.delete('/delete-enrolment/:id', async (req, res) => {
     try {
         const profileId = req.params.id;
@@ -435,7 +348,7 @@ router.delete('/delete-enrolment/:id', async (req, res) => {
     }
 });
 
-// --- GET ALL PROFILES ---
+// --- 14. GET ALL STUDENT PROFILES ---
 router.get('/all-profiles', async (req, res) => {
     try {
         const profiles = await StudentProfile.find().populate({
@@ -450,7 +363,9 @@ router.get('/all-profiles', async (req, res) => {
     }
 });
 
-// --- ME ROUTE ---
+// ==========================================
+// 🔥 FIX 2: NEW /me ROUTE FOR STUDENT DASHBOARD
+// ==========================================
 router.get('/me', auth, async (req, res) => {
     try {
         console.log('=== AUTH /ME CALLED ===');
