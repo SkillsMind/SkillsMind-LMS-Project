@@ -12,6 +12,9 @@ const auth = require('../middleware/auth');
 // ==========================================
 const SibApiV3Sdk = require('@getbrevo/brevo');
 
+// Check if API key exists
+console.log('🔍 Checking Brevo API Key:', process.env.BREVO_API_KEY ? '✅ Present' : '❌ MISSING!');
+
 // Force HTTPS API configuration
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
@@ -25,23 +28,36 @@ const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 // Debug log
 console.log('🔑 Brevo API configured with key:', process.env.BREVO_API_KEY ? '✅ Yes' : '❌ No');
 
-// Email send function using HTTPS API
+// ==========================================
+// EMAIL SEND FUNCTION WITH DETAILED LOGS
+// ==========================================
 async function sendEmailViaBrevo(toEmail, subject, htmlContent, userName = 'Student') {
     try {
-        console.log(`📧 Sending email to: ${toEmail}`);
+        console.log(`📧 [1] sendEmailViaBrevo called for: ${toEmail}`);
+        console.log(`📧 [2] Subject: ${subject}`);
         
         let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-        sendSmtpEmail.sender = { email: 'skillsmind786@gmail.com', name: 'SkillsMind' };
-        sendSmtpEmail.to = [{ email: toEmail, name: userName }];
+        sendSmtpEmail.sender = { 
+            email: 'skillsmind786@gmail.com', 
+            name: 'SkillsMind' 
+        };
+        sendSmtpEmail.to = [{ 
+            email: toEmail, 
+            name: userName 
+        }];
         sendSmtpEmail.subject = subject;
         sendSmtpEmail.htmlContent = htmlContent;
         
+        console.log(`📧 [3] Sending request to Brevo API...`);
         const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-        console.log(`✅ Email sent: ${response.messageId}`);
+        console.log(`✅ [4] Email sent successfully! MessageId: ${response.messageId}`);
         return { success: true, messageId: response.messageId };
+        
     } catch (error) {
-        console.error('❌ Email send failed:', error.response?.body || error.message);
-        return { success: false, error: error.message };
+        console.error(`❌ [ERROR] Email send failed:`);
+        console.error(`   - Error message: ${error.message}`);
+        console.error(`   - Response body: ${JSON.stringify(error.response?.body || {})}`);
+        return { success: false, error: error.message, details: error.response?.body };
     }
 }
 
@@ -69,26 +85,46 @@ const getEmailLayout = (content) => `
 `;
 
 // ==========================================
-// SEND OTP ROUTE
+// SEND OTP ROUTE (WITH DETAILED LOGS)
 // ==========================================
 router.post('/send-otp', async (req, res) => {
     try {
-        const { email } = req.body;
-        console.log('📨 /send-otp called for:', email);
+        console.log('='.repeat(50));
+        console.log('📨 /send-otp ROUTE CALLED');
+        console.log('='.repeat(50));
         
-        if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+        const { email } = req.body;
+        console.log(`📧 Request email: ${email}`);
+        
+        if (!email) {
+            console.log('❌ No email provided');
+            return res.status(400).json({ success: false, message: "Email is required" });
+        }
 
         const cleanEmail = email.trim().toLowerCase();
+        console.log(`📧 Clean email: ${cleanEmail}`);
+        
+        // Check if user exists
         const existingUser = await User.findOne({ email: cleanEmail });
+        console.log(`📧 User exists: ${existingUser ? 'Yes' : 'No'}`);
+        
         if (existingUser && existingUser.password) {
+            console.log('❌ User already has password, cannot send OTP');
             return res.status(400).json({ success: false, message: "User already exists. Please login." });
         }
 
+        // Generate OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log('🔢 Generated OTP:', otp);
+        console.log(`🔢 Generated OTP: ${otp}`);
         
-        otpStore[cleanEmail] = { otp: otp, expires: Date.now() + 10 * 60 * 1000 };
+        // Store OTP
+        otpStore[cleanEmail] = { 
+            otp: otp, 
+            expires: Date.now() + 10 * 60 * 1000 
+        };
+        console.log(`💾 OTP stored, expires in 10 minutes`);
 
+        // Prepare email HTML
         const emailHtml = getEmailLayout(`
             <h2 style="color: #000B29; text-align: center;">Verify Your Account</h2>
             <p style="text-align: center; font-size: 16px; color: #555;">Welcome to SkillsMind! Use the secure verification code below to complete your registration.</p>
@@ -99,18 +135,28 @@ router.post('/send-otp', async (req, res) => {
             </div>
             <p style="text-align: center; font-size: 14px; color: #888;">This code will expire in 10 minutes for security reasons.</p>
         `);
+        console.log(`📧 Email HTML prepared`);
 
+        // Send email via Brevo
+        console.log(`📧 Calling sendEmailViaBrevo...`);
         const emailResult = await sendEmailViaBrevo(cleanEmail, 'SkillsMind | Account Verification Code', emailHtml);
         
+        console.log(`📧 Email result: ${JSON.stringify(emailResult)}`);
+        
         if (emailResult.success) {
-            console.log('✅ OTP sent successfully to:', cleanEmail);
+            console.log(`✅ OTP sent successfully to: ${cleanEmail}`);
             res.status(200).json({ success: true, message: 'OTP sent successfully!' });
         } else {
-            console.error('❌ OTP send failed:', emailResult.error);
+            console.error(`❌ OTP send failed: ${emailResult.error}`);
             res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
         }
+        
     } catch (error) {
-        console.error("SkillsMind OTP Error:", error);
+        console.error('='.repeat(50));
+        console.error('❌ FATAL ERROR in /send-otp:');
+        console.error(`Error message: ${error.message}`);
+        console.error(`Error stack: ${error.stack}`);
+        console.error('='.repeat(50));
         res.status(500).json({ success: false, message: 'SkillsMind server cannot send email right now.' });
     }
 });
@@ -147,18 +193,23 @@ router.post('/verify-otp', async (req, res) => {
 // ==========================================
 router.post('/forgot-password', async (req, res) => {
     try {
+        console.log('='.repeat(50));
+        console.log('📨 /forgot-password ROUTE CALLED');
+        console.log('='.repeat(50));
+        
         const { email } = req.body;
-        console.log('📨 /forgot-password called for:', email);
+        console.log(`📧 Request email: ${email}`);
         
         const cleanEmail = email.trim().toLowerCase();
         const user = await User.findOne({ email: cleanEmail });
 
         if (!user) {
+            console.log('❌ Email not found');
             return res.status(404).json({ success: false, message: "Email not found in SkillsMind" });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log('🔢 Generated reset OTP:', otp);
+        console.log(`🔢 Generated reset OTP: ${otp}`);
         
         otpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 };
 
@@ -174,10 +225,10 @@ router.post('/forgot-password', async (req, res) => {
         const emailResult = await sendEmailViaBrevo(user.email, 'SkillsMind | Password Reset Request', emailHtml, user.name);
         
         if (emailResult.success) {
-            console.log('✅ Reset OTP sent to:', cleanEmail);
+            console.log(`✅ Reset OTP sent to: ${cleanEmail}`);
             res.status(200).json({ success: true, message: 'Password reset OTP sent!' });
         } else {
-            console.error('❌ Reset OTP failed:', emailResult.error);
+            console.error(`❌ Reset OTP failed: ${emailResult.error}`);
             res.status(500).json({ success: false, message: 'Failed to send reset code' });
         }
     } catch (error) {
