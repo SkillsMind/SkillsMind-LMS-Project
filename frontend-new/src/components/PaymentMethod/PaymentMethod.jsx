@@ -17,12 +17,11 @@ const PaymentMethod = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
-    // Get resubmit data if any
     const isResubmit = location.state?.resubmit || false;
     const previousPaymentId = location.state?.previousPaymentId || null;
     
-    // Enrollment data
     const enrollmentData = location.state?.enrollmentData || {};
+    const enrollmentId = location.state?.enrollmentId || null; // 🔥 GET enrollmentId from navigation
     const enrollmentMode = location.state?.mode || 'recorded';
     const modeTitle = enrollmentMode === 'live' ? 'Live Class' : 'Recorded Course';
     
@@ -137,6 +136,11 @@ const PaymentMethod = () => {
         data.append('paymentMethod', selectedMethod.name);
         data.append('enrollmentMode', enrollmentMode);
         
+        // 🔥 CRITICAL FIX: Send enrollmentId to backend
+        if (enrollmentId) {
+            data.append('enrollmentId', enrollmentId);
+        }
+        
         if (isResubmit && previousPaymentId) {
             data.append('previousPaymentId', previousPaymentId);
         }
@@ -183,7 +187,7 @@ const PaymentMethod = () => {
             console.error("SkillsMind Submission Error:", error);
             Swal.fire({
                 title: 'Submission Failed',
-                text: 'Server connect nahi ho pa raha.',
+                text: error.response?.data?.message || 'Server connect nahi ho pa raha.',
                 icon: 'error',
                 confirmButtonColor: '#d33'
             });
@@ -203,7 +207,6 @@ const PaymentMethod = () => {
 
     return (
         <div className="sm-payment-page-v2" style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
-            {/* Rejection Reason Alert */}
             {rejectionReason && (
                 <div className="rejection-alert" style={{
                     background: '#fee2e2',

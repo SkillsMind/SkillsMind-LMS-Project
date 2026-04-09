@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const liveEnrollmentSchema = new mongoose.Schema({
-    // ✅ ADD userId to track which student enrolled
     userId: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User',
@@ -15,14 +14,17 @@ const liveEnrollmentSchema = new mongoose.Schema({
     dob: { type: String, required: true },
     gender: { type: String, required: true },
     course: { type: String, required: true },
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' }, // ✅ ADD courseId
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
     profilePic: { type: String },
     status: { 
         type: String, 
         enum: ['pending', 'active', 'completed', 'cancelled'],
-        default: 'active' 
+        default: 'pending'  // 🔥 CHANGED: 'active' se 'pending'
     },
     mode: { type: String, default: 'live' },
+    rejectionReason: { type: String }, // 🔥 ADDED
+    paymentApprovedAt: { type: Date }, // 🔥 ADDED
+    paymentRejectedAt: { type: Date }, // 🔥 ADDED
     createdAt: { type: Date, default: Date.now }
 });
 

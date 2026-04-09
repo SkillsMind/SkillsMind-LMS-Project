@@ -3,7 +3,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { 
     FaCheck, FaTimes, FaEye, FaIdCard, FaSync, FaShieldAlt, 
-    FaTrashAlt, FaTimesCircle, FaFileExcel, FaFilePdf 
+    FaTrashAlt, FaTimesCircle, FaFileExcel, FaFilePdf, FaCommentAlt
 } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -38,129 +38,46 @@ const PaymentApprovals = () => {
         }
     };
 
-    // --- CLEAN EXCEL EXPORT ---
-    const exportToExcel = () => {
-        if (payments.length === 0) return Swal.fire('No Data', 'There are no records to export.', 'info');
-
-        const fileData = payments.map((p, index) => ({
-            "Sr. No": index + 1,
-            "Student Name": p.studentName,
-            "Email Address": p.studentEmail,
-            "CNIC": p.studentCnic || 'N/A',
-            "Course Name": p.courseName,
-            "Amount (PKR)": p.amount,
-            "Payment Method": p.paymentMethod,
-            "Transaction ID": p.transactionId,
-            "Status": p.status.toUpperCase(),
-            "Date": new Date(p.createdAt).toLocaleDateString()
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(fileData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "SkillsMind_Payments");
+    // 🔥 UPDATED: Handle rejection with reason
+    const handleAction = async (e, id, status) => {
+        if(e) { e.preventDefault(); e.stopPropagation(); }
         
-        const colWidths = [
-            { wch: 8 }, { wch: 25 }, { wch: 30 }, { wch: 18 }, 
-            { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, 
-            { wch: 12 }, { wch: 15 }
-        ];
-        ws['!cols'] = colWidths;
-        
-        XLSX.writeFile(wb, `SkillsMind_Payments_Report_${new Date().getTime()}.xlsx`);
-    };
-
-    // --- PROFESSIONAL PDF EXPORT WITH STATUS COLORS ---
-    const exportToPDF = () => {
-        if (payments.length === 0) return Swal.fire('No Data', 'There are no records to export.', 'info');
-
-        try {
-            const doc = new jsPDF('l', 'mm', 'a4');
-            
-            // Header Section
-            doc.setFontSize(22);
-            doc.setTextColor(0, 11, 41); 
-            doc.text("SkillsMind Premium", 14, 20);
-            
-            doc.setFontSize(12);
-            doc.setTextColor(227, 30, 36); 
-            doc.text("Official Payment Settlement Report", 14, 28);
-
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 35);
-            doc.text(`Total Records: ${payments.length}`, 240, 35);
-
-            const tableColumn = ["#", "Student Details", "CNIC", "Course Info", "Transaction Details", "Status", "Date"];
-            
-            const tableRows = payments.map((p, index) => [
-                index + 1,
-                `${p.studentName}\n${p.studentEmail}`,
-                p.studentCnic || 'N/A',
-                `${p.courseName}\nRs. ${p.amount}`,
-                `${p.paymentMethod}\nID: ${p.transactionId}`,
-                p.status.toUpperCase(),
-                new Date(p.createdAt).toLocaleDateString()
-            ]);
-
-            autoTable(doc, {
-                startY: 40,
-                head: [tableColumn],
-                body: tableRows,
-                theme: 'grid',
-                headStyles: { 
-                    fillColor: [0, 11, 41], 
-                    textColor: [255, 255, 255], 
-                    fontSize: 10, 
-                    fontStyle: 'bold',
-                    halign: 'center'
+        // If rejecting, ask for reason first
+        if (status === 'rejected') {
+            const { value: reason } = await Swal.fire({
+                title: 'Reject Payment',
+                input: 'textarea',
+                inputLabel: 'Rejection Reason',
+                inputPlaceholder: 'Enter reason for rejection (e.g., Invalid screenshot, Incorrect amount, etc.)',
+                inputAttributes: {
+                    'aria-label': 'Type rejection reason here'
                 },
-                styles: { 
-                    fontSize: 9, 
-                    cellPadding: 4, 
-                    valign: 'middle'
-                },
-                columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' },
-                    5: { fontStyle: 'bold', halign: 'center' }
-                },
-                alternateRowStyles: { fillColor: [248, 250, 252] },
-                margin: { left: 14, right: 14 },
-                
-                didParseCell: function (data) {
-                    if (data.section === 'body' && data.column.index === 5) {
-                        const status = data.cell.raw;
-                        if (status === 'APPROVED') {
-                            data.cell.styles.textColor = [16, 185, 129]; // Green
-                        } else if (status === 'REJECTED') {
-                            data.cell.styles.textColor = [227, 30, 36]; // Red
-                        } else if (status === 'PENDING') {
-                            data.cell.styles.textColor = [255, 193, 7]; // Yellow
-                        }
+                showCancelButton: true,
+                confirmButtonColor: '#e31e24',
+                confirmButtonText: 'Reject Payment',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please provide a reason for rejection!';
                     }
                 }
             });
 
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.text(`SkillsMind Admin Portal - Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-            }
-
-            doc.save(`SkillsMind_Report_${new Date().getTime()}.pdf`);
-        } catch (error) {
-            console.error("PDF Export Error:", error);
-            Swal.fire('Export Failed', 'An error occurred while generating the PDF report.', 'error');
+            if (!reason) return; // Cancelled
+            return updateStatus(id, status, reason);
         }
+        
+        // For approve or pending, proceed directly
+        updateStatus(id, status);
     };
 
-    const handleAction = async (e, id, status) => {
-        if(e) { e.preventDefault(); e.stopPropagation(); }
+    const updateStatus = async (id, status, reason = null) => {
         const statusColors = { approved: '#10b981', rejected: '#e31e24', pending: '#3b82f6' };
+        const statusTexts = { approved: 'APPROVE', rejected: 'REJECT', pending: 'RESET' };
         
         const result = await Swal.fire({
-            title: `Confirm ${status.toUpperCase()}`,
-            text: `Are you sure you want to mark this payment as ${status}?`,
+            title: `Confirm ${statusTexts[status.toUpperCase()]}`,
+            text: `Are you sure you want to ${status} this payment?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: statusColors[status],
@@ -171,14 +88,25 @@ const PaymentApprovals = () => {
 
         if (result.isConfirmed) {
             try {
-                const response = await axios.put(`${API_BASE_URL}/api/payments/update-status/${id}`, { status });
+                const payload = { status };
+                if (reason) payload.rejectionReason = reason;
+                
+                const response = await axios.put(`${API_BASE_URL}/api/payments/update-status/${id}`, payload);
+                
                 if (response.data.success) {
                     fetchPayments(); 
+                    
+                    const messages = {
+                        approved: 'Payment approved! Student can now access the course.',
+                        rejected: 'Payment rejected. Student will be notified with reason.',
+                        pending: 'Status reset to pending.'
+                    };
+                    
                     Swal.fire({ 
                         title: 'Updated!', 
-                        text: `The payment status has been set to ${status}.`, 
+                        text: messages[status], 
                         icon: 'success', 
-                        timer: 1500, 
+                        timer: 2000, 
                         showConfirmButton: false 
                     });
                 }
@@ -213,6 +141,120 @@ const PaymentApprovals = () => {
         }
     };
 
+    const exportToExcel = () => {
+        if (payments.length === 0) return Swal.fire('No Data', 'There are no records to export.', 'info');
+
+        const fileData = payments.map((p, index) => ({
+            "Sr. No": index + 1,
+            "Student Name": p.studentName,
+            "Email Address": p.studentEmail,
+            "CNIC": p.studentCnic || 'N/A',
+            "Course Name": p.courseName,
+            "Amount (PKR)": p.amount,
+            "Payment Method": p.paymentMethod,
+            "Transaction ID": p.transactionId,
+            "Status": p.status.toUpperCase(),
+            "Rejection Reason": p.rejectionReason || '-',
+            "Date": new Date(p.createdAt).toLocaleDateString()
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(fileData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "SkillsMind_Payments");
+        
+        const colWidths = [
+            { wch: 8 }, { wch: 25 }, { wch: 30 }, { wch: 18 }, 
+            { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, 
+            { wch: 12 }, { wch: 20 }, { wch: 15 }
+        ];
+        ws['!cols'] = colWidths;
+        
+        XLSX.writeFile(wb, `SkillsMind_Payments_Report_${new Date().getTime()}.xlsx`);
+    };
+
+    const exportToPDF = () => {
+        if (payments.length === 0) return Swal.fire('No Data', 'There are no records to export.', 'info');
+
+        try {
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            doc.setFontSize(22);
+            doc.setTextColor(0, 11, 41); 
+            doc.text("SkillsMind Premium", 14, 20);
+            
+            doc.setFontSize(12);
+            doc.setTextColor(227, 30, 36); 
+            doc.text("Official Payment Settlement Report", 14, 28);
+
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 35);
+            doc.text(`Total Records: ${payments.length}`, 240, 35);
+
+            const tableColumn = ["#", "Student Details", "CNIC", "Course Info", "Transaction Details", "Status", "Reason"];
+            
+            const tableRows = payments.map((p, index) => [
+                index + 1,
+                `${p.studentName}\n${p.studentEmail}`,
+                p.studentCnic || 'N/A',
+                `${p.courseName}\nRs. ${p.amount}`,
+                `${p.paymentMethod}\nID: ${p.transactionId}`,
+                p.status.toUpperCase(),
+                p.rejectionReason || '-'
+            ]);
+
+            autoTable(doc, {
+                startY: 40,
+                head: [tableColumn],
+                body: tableRows,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [0, 11, 41], 
+                    textColor: [255, 255, 255], 
+                    fontSize: 10, 
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 4, 
+                    valign: 'middle'
+                },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    5: { fontStyle: 'bold', halign: 'center' }
+                },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { left: 14, right: 14 },
+                
+                didParseCell: function (data) {
+                    if (data.section === 'body' && data.column.index === 5) {
+                        const status = data.cell.raw;
+                        if (status === 'APPROVED') {
+                            data.cell.styles.textColor = [16, 185, 129];
+                        } else if (status === 'REJECTED') {
+                            data.cell.styles.textColor = [227, 30, 36];
+                        } else if (status === 'PENDING') {
+                            data.cell.styles.textColor = [255, 193, 7];
+                        }
+                    }
+                }
+            });
+
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(`SkillsMind Admin Portal - Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+            }
+
+            doc.save(`SkillsMind_Report_${new Date().getTime()}.pdf`);
+        } catch (error) {
+            console.error("PDF Export Error:", error);
+            Swal.fire('Export Failed', 'An error occurred while generating the PDF report.', 'error');
+        }
+    };
+
     const viewReceipt = (e, path) => {
         if(e) { e.preventDefault(); e.stopPropagation(); }
         if (!path) return Swal.fire('No Proof', 'No transaction receipt was found for this student.', 'info');
@@ -222,7 +264,7 @@ const PaymentApprovals = () => {
 
     if (loading) return (
         <div className="sm-loading-container">
-            <div className="sm-loader"></div>
+            <div className="spinner"></div>
             <p>Syncing SkillsMind Database...</p>
         </div>
     );
@@ -275,7 +317,7 @@ const PaymentApprovals = () => {
                         </thead>
                         <tbody>
                             {payments.length > 0 ? payments.map((pay) => (
-                                <tr key={pay._id}>
+                                <tr key={pay._id} style={pay.status === 'rejected' ? { background: '#fef2f2' } : {}}>
                                     <td>
                                         <div className="sm-user-box">
                                             <div className="sm-avatar">{pay.studentName?.charAt(0)}</div>
@@ -304,10 +346,24 @@ const PaymentApprovals = () => {
                                         </button>
                                     </td>
                                     <td>
-                                        {/* Dynamic Status Badge with Rejected Logic */}
                                         <span className={`sm-badge status-${pay.status?.toLowerCase()}`}>
                                             {pay.status?.toUpperCase()}
                                         </span>
+                                        {/* 🔥 SHOW REJECTION REASON */}
+                                        {pay.rejectionReason && (
+                                            <div style={{ 
+                                                fontSize: '11px', 
+                                                color: '#dc2626', 
+                                                marginTop: '4px',
+                                                maxWidth: '150px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}>
+                                                <FaCommentAlt style={{ fontSize: '10px' }} />
+                                                {pay.rejectionReason}
+                                            </div>
+                                        )}
                                     </td>
                                     <td>
                                         <div className="sm-action-buttons">
@@ -317,7 +373,7 @@ const PaymentApprovals = () => {
                                                 </button>
                                             )}
                                             {pay.status !== 'rejected' && (
-                                                <button title="Reject" className="sm-btn-reject" onClick={(e) => handleAction(e, pay._id, 'rejected')}>
+                                                <button title="Reject with Reason" className="sm-btn-reject" onClick={(e) => handleAction(e, pay._id, 'rejected')}>
                                                     <FaTimes />
                                                 </button>
                                             )}

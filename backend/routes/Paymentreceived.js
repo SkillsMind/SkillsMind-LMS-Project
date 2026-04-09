@@ -4,6 +4,8 @@ const router = express.Router();
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const Payment = require('../models/Payment');
+const LiveEnrollment = require('../models/LiveEnrollment'); // ADD THIS
+const Course = require('../models/Course'); // ADD THIS
 const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -42,7 +44,7 @@ router.get('/all-payments', async (req, res) => {
     }
 });
 
-// B. Update Status (Approve/Reject) - WITH AUTO ENROLLMENT & REJECTION REASON
+// B. Update Status (Approve/Reject) - WITH LIVE ENROLLMENT SYNC
 router.put('/update-status/:id', async (req, res) => {
     const { status, rejectionReason } = req.body;
     try {
@@ -57,7 +59,7 @@ router.put('/update-status/:id', async (req, res) => {
 
         payment.status = status.toLowerCase();
         
-        // ✅ Store rejection reason if rejected
+        // Store rejection reason if rejected
         if (status.toLowerCase() === 'rejected' && rejectionReason) {
             payment.rejectionReason = rejectionReason;
         }
@@ -68,76 +70,95 @@ router.put('/update-status/:id', async (req, res) => {
         await payment.save();
 
         const updated = payment;
-
-        // 🔥 Auto-enrollment when approved
         let enrollmentMessage = '';
+
+        // 🔥 CRITICAL FIX: Sync with LiveEnrollment
         if (status.toLowerCase() === 'approved') {
             try {
+                // Find pending enrollment for this student and course
+                const enrollment = await LiveEnrollment.findOne({
+                    userId: updated.studentId,
+                    courseId: updated.courseId,
+                    status: 'pending'
+                });
+
+                if (enrollment) {
+                    // Update enrollment to active
+                    enrollment.status = 'active';
+                    enrollment.paymentApprovedAt = new Date();
+                    await enrollment.save();
+                    
+                    // Also update Course enrolled students
+                    await Course.findByIdAndUpdate(updated.courseId, {
+                        $addToSet: { enrolledStudentIds: updated.studentId },
+                        $inc: { enrolledStudents: 1 }
+                    });
+                    
+                    enrollmentMessage = ' & Enrollment Activated';
+                    console.log(`✅ LiveEnrollment activated for student: ${updated.studentId}`);
+                } else {
+                    // Try to find by email if studentId not set
+                    const User = require('../models/User');
+                    const student = await User.findOne({ email: updated.studentEmail });
+                    if (student) {
+                        const enrollByEmail = await LiveEnrollment.findOne({
+                            userId: student._id,
+                            courseId: updated.courseId,
+                            status: 'pending'
+                        });
+                        
+                        if (enrollByEmail) {
+                            enrollByEmail.status = 'active';
+                            enrollByEmail.paymentApprovedAt = new Date();
+                            await enrollByEmail.save();
+                            
+                            await Course.findByIdAndUpdate(updated.courseId, {
+                                $addToSet: { enrolledStudentIds: student._id },
+                                $inc: { enrolledStudents: 1 }
+                            });
+                            
+                            enrollmentMessage = ' & Enrollment Activated';
+                        }
+                    }
+                }
+            } catch (enrollErr) {
+                console.error("⚠️ Enrollment sync error:", enrollErr.message);
+                enrollmentMessage = ' (Enrollment sync failed)';
+            }
+        } 
+        else if (status.toLowerCase() === 'rejected') {
+            // Update LiveEnrollment to cancelled
+            try {
                 const User = require('../models/User');
-                const Course = require('../models/Course');
-                
                 let student = null;
                 
                 if (updated.studentId) {
                     student = await User.findById(updated.studentId);
-                    console.log('Found student by studentId:', student?.email);
-                }
-                
-                if (!student) {
-                    student = await User.findOne({ email: updated.studentEmail });
-                    console.log('Found student by email:', student?.email);
-                    
-                    if (student && !updated.studentId) {
-                        updated.studentId = student._id;
-                        await updated.save();
-                    }
-                }
-                
-                if (student && updated.courseId) {
-                    let courseObjectId;
-                    if (mongoose.Types.ObjectId.isValid(updated.courseId)) {
-                        courseObjectId = new mongoose.Types.ObjectId(updated.courseId);
-                    } else {
-                        console.log('Invalid courseId:', updated.courseId);
-                        enrollmentMessage = ' (Invalid Course ID)';
-                        throw new Error('Invalid course ID');
-                    }
-                    
-                    const course = await Course.findById(courseObjectId);
-                    if (!course) {
-                        console.log('Course not found:', updated.courseId);
-                        enrollmentMessage = ' (Course Not Found)';
-                        throw new Error('Course not found');
-                    }
-                    
-                    await User.findByIdAndUpdate(
-                        student._id,
-                        { $addToSet: { enrolledCourses: courseObjectId } },
-                        { new: true }
-                    );
-                    
-                    await Course.findByIdAndUpdate(
-                        courseObjectId,
-                        { 
-                            $addToSet: { enrolledStudentIds: student._id },
-                            $inc: { enrolledStudents: 1 }
-                        },
-                        { new: true }
-                    );
-                    
-                    enrollmentMessage = ' & Student Auto-Enrolled';
-                    console.log(`✅ [SkillsMind] Auto-enrolled: ${student.email} to course ${course.title}`);
                 } else {
-                    console.log('⚠️ Auto-enrollment skipped: Student or courseId not found');
-                    enrollmentMessage = ' (Student/Course Not Found)';
+                    student = await User.findOne({ email: updated.studentEmail });
                 }
-            } catch (enrollErr) {
-                console.error("⚠️ Auto-enrollment error:", enrollErr.message);
-                enrollmentMessage = enrollmentMessage || ' (Enrollment Failed)';
+                
+                if (student) {
+                    await LiveEnrollment.findOneAndUpdate(
+                        {
+                            userId: student._id,
+                            courseId: updated.courseId,
+                            status: 'pending'
+                        },
+                        {
+                            status: 'cancelled',
+                            rejectionReason: rejectionReason,
+                            paymentRejectedAt: new Date()
+                        }
+                    );
+                    enrollmentMessage = ' & Enrollment Cancelled';
+                }
+            } catch (err) {
+                console.error("Error cancelling enrollment:", err);
             }
         }
 
-        // --- STATUS UPDATE EMAIL ---
+        // --- STATUS UPDATE EMAIL --- (Your existing email code)
         const isApproved = status.toLowerCase() === 'approved';
         const themeColor = isApproved ? '#5e6160' : '#e31e24'; 
         const dashboardUrl = process.env.FRONTEND_URL || "http://localhost:5173/my-learning";
@@ -212,7 +233,6 @@ router.put('/update-status/:id', async (req, res) => {
 
         transporter.sendMail(statusMailOptions).catch(err => console.error("Email Sending Failed:", err));
         
-        console.log(`✅ [SkillsMind] Action Log: ${status} | Student: ${updated.studentEmail}${enrollmentMessage}`);
         res.status(200).json({ 
             success: true, 
             message: `Status updated to ${status}${enrollmentMessage}!`, 
@@ -244,7 +264,7 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
-// ✅ D. GET Rejection Reason for a payment
+// D. GET Rejection Reason for a payment
 router.get('/rejection-reason/:id', async (req, res) => {
     try {
         const payment = await Payment.findById(req.params.id);
@@ -273,7 +293,7 @@ router.get('/rejection-reason/:id', async (req, res) => {
 
 router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
     try {
-        const { studentName, studentEmail, studentCnic, courseName, courseId, transactionId, amount, paymentMethod, enrollmentMode, previousPaymentId } = req.body;
+        const { studentName, studentEmail, studentCnic, courseName, courseId, transactionId, amount, paymentMethod, enrollmentMode, previousPaymentId, enrollmentId } = req.body;
         
         let receiptPath = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
@@ -287,12 +307,11 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
             });
         }
         
-        // ✅ If resubmitting, mark previous payment as replaced
+        // If resubmitting, mark previous payment as replaced
         if (previousPaymentId) {
             const previousPayment = await Payment.findById(previousPaymentId);
             if (previousPayment && previousPayment.status === 'rejected') {
                 previousPayment.isReplaced = true;
-                previousPayment.replacedBy = newPaymentId;
                 await previousPayment.save();
             }
         }
@@ -305,6 +324,7 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
             courseId,
             studentId: student._id,
             enrollmentMode: enrollmentMode || 'recorded',
+            enrollmentId: enrollmentId || null, // Store enrollment ID
             transactionId, 
             amount, 
             paymentMethod,
@@ -345,7 +365,7 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
     }
 });
 
-// FIXED: SkillMind Status Route to match Frontend exactly
+// Get payment status
 router.get('/my-status/:email', async (req, res) => {
     try {
         const studentEmail = req.params.email;

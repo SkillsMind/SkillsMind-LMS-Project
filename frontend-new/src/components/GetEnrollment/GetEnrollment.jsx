@@ -9,7 +9,8 @@ import {
   FaGlobe, FaUserCheck, FaLayerGroup, FaDownload, FaChalkboardTeacher, FaLightbulb,
   FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp, FaInstagram, FaYoutube, FaCertificate, 
   FaInfinity, FaMobileAlt, FaAward, FaRocket, FaShieldAlt, FaVideo, FaMicrophone, 
-  FaEnvelope, FaPhone, FaTransgender, FaGraduationCap, FaExclamationTriangle
+  FaEnvelope, FaPhone, FaTransgender, FaGraduationCap, FaExclamationTriangle,
+  FaRedo, FaTimesCircle
 } from 'react-icons/fa';
 import axios from 'axios';
 import jsPDF from 'jspdf';
@@ -41,6 +42,8 @@ const GetEnrollment = () => {
   const [activeEnrollments, setActiveEnrollments] = useState([]);
   // PENDING enrollments (form filled, payment not approved)
   const [pendingEnrollments, setPendingEnrollments] = useState([]);
+  // REJECTED enrollments (payment rejected by admin)
+  const [rejectedEnrollments, setRejectedEnrollments] = useState([]);
 
   const { profile, loading: profileLoading } = useProfile();
   
@@ -86,10 +89,25 @@ const GetEnrollment = () => {
     }
   };
 
+  // Check REJECTED enrollments
+  const checkRejectedEnrollments = async () => {
+    try {
+      const response = await axios.get(`${backendURL}/api/enroll/check-rejected/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setRejectedEnrollments(response.data.rejectedCourses || []);
+      }
+    } catch (error) {
+      console.error("Rejected enrollment check error:", error);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
     checkActiveEnrollments();
     checkPendingEnrollments();
+    checkRejectedEnrollments();
   }, [userId]);
 
   const getLearningPoints = (courseTitle) => {
@@ -165,14 +183,6 @@ const GetEnrollment = () => {
     } catch (e) {
       console.error("Logo loading failed for PDF", e);
     }
-
-    doc.setTextColor(240, 240, 240);
-    doc.setFontSize(60);
-    doc.setFont(undefined, 'bold');
-    doc.saveGraphicsState();
-    doc.setGState(new doc.GState({ opacity: 0.2 }));
-    doc.text("SKILLSMIND", pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
-    doc.restoreGraphicsState();
 
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(24);
@@ -307,29 +317,37 @@ const GetEnrollment = () => {
   };
 
   // ============================================
-  // FIXED: Proper enrollment status check functions
+  // STATUS CHECK FUNCTIONS
   // ============================================
   
-  // Check if course has pending payment (returns the enrollment object or undefined)
+  // Check if PENDING
   const getPendingEnrollment = (courseId, courseTitle) => {
     return pendingEnrollments.find(
       p => p.courseId === courseId || p.courseTitle === courseTitle
     );
   };
 
-  // Check if course is already active enrolled (returns boolean)
+  // Check if ACTIVE
   const isActiveEnrolled = (courseId, courseTitle) => {
     return activeEnrollments.some(
       a => a.courseId === courseId || a.courseTitle === courseTitle
     );
   };
 
-  // Handle Live Class Enrollment with proper logic
+  // Check if REJECTED
+  const getRejectedEnrollment = (courseId, courseTitle) => {
+    return rejectedEnrollments.find(
+      r => r.courseId === courseId || r.courseTitle === courseTitle
+    );
+  };
+
+  // Handle Enrollment Click
   const handleLiveEnrollment = async (course) => {
     const isActive = isActiveEnrolled(course._id, course.title);
     const pendingEnrollment = getPendingEnrollment(course._id, course.title);
+    const rejectedEnrollment = getRejectedEnrollment(course._id, course.title);
     
-    // CASE 1: Already fully enrolled (Active)
+    // CASE 1: Already Active
     if (isActive) {
       const result = await Swal.fire({
         title: 'Already Enrolled!',
@@ -348,7 +366,43 @@ const GetEnrollment = () => {
       return;
     }
 
-    // CASE 2: Pending enrollment exists (Form submitted, payment pending)
+    // CASE 2: Rejected - Allow resubmission
+    if (rejectedEnrollment) {
+      const result = await Swal.fire({
+        title: 'Payment Rejected!',
+        html: `
+          <div style="text-align: left;">
+            <p style="color: #dc2626; font-weight: bold; margin-bottom: 10px;">Reason: ${rejectedEnrollment.rejectionReason || 'Payment not verified'}</p>
+            <p>Would you like to resubmit your payment?</p>
+          </div>
+        `,
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Resubmit Payment',
+        cancelButtonText: 'Cancel'
+      });
+      
+      if (result.isConfirmed) {
+        navigate(`/payment-method/${course._id}`, {
+          state: {
+            course: course.title,
+            amount: course.price,
+            image: course.thumbnail,
+            duration: course.duration,
+            level: course.level,
+            enrollmentId: rejectedEnrollment.enrollmentId,
+            enrollmentData: rejectedEnrollment.formData,
+            resubmit: true,
+            previousPaymentId: rejectedEnrollment.paymentId
+          }
+        });
+      }
+      return;
+    }
+
+    // CASE 3: Pending
     if (pendingEnrollment) {
       const result = await Swal.fire({
         title: 'Complete Your Payment!',
@@ -365,7 +419,6 @@ const GetEnrollment = () => {
       });
       
       if (result.isConfirmed) {
-        // Direct payment page par le jao
         navigate(`/payment-method/${course._id}`, {
           state: {
             course: course.title,
@@ -379,7 +432,6 @@ const GetEnrollment = () => {
         });
         return;
       } else if (result.isDenied) {
-        // Form par le jao pre-filled data ke saath
         navigate('/enroll-live/' + course.title.replace(/\s+/g, '-').toLowerCase(), {
           state: {
             course: course,
@@ -394,11 +446,10 @@ const GetEnrollment = () => {
         });
         return;
       }
-      // Agar cancel kare toh kuch mat karo
       return;
     }
 
-    // CASE 3: New enrollment (No active, no pending)
+    // CASE 4: New Enrollment
     navigate('/enroll-live/' + course.title.replace(/\s+/g, '-').toLowerCase(), {
       state: {
         course: course,
@@ -556,12 +607,9 @@ const GetEnrollment = () => {
 
                 <div className="enroll-grid-v6">
                   {filtered.map((course) => {
-                    // ============================================
-                    // FIXED: Priority Logic - Only ONE state possible
-                    // Priority: 1. Active > 2. Pending > 3. New
-                    // ============================================
-                    
+                    // PRIORITY: Active > Rejected > Pending > New
                     const isActive = isActiveEnrolled(course._id, course.title);
+                    const rejectedEnrollment = getRejectedEnrollment(course._id, course.title);
                     const pendingEnrollment = getPendingEnrollment(course._id, course.title);
                     
                     return (
@@ -570,13 +618,14 @@ const GetEnrollment = () => {
                           <img src={getImageUrl(course.thumbnail)} alt={course.title} />
                           <div className="elite-badge">{course.badge || 'PREMIUM'}</div>
                           
-                          {/* ============================================
-                              MUTUALLY EXCLUSIVE BADGES
-                              Pehle Active check, phir Pending, phir kuch nahi
-                          ============================================ */}
+                          {/* BADGES - Priority Order */}
                           {isActive ? (
                             <div className="enrolled-badge">
                               <FaCheckCircle /> Enrolled
+                            </div>
+                          ) : rejectedEnrollment ? (
+                            <div className="rejected-badge">
+                              <FaTimesCircle /> Rejected
                             </div>
                           ) : pendingEnrollment ? (
                             <div className="pending-badge">
@@ -600,18 +649,25 @@ const GetEnrollment = () => {
                               window.scrollTo(0,0);
                             }}>Details</button>
                             
-                            {/* ============================================
-                                MUTUALLY EXCLUSIVE BUTTONS
-                                Same logic: Active > Pending > Enroll
-                            ============================================ */}
+                            {/* BUTTONS - Priority Order */}
                             {isActive ? (
+                              // GREEN: Active/Approved
                               <button 
                                 className="btn-v6-enroll active-enrolled" 
                                 onClick={() => navigate('/my-learning')}
                               >
                                 <FaCheckCircle /> Enrolled
                               </button>
+                            ) : rejectedEnrollment ? (
+                              // RED: Rejected with Reason
+                              <button 
+                                className="btn-v6-enroll rejected-btn" 
+                                onClick={() => handleLiveEnrollment(course)}
+                              >
+                                <FaRedo /> Resubmit
+                              </button>
                             ) : pendingEnrollment ? (
+                              // YELLOW: Pending
                               <button 
                                 className="btn-v6-enroll pending-payment" 
                                 onClick={() => handleLiveEnrollment(course)}
@@ -619,6 +675,7 @@ const GetEnrollment = () => {
                                 Complete Payment <FaChevronRight />
                               </button>
                             ) : (
+                              // DEFAULT: Enroll
                               <button 
                                 className="btn-v6-enroll" 
                                 onClick={() => {
@@ -632,6 +689,27 @@ const GetEnrollment = () => {
                               </button>
                             )}
                           </div>
+                          
+                          {/* Show Rejection Reason below button if rejected */}
+                          {rejectedEnrollment && (
+                            <div style={{ 
+                              marginTop: '10px', 
+                              padding: '8px', 
+                              background: '#fef2f2', 
+                              border: '1px solid #fecaca',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              color: '#dc2626',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <FaTimesCircle style={{ flexShrink: 0 }} />
+                              <span style={{ fontWeight: '600' }}>
+                                Reason: {rejectedEnrollment.rejectionReason || 'Payment not verified'}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -833,29 +911,50 @@ const GetEnrollment = () => {
                             <span className="was-v2">Rs. {Math.round(selectedCourse.price * 1.5)}</span>
                         </div>
                         
-                        {/* Detail View Buttons - Same Logic */}
-                        {isActiveEnrolled(selectedCourse._id, selectedCourse.title) ? (
-                          <button 
-                            className="enroll-btn-v2 enrolled-btn" 
-                            onClick={() => navigate('/my-learning')}
-                          >
-                            <FaCheckCircle /> Go to My Learning
-                          </button>
-                        ) : getPendingEnrollment(selectedCourse._id, selectedCourse.title) ? (
-                          <button 
-                            className="enroll-btn-v2 pending-btn" 
-                            onClick={() => handleLiveEnrollment(selectedCourse)}
-                          >
-                            Complete Payment <FaChevronRight />
-                          </button>
-                        ) : (
-                          <button 
-                            className="enroll-btn-v2" 
-                            onClick={() => setShowModeSelection(true)}
-                          >
-                            Enroll Now <FaChevronRight />
-                          </button>
-                        )}
+                        {/* Detail View Buttons - Updated Logic */}
+                        {(() => {
+                          const isActive = isActiveEnrolled(selectedCourse._id, selectedCourse.title);
+                          const rejected = getRejectedEnrollment(selectedCourse._id, selectedCourse.title);
+                          const pending = getPendingEnrollment(selectedCourse._id, selectedCourse.title);
+                          
+                          if (isActive) {
+                            return (
+                              <button 
+                                className="enroll-btn-v2 enrolled-btn" 
+                                onClick={() => navigate('/my-learning')}
+                              >
+                                <FaCheckCircle /> Go to My Learning
+                              </button>
+                            );
+                          } else if (rejected) {
+                            return (
+                              <button 
+                                className="enroll-btn-v2 rejected-btn" 
+                                onClick={() => handleLiveEnrollment(selectedCourse)}
+                              >
+                                <FaRedo /> Resubmit Payment
+                              </button>
+                            );
+                          } else if (pending) {
+                            return (
+                              <button 
+                                className="enroll-btn-v2 pending-btn" 
+                                onClick={() => handleLiveEnrollment(selectedCourse)}
+                              >
+                                Complete Payment <FaChevronRight />
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <button 
+                                className="enroll-btn-v2" 
+                                onClick={() => setShowModeSelection(true)}
+                              >
+                                Enroll Now <FaChevronRight />
+                              </button>
+                            );
+                          }
+                        })()}
                         
                         <div className="perks-v2">
                             <div><FaInfinity/> Lifetime</div>
@@ -887,7 +986,7 @@ const GetEnrollment = () => {
                                       onClick={() => setExpandedWeek(expandedWeek === idx ? null : idx)}
                                       className="accordion-head-v2"
                                     >
-                                        <span>Week {item.week}: {item.mainTopic}</span>
+                                        <span>Week ${item.week}: {item.mainTopic}</span>
                                         <FaChevronDown className="arrow-icon"/>
                                     </div>
                                     <AnimatePresence>
@@ -917,29 +1016,50 @@ const GetEnrollment = () => {
                 <span className="m-old-price">Rs. {Math.round(selectedCourse.price * 1.5)}</span>
               </div>
               
-              {/* Mobile Buttons - Same Logic */}
-              {isActiveEnrolled(selectedCourse._id, selectedCourse.title) ? (
-                <button 
-                  className="m-enroll-btn enrolled" 
-                  onClick={() => navigate('/my-learning')}
-                >
-                  <FaCheckCircle /> Enrolled
-                </button>
-              ) : getPendingEnrollment(selectedCourse._id, selectedCourse.title) ? (
-                <button 
-                  className="m-enroll-btn pending" 
-                  onClick={() => handleLiveEnrollment(selectedCourse)}
-                >
-                  Complete Payment
-                </button>
-              ) : (
-                <button 
-                  className="m-enroll-btn" 
-                  onClick={() => setShowModeSelection(true)}
-                >
-                  Enroll Now
-                </button>
-              )}
+              {/* Mobile Buttons - Updated Logic */}
+              {(() => {
+                const isActive = isActiveEnrolled(selectedCourse._id, selectedCourse.title);
+                const rejected = getRejectedEnrollment(selectedCourse._id, selectedCourse.title);
+                const pending = getPendingEnrollment(selectedCourse._id, selectedCourse.title);
+                
+                if (isActive) {
+                  return (
+                    <button 
+                      className="m-enroll-btn enrolled" 
+                      onClick={() => navigate('/my-learning')}
+                    >
+                      <FaCheckCircle /> Enrolled
+                    </button>
+                  );
+                } else if (rejected) {
+                  return (
+                    <button 
+                      className="m-enroll-btn rejected" 
+                      onClick={() => handleLiveEnrollment(selectedCourse)}
+                    >
+                      <FaRedo /> Resubmit
+                    </button>
+                  );
+                } else if (pending) {
+                  return (
+                    <button 
+                      className="m-enroll-btn pending" 
+                      onClick={() => handleLiveEnrollment(selectedCourse)}
+                    >
+                      Complete Payment
+                    </button>
+                  );
+                } else {
+                  return (
+                    <button 
+                      className="m-enroll-btn" 
+                      onClick={() => setShowModeSelection(true)}
+                    >
+                      Enroll Now
+                    </button>
+                  );
+                }
+              })()}
             </div>
           </motion.div>
         )}
@@ -1128,7 +1248,7 @@ const GetEnrollment = () => {
           background: var(--sm-red-brand); 
         }
         
-        /* Enrolled State Button */
+        /* Enrolled State Button - GREEN */
         .enroll-btn-v2.enrolled-btn {
           background: #10b981 !important;
           cursor: default;
@@ -1137,7 +1257,7 @@ const GetEnrollment = () => {
           background: #059669 !important;
         }
         
-        /* Pending State Button */
+        /* Pending State Button - YELLOW */
         .enroll-btn-v2.pending-btn {
           background: #f59e0b !important;
           animation: pulse 2s infinite;
@@ -1146,9 +1266,24 @@ const GetEnrollment = () => {
           background: #d97706 !important;
         }
         
+        /* Rejected State Button - RED */
+        .enroll-btn-v2.rejected-btn {
+          background: #dc2626 !important;
+          animation: shake 0.5s;
+        }
+        .enroll-btn-v2.rejected-btn:hover {
+          background: #b91c1c !important;
+        }
+        
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.8; }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
         }
 
         .perks-v2 { display: flex; justify-content: space-between; margin-top: 15px; font-size: 9px; color: #64748b; }
@@ -1234,7 +1369,7 @@ const GetEnrollment = () => {
           .mobile-search-overlay-sm { display: none; }
         }
 
-        /* Badges - Positioned differently to avoid overlap */
+        /* Badges */
         .pending-badge {
           position: absolute;
           top: 10px;
@@ -1268,6 +1403,30 @@ const GetEnrollment = () => {
           gap: 5px;
           box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
         }
+        
+        /* Rejected Badge - RED */
+        .rejected-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #dc2626;
+          color: white;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+          animation: pulse-red 2s infinite;
+        }
+        
+        @keyframes pulse-red {
+          0%, 100% { box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3); }
+          50% { box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5); }
+        }
 
         /* Button States */
         .btn-v6-enroll.active-enrolled {
@@ -1280,6 +1439,10 @@ const GetEnrollment = () => {
           animation: pulse 2s infinite;
         }
         
+        .btn-v6-enroll.rejected-btn {
+          background: #dc2626 !important;
+        }
+        
         .m-enroll-btn.enrolled {
           background: #10b981 !important;
         }
@@ -1287,6 +1450,10 @@ const GetEnrollment = () => {
         .m-enroll-btn.pending {
           background: #f59e0b !important;
           animation: pulse 2s infinite;
+        }
+        
+        .m-enroll-btn.rejected {
+          background: #dc2626 !important;
         }
       `}</style>
     </div>

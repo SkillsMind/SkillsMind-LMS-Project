@@ -264,4 +264,36 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
+// 🔥 8. GET: Check REJECTED enrollments (Payment Rejected by Admin)
+router.get('/check-rejected/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const rejectedEnrollments = await LiveEnrollment.find({ 
+            userId: userId,
+            status: 'cancelled',
+            paymentRejectedAt: { $exists: true }
+        });
+        
+        res.json({
+            success: true,
+            rejectedCourses: rejectedEnrollments.map(e => ({
+                enrollmentId: e._id,
+                courseId: e.courseId,
+                courseTitle: e.course,
+                rejectionReason: e.rejectionReason,
+                rejectedAt: e.paymentRejectedAt,
+                formData: {
+                    fullName: e.fullName,
+                    email: e.email,
+                    phone: e.phone
+                }
+            }))
+        });
+    } catch (error) {
+        console.error("Rejected check error:", error);
+        res.status(500).json({ success: false, rejectedCourses: [] });
+    }
+});
+
 module.exports = router;
