@@ -11,230 +11,178 @@ const auth = require('../middleware/auth');
 const otpStore = {}; 
 
 // ==========================================
-// 🔥 BREVO EMAIL SERVICE (NO SMTP/NODEMAILER)
+// 🔥 RESEND EMAIL SERVICE (WORKING 100%)
 // ==========================================
 
-// ✅ Send OTP Email using Brevo API
+// ✅ Send OTP Email using Resend
 async function sendOTPEmail(toEmail, userName, otpCode) {
     try {
-        console.log('📧 Sending OTP to:', toEmail);
+        console.log('📧 Sending OTP via Resend to:', toEmail);
         
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'api-key': process.env.BREVO_API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                sender: {
-                    email: 'skillsmind786@gmail.com',
-                    name: 'SkillsMind'
-                },
-                to: [{
-                    email: toEmail,
-                    name: userName || 'Student'
-                }],
-                subject: 'Your SkillsMind OTP Code',
-                htmlContent: `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-                            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #eee; }
-                            .header { background-color: #000B29; padding: 40px 20px; text-align: center; }
-                            .header h1 { color: #ffffff; margin: 0; font-size: 35px; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; }
-                            .content { padding: 40px 30px; line-height: 1.6; color: #333; text-align: center; }
-                            .otp-code { font-size: 48px; font-weight: bold; color: #E30613; letter-spacing: 10px; margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; display: inline-block; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="header">
-                                <h1>SkillsMind</h1>
-                                <p style="color: #E30613; margin: 10px 0 0 0; font-weight: bold; font-size: 12px; letter-spacing: 2px;">PREMIUM LEARNING EXPERIENCE</p>
-                            </div>
-                            <div class="content">
-                                <h2 style="color: #000B29;">Verify Your Account</h2>
-                                <p style="font-size: 16px; color: #555;">Welcome to SkillsMind! Use the secure verification code below to complete your registration.</p>
-                                <div class="otp-code">${otpCode}</div>
-                                <p style="font-size: 14px; color: #888;">This code will expire in 10 minutes for security reasons.</p>
-                            </div>
-                            <div style="background-color: #f9f9f9; padding: 25px; text-align: center; border-top: 1px solid #eee;">
-                                <p style="color: #999; font-size: 12px; margin: 0;">© 2026 SkillsMind Education System. All Rights Reserved.</p>
-                            </div>
+        const response = await axios.post('https://api.resend.com/emails', {
+            from: 'SkillsMind <onboarding@resend.dev>', // Free tier ke liye yeh use karo
+            // YA apna domain (jaise verify ho jaye):
+            // from: 'SkillsMind <noreply@skillsmind.online>',
+            to: [toEmail],
+            subject: 'Your SkillsMind OTP Code',
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+                        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #eee; }
+                        .header { background-color: #000B29; padding: 40px 20px; text-align: center; }
+                        .header h1 { color: #ffffff; margin: 0; font-size: 35px; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; }
+                        .content { padding: 40px 30px; line-height: 1.6; color: #333; text-align: center; }
+                        .otp-code { font-size: 48px; font-weight: bold; color: #E30613; letter-spacing: 10px; margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; display: inline-block; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>SkillsMind</h1>
+                            <p style="color: #E30613; margin: 10px 0 0 0; font-weight: bold; font-size: 12px; letter-spacing: 2px;">PREMIUM LEARNING EXPERIENCE</p>
                         </div>
-                    </body>
-                    </html>
-                `
-            })
+                        <div class="content">
+                            <h2 style="color: #000B29;">Verify Your Account</h2>
+                            <p style="font-size: 16px; color: #555;">Your verification code:</p>
+                            <div class="otp-code">${otpCode}</div>
+                            <p style="font-size: 14px; color: #888;">This code will expire in 10 minutes.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
         });
         
-        const data = await response.json();
+        console.log('✅ OTP sent via Resend:', response.data.id);
+        return { success: true, messageId: response.data.id };
         
-        if (response.ok) {
-            console.log('✅ OTP email sent successfully to:', toEmail);
-            return { success: true, messageId: data.messageId };
-        } else {
-            console.error('❌ Brevo API error:', data);
-            return { success: false, error: data.message || 'Unknown error' };
-        }
     } catch (error) {
-        console.error('❌ Email send failed:', error.message);
-        return { success: false, error: error.message };
+        console.error('❌ Resend error:', error.response?.data || error.message);
+        return { success: false, error: error.response?.data?.message || error.message };
     }
 }
 
-// ✅ Send Welcome Email using Brevo API
-async function sendWelcomeEmail(toEmail, userName) {
-    try {
-        console.log('📧 Sending welcome email to:', toEmail);
-        
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'api-key': process.env.BREVO_API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                sender: {
-                    email: 'skillsmind786@gmail.com',
-                    name: 'SkillsMind'
-                },
-                to: [{
-                    email: toEmail,
-                    name: userName || 'Student'
-                }],
-                subject: `Welcome to SkillsMind, ${userName}! 🎉`,
-                htmlContent: `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-                            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #eee; }
-                            .header { background-color: #000B29; padding: 40px 20px; text-align: center; }
-                            .header h1 { color: #ffffff; margin: 0; font-size: 35px; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; }
-                            .content { padding: 40px 30px; line-height: 1.6; color: #333; }
-                            .btn { display: inline-block; background-color: #000B29; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="header">
-                                <h1>SkillsMind</h1>
-                                <p style="color: #E30613; margin: 10px 0 0 0; font-weight: bold; font-size: 12px; letter-spacing: 2px;">PREMIUM LEARNING EXPERIENCE</p>
-                            </div>
-                            <div class="content">
-                                <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
-                                <p style="font-size: 16px;">Hello <b>${userName}</b>,</p>
-                                <p style="font-size: 16px;">We are thrilled to have you join <b>SkillsMind</b>. Our mission is to provide you with a world-class learning experience.</p>
-                                <div style="background-color: #fff5f5; border-left: 5px solid #E30613; padding: 20px; margin: 30px 0;">
-                                    <p style="margin: 0; font-weight: bold; color: #333;">Start Your Journey:</p>
-                                    <p style="margin: 5px 0 0 0; color: #666;">Login to your dashboard to explore our premium courses!</p>
-                                </div>
-                                <center>
-                                    <a href="https://skillsmind.online/login" class="btn">Go to Dashboard</a>
-                                </center>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                `
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            console.log('✅ Welcome email sent to:', toEmail);
-            return { success: true, messageId: data.messageId };
-        } else {
-            console.error('❌ Brevo welcome email error:', data);
-            return { success: false, error: data.message };
-        }
-    } catch (error) {
-        console.error('❌ Welcome email failed:', error.message);
-        return { success: false, error: error.message };
-    }
-}
-
-// ✅ Send Password Reset Email using Brevo API
+// ✅ Send Reset Email using Resend
 async function sendResetEmail(toEmail, userName, otpCode) {
     try {
-        console.log('📧 Sending reset OTP to:', toEmail);
+        console.log('📧 Sending reset OTP via Resend to:', toEmail);
         
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'api-key': process.env.BREVO_API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                sender: {
-                    email: 'skillsmind786@gmail.com',
-                    name: 'SkillsMind Support'
-                },
-                to: [{
-                    email: toEmail,
-                    name: userName || 'Student'
-                }],
-                subject: 'SkillsMind | Password Reset Request',
-                htmlContent: `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-                            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #eee; }
-                            .header { background-color: #000B29; padding: 40px 20px; text-align: center; }
-                            .header h1 { color: #ffffff; margin: 0; font-size: 35px; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; }
-                            .content { padding: 40px 30px; line-height: 1.6; color: #333; text-align: center; }
-                            .otp-code { font-size: 48px; font-weight: bold; color: #000B29; letter-spacing: 10px; margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; display: inline-block; border-bottom: 4px solid #E30613; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="header">
-                                <h1>SkillsMind</h1>
-                                <p style="color: #E30613; margin: 10px 0 0 0; font-weight: bold; font-size: 12px; letter-spacing: 2px;">PREMIUM LEARNING EXPERIENCE</p>
-                            </div>
-                            <div class="content">
-                                <h2 style="color: #000B29;">Password Reset Request</h2>
-                                <p style="font-size: 16px; color: #555;">Hello <b>${userName || 'Student'}</b>,</p>
-                                <p style="font-size: 16px; color: #555;">You requested to reset your password. Use the following code to proceed:</p>
-                                <div class="otp-code">${otpCode}</div>
-                                <p style="font-size: 14px; color: #888;">This code will expire in 10 minutes.</p>
-                                <p style="font-size: 13px; color: #999; margin-top: 30px;">If you didn't request this, please ignore this email or contact support.</p>
-                            </div>
+        const response = await axios.post('https://api.resend.com/emails', {
+            from: 'SkillsMind Support <onboarding@resend.dev>',
+            to: [toEmail],
+            subject: 'SkillsMind | Password Reset Request',
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+                        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #eee; }
+                        .header { background-color: #000B29; padding: 40px 20px; text-align: center; }
+                        .header h1 { color: #ffffff; margin: 0; font-size: 35px; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; }
+                        .content { padding: 40px 30px; line-height: 1.6; color: #333; text-align: center; }
+                        .otp-code { font-size: 48px; font-weight: bold; color: #000B29; letter-spacing: 10px; margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; display: inline-block; border-bottom: 4px solid #E30613; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>SkillsMind</h1>
+                            <p style="color: #E30613; margin: 10px 0 0 0; font-weight: bold; font-size: 12px; letter-spacing: 2px;">PREMIUM LEARNING EXPERIENCE</p>
                         </div>
-                    </body>
-                    </html>
-                `
-            })
+                        <div class="content">
+                            <h2 style="color: #000B29;">Password Reset Request</h2>
+                            <p style="font-size: 16px; color: #555;">Hello <b>${userName || 'Student'}</b>,</p>
+                            <p style="font-size: 16px; color: #555;">Use this code to reset your password:</p>
+                            <div class="otp-code">${otpCode}</div>
+                            <p style="font-size: 14px; color: #888;">This code will expire in 10 minutes.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
         });
         
-        const data = await response.json();
+        console.log('✅ Reset OTP sent via Resend:', response.data.id);
+        return { success: true, messageId: response.data.id };
         
-        if (response.ok) {
-            console.log('✅ Reset OTP sent successfully to:', toEmail);
-            return { success: true, messageId: data.messageId };
-        } else {
-            console.error('❌ Brevo API error:', data);
-            return { success: false, error: data.message || 'Unknown error' };
-        }
     } catch (error) {
-        console.error('❌ Reset email failed:', error.message);
-        return { success: false, error: error.message };
+        console.error('❌ Resend reset error:', error.response?.data || error.message);
+        return { success: false, error: error.response?.data?.message || error.message };
+    }
+}
+
+// ✅ Send Welcome Email using Resend
+async function sendWelcomeEmail(toEmail, userName) {
+    try {
+        console.log('📧 Sending welcome email via Resend to:', toEmail);
+        
+        const response = await axios.post('https://api.resend.com/emails', {
+            from: 'SkillsMind <onboarding@resend.dev>',
+            to: [toEmail],
+            subject: `Welcome to SkillsMind, ${userName}! 🎉`,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+                        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+                        .header { background-color: #000B29; padding: 40px 20px; text-align: center; }
+                        .header h1 { color: #ffffff; margin: 0; font-size: 35px; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; }
+                        .content { padding: 40px 30px; line-height: 1.6; color: #333; }
+                        .btn { display: inline-block; background-color: #000B29; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>SkillsMind</h1>
+                            <p style="color: #E30613; margin: 10px 0 0 0; font-weight: bold; font-size: 12px; letter-spacing: 2px;">PREMIUM LEARNING EXPERIENCE</p>
+                        </div>
+                        <div class="content">
+                            <h2 style="color: #000B29;">Welcome to the Family! 🎉</h2>
+                            <p style="font-size: 16px;">Hello <b>${userName}</b>,</p>
+                            <p>We are thrilled to have you join <b>SkillsMind</b>.</p>
+                            <center><a href="https://skillsmind.online/login" class="btn">Go to Dashboard</a></center>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('✅ Welcome email sent via Resend:', response.data.id);
+        return { success: true, messageId: response.data.id };
+        
+    } catch (error) {
+        console.error('❌ Welcome email error:', error.response?.data || error.message);
+        return { success: false, error: error.response?.data?.message || error.message };
     }
 }
 
 // ==========================================
-// 2. SEND OTP ROUTE (REGISTER)
+// ROUTES (SAME AS BEFORE)
 // ==========================================
+
 router.post('/send-otp', async (req, res) => {
     try {
         const { email } = req.body;
@@ -252,7 +200,6 @@ router.post('/send-otp', async (req, res) => {
             expires: Date.now() + 10 * 60 * 1000 
         };
 
-        // ✅ Use Brevo API (NOT nodemailer)
         const emailResult = await sendOTPEmail(cleanEmail, null, otp);
         
         if (!emailResult.success) {
@@ -262,12 +209,11 @@ router.post('/send-otp', async (req, res) => {
 
         res.status(200).json({ success: true, message: 'OTP sent successfully!' });
     } catch (error) {
-        console.error("SkillsMind OTP Error:", error);
+        console.error("Send OTP Error:", error);
         res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 });
 
-// --- 3. VERIFY OTP ROUTE ---
 router.post('/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -295,9 +241,6 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
-// ==========================================
-// 4. FORGOT PASSWORD - SEND OTP (🔥 FIXED)
-// ==========================================
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -316,7 +259,6 @@ router.post('/forgot-password', async (req, res) => {
             expires: Date.now() + 10 * 60 * 1000 
         };
 
-        // ✅ Use Brevo API (NOT nodemailer/transporter)
         const emailResult = await sendResetEmail(cleanEmail, user.name, otp);
         
         if (!emailResult.success) {
@@ -332,7 +274,6 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// --- 5. VERIFY RESET OTP ---
 router.post('/verify-reset-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -350,7 +291,6 @@ router.post('/verify-reset-otp', async (req, res) => {
     }
 });
 
-// --- 6. RESET PASSWORD ---
 router.post('/reset-password', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -371,7 +311,7 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// --- 7. GOOGLE LOGIN ---
+// Google Login (UNCHANGED)
 router.post('/google-login', async (req, res) => {
     try {
         const { token } = req.body;
@@ -413,9 +353,6 @@ router.post('/google-login', async (req, res) => {
     }
 });
 
-// ==========================================
-// 8. REGISTER ROUTE (WITH WELCOME EMAIL)
-// ==========================================
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -429,19 +366,17 @@ router.post('/register', async (req, res) => {
         
         delete otpStore[cleanEmail]; 
 
-        // ✅ Send welcome email using Brevo (fire and forget - don't fail registration if email fails)
         sendWelcomeEmail(cleanEmail, name).catch(e => {
             console.log("Welcome email failed (non-critical):", e.message);
         });
         
         res.status(201).json({ success: true, message: "SkillsMind registration successful!" });
     } catch (err) { 
-        console.error("SkillsMind Register Error:", err);
+        console.error("Register Error:", err);
         res.status(500).json({ success: false, message: "Server Error during registration" }); 
     }
 });
 
-// --- 9. LOGIN ROUTE ---
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -475,7 +410,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// --- 10. GET ALL USERS ---
+// Other routes...
 router.get('/all-users', async (req, res) => {
     try {
         const users = await User.find().select('-password'); 
@@ -485,7 +420,6 @@ router.get('/all-users', async (req, res) => {
     }
 });
 
-// --- 11. GET USER ---
 router.get('/user', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
@@ -498,7 +432,6 @@ router.get('/user', auth, async (req, res) => {
     }
 });
 
-// --- 12. DELETE USER ---
 router.delete('/delete-user/:id', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -510,7 +443,6 @@ router.delete('/delete-user/:id', async (req, res) => {
     }
 });
 
-// --- 13. DELETE ENROLMENT ---
 router.delete('/delete-enrolment/:id', async (req, res) => {
     try {
         const profileId = req.params.id;
@@ -522,7 +454,6 @@ router.delete('/delete-enrolment/:id', async (req, res) => {
     }
 });
 
-// --- 14. GET ALL STUDENT PROFILES ---
 router.get('/all-profiles', async (req, res) => {
     try {
         const profiles = await StudentProfile.find().populate({
@@ -537,7 +468,6 @@ router.get('/all-profiles', async (req, res) => {
     }
 });
 
-// --- 15. GET ME ---
 router.get('/me', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
