@@ -11,18 +11,16 @@ const auth = require('../middleware/auth');
 const otpStore = {}; 
 
 // ==========================================
-// 🔥 RESEND EMAIL SERVICE (WORKING 100%)
+// 🔥 RESEND EMAIL SERVICE (DOMAIN VERIFIED)
 // ==========================================
 
-// ✅ Send OTP Email using Resend
+// ✅ Send OTP Email
 async function sendOTPEmail(toEmail, userName, otpCode) {
     try {
         console.log('📧 Sending OTP via Resend to:', toEmail);
         
         const response = await axios.post('https://api.resend.com/emails', {
-            from: 'SkillsMind <onboarding@resend.dev>', // Free tier ke liye yeh use karo
-            // YA apna domain (jaise verify ho jaye):
-            // from: 'SkillsMind <noreply@skillsmind.online>',
+            from: 'SkillsMind <noreply@skillsmind.online>', // ✅ CHANGED: Apna domain use kiya
             to: [toEmail],
             subject: 'Your SkillsMind OTP Code',
             html: `
@@ -70,13 +68,13 @@ async function sendOTPEmail(toEmail, userName, otpCode) {
     }
 }
 
-// ✅ Send Reset Email using Resend
+// ✅ Send Reset Email
 async function sendResetEmail(toEmail, userName, otpCode) {
     try {
         console.log('📧 Sending reset OTP via Resend to:', toEmail);
         
         const response = await axios.post('https://api.resend.com/emails', {
-            from: 'SkillsMind Support <onboarding@resend.dev>',
+            from: 'SkillsMind Support <noreply@skillsmind.online>', // ✅ CHANGED: Apna domain use kiya
             to: [toEmail],
             subject: 'SkillsMind | Password Reset Request',
             html: `
@@ -125,13 +123,13 @@ async function sendResetEmail(toEmail, userName, otpCode) {
     }
 }
 
-// ✅ Send Welcome Email using Resend
+// ✅ Send Welcome Email
 async function sendWelcomeEmail(toEmail, userName) {
     try {
         console.log('📧 Sending welcome email via Resend to:', toEmail);
         
         const response = await axios.post('https://api.resend.com/emails', {
-            from: 'SkillsMind <onboarding@resend.dev>',
+            from: 'SkillsMind <noreply@skillsmind.online>', // ✅ CHANGED: Apna domain use kiya
             to: [toEmail],
             subject: `Welcome to SkillsMind, ${userName}! 🎉`,
             html: `
@@ -180,7 +178,7 @@ async function sendWelcomeEmail(toEmail, userName) {
 }
 
 // ==========================================
-// ROUTES (SAME AS BEFORE)
+// ROUTES (Same as before)
 // ==========================================
 
 router.post('/send-otp', async (req, res) => {
@@ -311,7 +309,6 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// Google Login (UNCHANGED)
 router.post('/google-login', async (req, res) => {
     try {
         const { token } = req.body;
@@ -410,7 +407,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Other routes...
 router.get('/all-users', async (req, res) => {
     try {
         const users = await User.find().select('-password'); 
