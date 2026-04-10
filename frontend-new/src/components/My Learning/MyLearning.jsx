@@ -3,7 +3,7 @@ import {
     FaClock, FaCheckCircle, FaPlayCircle, FaFileDownload, 
     FaLock, FaExclamationTriangle, FaHeadset, FaVideo,
     FaGraduationCap, FaBookOpen, FaArrowRight, FaCalendarAlt,
-    FaChalkboardTeacher, FaStar, FaUsers
+    FaChalkboardTeacher, FaSpinner, FaHourglassHalf, FaTimesCircle
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -12,15 +12,19 @@ const MyLearning = () => {
     const navigate = useNavigate();
     const [paymentData, setPaymentData] = useState(null);
     const [enrollments, setEnrollments] = useState([]);
+    const [pendingPayments, setPendingPayments] = useState([]);
+    const [rejectedPayments, setRejectedPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState('approved');
 
     const studentEmail = localStorage.getItem('studentEmail');
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     useEffect(() => {
-        const fetchStatus = async () => {
+        const fetchAllStatus = async () => {
             if (!studentEmail || !userId) {
                 setError("Session expired. Please log in again.");
                 setLoading(false);
@@ -28,25 +32,18 @@ const MyLearning = () => {
             }
             
             try {
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                setLoading(true);
                 
+                // 1. Fetch ACTIVE enrollments (payment approved)
                 const enrollRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                console.log('MyLearning - Raw Enrollments:', enrollRes.data);
-                
-                if (enrollRes.data.success && enrollRes.data.enrolledCourses && enrollRes.data.enrolledCourses.length > 0) {
+                if (enrollRes.data.success && enrollRes.data.enrolledCourses) {
                     const uniqueCourses = [];
                     const seenCourseIds = new Set();
                     
-                    const sortedCourses = [...enrollRes.data.enrolledCourses].sort((a, b) => {
-                        if (a.mode === 'live' && b.mode !== 'live') return -1;
-                        if (a.mode !== 'live' && b.mode === 'live') return 1;
-                        return 0;
-                    });
-                    
-                    sortedCourses.forEach(course => {
+                    enrollRes.data.enrolledCourses.forEach(course => {
                         const courseId = course.courseId?.toString();
                         if (courseId && !seenCourseIds.has(courseId)) {
                             seenCourseIds.add(courseId);
@@ -55,40 +52,41 @@ const MyLearning = () => {
                     });
                     
                     setEnrollments(uniqueCourses);
-                    
-                    if (uniqueCourses.length > 0) {
-                        setPaymentData({
-                            status: 'approved',
-                            studentName: uniqueCourses[0].studentName,
-                            courseName: uniqueCourses[0].courseTitle,
-                            courseId: uniqueCourses[0].courseId,
-                            _id: uniqueCourses[0].enrollmentId
-                        });
-                    }
-                    setLoading(false);
-                    return;
                 }
                 
-                const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
+                // 2. Fetch PENDING payments
+                const pendingRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (paymentRes.data) {
-                    setPaymentData(paymentRes.data);
-                    if (paymentRes.data.status === 'approved') {
-                        setEnrollments([{
-                            courseId: paymentRes.data.courseId,
-                            courseTitle: paymentRes.data.courseName,
-                            studentName: paymentRes.data.studentName,
-                            enrollmentId: paymentRes.data._id,
-                            paymentStatus: 'active',
-                            mode: 'live',
-                            enrollmentDate: paymentRes.data.createdAt
-                        }]);
-                    }
-                } else {
-                    setError("No enrollment record found.");
+                if (pendingRes.data && pendingRes.data.status === 'pending') {
+                    setPendingPayments([{
+                        courseId: pendingRes.data.courseId,
+                        courseName: pendingRes.data.courseName,
+                        amount: pendingRes.data.amount,
+                        submittedAt: pendingRes.data.createdAt,
+                        paymentId: pendingRes.data._id
+                    }]);
+                } else if (pendingRes.data && pendingRes.data.status === 'rejected') {
+                    setRejectedPayments([{
+                        courseId: pendingRes.data.courseId,
+                        courseName: pendingRes.data.courseName,
+                        amount: pendingRes.data.amount,
+                        rejectionReason: pendingRes.data.rejectionReason,
+                        rejectedAt: pendingRes.data.updatedAt,
+                        paymentId: pendingRes.data._id
+                    }]);
                 }
+                
+                // 3. Also check rejected from enrollment API
+                const rejectedRes = await axios.get(`${API_URL}/api/enroll/check-rejected/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).catch(() => ({ data: { rejectedCourses: [] } }));
+                
+                if (rejectedRes.data?.rejectedCourses?.length > 0) {
+                    setRejectedPayments(prev => [...prev, ...rejectedRes.data.rejectedCourses]);
+                }
+                
             } catch (err) {
                 console.error('MyLearning Error:', err);
                 setError("Unable to retrieve records. Check server.");
@@ -97,40 +95,45 @@ const MyLearning = () => {
             }
         };
         
-        fetchStatus();
-    }, [studentEmail, userId, token]);
+        fetchAllStatus();
+    }, [studentEmail, userId, token, API_URL]);
+
+    const getStatusColor = (status) => {
+        switch(status) {
+            case 'approved': return '#22c55e';
+            case 'pending': return '#f59e0b';
+            case 'rejected': return '#dc2626';
+            default: return '#64748b';
+        }
+    };
+
+    const getStatusIcon = (status) => {
+        switch(status) {
+            case 'approved': return <FaCheckCircle size={18} />;
+            case 'pending': return <FaHourglassHalf size={18} />;
+            case 'rejected': return <FaTimesCircle size={18} />;
+            default: return <FaClock size={18} />;
+        }
+    };
 
     if (loading) {
         return (
             <div className="mylearning-loading">
                 <div className="mylearning-spinner"></div>
-                <h2>Accessing SkillsMind Portal...</h2>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="mylearning-error">
-                <FaLock size={60} color="#64748b" />
-                <h2>Access Restricted</h2>
-                <p>{error}</p>
-                <button className="mylearning-btn-browse" onClick={() => navigate('/courses')}>
-                    Browse Courses
-                </button>
+                <h2>Loading your dashboard...</h2>
             </div>
         );
     }
 
     const hasApprovedCourses = enrollments.length > 0;
-    const hasRejectedCourses = paymentData && paymentData.status === 'rejected';
-    const hasPendingCourses = paymentData && paymentData.status === 'pending';
+    const hasPendingPayments = pendingPayments.length > 0;
+    const hasRejectedPayments = rejectedPayments.length > 0;
 
     return (
         <div className="mylearning-container">
             <div className="mylearning-inner">
                 
-                {/* Header with Stats */}
+                {/* Header */}
                 <header className="mylearning-header">
                     <div className="header-content">
                         <div className="header-left">
@@ -138,133 +141,205 @@ const MyLearning = () => {
                                 <FaGraduationCap size={32} />
                             </div>
                             <div>
-                                <h1>My Learning Dashboard</h1>
-                                <p>Welcome back, <strong>{paymentData?.studentName || enrollments[0]?.studentName || 'Student'}</strong></p>
+                                <h1>My Learning</h1>
+                                <p>Track your courses and payments</p>
                             </div>
                         </div>
                         <div className="header-stats">
-                            <div className="stat-badge">
-                                <FaBookOpen />
-                                <span>{enrollments.length} Active Courses</span>
+                            <div className="stat-badge approved">
+                                <FaCheckCircle />
+                                <span>{enrollments.length} Active</span>
                             </div>
+                            {hasPendingPayments && (
+                                <div className="stat-badge pending">
+                                    <FaHourglassHalf />
+                                    <span>{pendingPayments.length} Pending</span>
+                                </div>
+                            )}
+                            {hasRejectedPayments && (
+                                <div className="stat-badge rejected">
+                                    <FaTimesCircle />
+                                    <span>{rejectedPayments.length} Rejected</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </header>
 
+                {/* Tabs */}
+                {(hasPendingPayments || hasRejectedPayments) && (
+                    <div className="mylearning-tabs">
+                        <button 
+                            className={`tab-btn ${activeTab === 'approved' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('approved')}
+                        >
+                            <FaCheckCircle /> Active Courses
+                            {enrollments.length > 0 && <span className="tab-count">{enrollments.length}</span>}
+                        </button>
+                        {hasPendingPayments && (
+                            <button 
+                                className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('pending')}
+                            >
+                                <FaHourglassHalf /> Pending
+                                <span className="tab-count pending">{pendingPayments.length}</span>
+                            </button>
+                        )}
+                        {hasRejectedPayments && (
+                            <button 
+                                className={`tab-btn ${activeTab === 'rejected' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('rejected')}
+                            >
+                                <FaTimesCircle /> Rejected
+                                <span className="tab-count rejected">{rejectedPayments.length}</span>
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* Active Courses Section */}
-                {hasApprovedCourses && enrollments.length >= 1 && (
+                {activeTab === 'approved' && (
                     <div className="courses-section">
-                        <div className="section-title">
-                            <h2>Your Active Courses</h2>
-                            <div className="title-underline"></div>
-                        </div>
-                        
-                        <div className="courses-grid">
-                            {enrollments.map((course, index) => (
-                                <div key={course.courseId || index} className="course-card">
-                                    <div className="card-badge">ACTIVE</div>
-                                    <div className="card-icon">
-                                        <FaVideo size={36} />
+                        {enrollments.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-icon">
+                                    <FaBookOpen size={48} />
+                                </div>
+                                <h3>No Active Courses</h3>
+                                <p>You haven't enrolled in any courses yet.</p>
+                                <button className="browse-btn" onClick={() => navigate('/get-enrolment')}>
+                                    Browse Courses
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="courses-grid">
+                                {enrollments.map((course, index) => (
+                                    <div key={course.courseId || index} className="course-card approved">
+                                        <div className="card-status approved">
+                                            <FaCheckCircle /> Active
+                                        </div>
+                                        <div className="card-icon">
+                                            <FaVideo size={36} />
+                                        </div>
+                                        <div className="card-content">
+                                            <h3>{course.courseTitle}</h3>
+                                            <div className="card-meta">
+                                                <div className="meta-item">
+                                                    <FaChalkboardTeacher />
+                                                    <span>{course.mode === 'live' ? 'Live Classes' : 'Recorded Course'}</span>
+                                                </div>
+                                                <div className="meta-item">
+                                                    <FaCalendarAlt />
+                                                    <span>Enrolled: {course.enrollmentDate ? new Date(course.enrollmentDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                className="continue-btn"
+                                                onClick={() => navigate('/student-dashboard')}
+                                            >
+                                                <FaPlayCircle /> Continue Learning
+                                                <FaArrowRight />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="card-content">
-                                        <h3>{course.courseTitle}</h3>
-                                        <div className="card-meta">
-                                            <div className="meta-item">
-                                                <FaChalkboardTeacher size={12} />
-                                                <span>{course.mode === 'live' ? 'Live Classes' : 'Recorded Course'}</span>
-                                            </div>
-                                            <div className="meta-item">
-                                                <FaCalendarAlt size={12} />
-                                                <span>Enrolled: {course.enrollmentDate ? new Date(course.enrollmentDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
-                                            </div>
-                                            <div className="meta-item">
-                                                <FaUsers size={12} />
-                                                <span>Premium Access</span>
-                                            </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Pending Payments Section */}
+                {activeTab === 'pending' && (
+                    <div className="payments-section">
+                        {pendingPayments.map((payment, index) => (
+                            <div key={index} className="payment-card pending">
+                                <div className="card-status pending">
+                                    <FaHourglassHalf /> Pending Verification
+                                </div>
+                                <div className="payment-icon">
+                                    <FaSpinner size={36} className="spin" />
+                                </div>
+                                <div className="payment-content">
+                                    <h3>{payment.courseName}</h3>
+                                    <div className="payment-details">
+                                        <div className="detail-item">
+                                            <span>Amount:</span>
+                                            <strong>Rs. {payment.amount}</strong>
                                         </div>
-                                        <div className="card-progress">
-                                            <div className="progress-bar">
-                                                <div className="progress-fill" style={{ width: '65%' }}></div>
-                                            </div>
-                                            <span className="progress-text">65% Complete</span>
+                                        <div className="detail-item">
+                                            <span>Submitted:</span>
+                                            <strong>{new Date(payment.submittedAt).toLocaleDateString()}</strong>
                                         </div>
-                                        <button 
-                                            className="continue-btn"
-                                            onClick={() => navigate('/student-dashboard')}
-                                        >
-                                            <FaPlayCircle size={16} />
-                                            Continue Learning
-                                            <FaArrowRight size={14} />
+                                    </div>
+                                    <div className="pending-message">
+                                        <FaClock />
+                                        <span>Your payment is being verified. You'll get access within 2-4 hours.</span>
+                                    </div>
+                                    <button className="track-btn" onClick={() => navigate('/contact')}>
+                                        Track Status
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Rejected Payments Section */}
+                {activeTab === 'rejected' && (
+                    <div className="payments-section">
+                        {rejectedPayments.map((payment, index) => (
+                            <div key={index} className="payment-card rejected">
+                                <div className="card-status rejected">
+                                    <FaTimesCircle /> Payment Rejected
+                                </div>
+                                <div className="payment-icon rejected-icon">
+                                    <FaExclamationTriangle size={36} />
+                                </div>
+                                <div className="payment-content">
+                                    <h3>{payment.courseName}</h3>
+                                    <div className="rejection-reason-box">
+                                        <strong>Reason for rejection:</strong>
+                                        <p>{payment.rejectionReason || 'Unable to verify payment details. Please resubmit with correct information.'}</p>
+                                    </div>
+                                    <div className="payment-details">
+                                        <div className="detail-item">
+                                            <span>Rejected on:</span>
+                                            <strong>{new Date(payment.rejectedAt || Date.now()).toLocaleDateString()}</strong>
+                                        </div>
+                                    </div>
+                                    <div className="action-buttons">
+                                        <button className="resubmit-btn" onClick={() => {
+                                            navigate('/payment-method/' + payment.courseId, {
+                                                state: {
+                                                    enrollmentData: {
+                                                        fullName: localStorage.getItem('userName'),
+                                                        email: studentEmail
+                                                    },
+                                                    mode: 'live',
+                                                    resubmit: true,
+                                                    previousPaymentId: payment.paymentId
+                                                }
+                                            });
+                                        }}>
+                                            Resubmit Payment
+                                        </button>
+                                        <button className="contact-btn" onClick={() => navigate('/contact')}>
+                                            Contact Support
                                         </button>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Rejected State */}
-                {hasRejectedCourses && (
-                    <div className="status-card rejected">
-                        <div className="status-icon">
-                            <FaExclamationTriangle size={48} />
-                        </div>
-                        <h2>Payment Verification Failed</h2>
-                        <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
-                        {paymentData.rejectionReason && (
-                            <div className="rejection-reason">
-                                <strong>Reason:</strong> {paymentData.rejectionReason}
                             </div>
-                        )}
-                        <div className="status-buttons">
-                            <button className="btn-contact" onClick={() => navigate('/contact')}>
-                                <FaHeadset /> Contact Support
-                            </button>
-                            <button className="btn-resubmit" onClick={() => {
-                                navigate('/payment-method/' + paymentData.courseId, {
-                                    state: {
-                                        enrollmentData: {
-                                            fullName: paymentData.studentName,
-                                            email: paymentData.studentEmail,
-                                            cnic: paymentData.studentCnic
-                                        },
-                                        mode: paymentData.enrollmentMode || 'live',
-                                        resubmit: true,
-                                        previousPaymentId: paymentData._id
-                                    }
-                                });
-                            }}>
-                                Re-submit Payment
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Pending State */}
-                {hasPendingCourses && (
-                    <div className="status-card pending">
-                        <div className="status-icon pending-icon">
-                            <FaClock size={48} />
-                        </div>
-                        <h2>Verification in Progress</h2>
-                        <p>Our team is currently reviewing your payment for <strong>{paymentData.courseName}</strong>.</p>
-                        <div className="eta-badge">
-                            ⏳ Expected Time: 2 - 4 Business Hours
-                        </div>
+                        ))}
                     </div>
                 )}
             </div>
 
             {/* CSS Styles */}
             <style>{`
-                /* ============================================
-                   MYLEARNING - PROFESSIONAL DESIGN
-                ============================================ */
-                
                 .mylearning-loading {
                     text-align: center;
                     padding: 100px 20px;
-                    background: #fff;
+                    background: #f8fafc;
                     min-height: 100vh;
                     display: flex;
                     flex-direction: column;
@@ -273,8 +348,8 @@ const MyLearning = () => {
                 }
                 
                 .mylearning-spinner {
-                    border: 4px solid #f3f3f3;
-                    border-top: 4px solid #000B29;
+                    border: 4px solid #e2e8f0;
+                    border-top: 4px solid #e30613;
                     border-radius: 50%;
                     width: 50px;
                     height: 50px;
@@ -287,48 +362,6 @@ const MyLearning = () => {
                     100% { transform: rotate(360deg); }
                 }
                 
-                .mylearning-loading h2 {
-                    color: #000B29;
-                    font-size: 20px;
-                    font-weight: 600;
-                }
-                
-                .mylearning-error {
-                    text-align: center;
-                    padding: 100px 20px;
-                    background: #fff;
-                    min-height: 100vh;
-                }
-                
-                .mylearning-error h2 {
-                    margin-top: 20px;
-                    color: #000B29;
-                    font-size: 24px;
-                }
-                
-                .mylearning-error p {
-                    color: #64748b;
-                    margin: 10px 0;
-                }
-                
-                .mylearning-btn-browse {
-                    margin-top: 20px;
-                    padding: 12px 30px;
-                    background: #000B29;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    transition: all 0.3s ease;
-                }
-                
-                .mylearning-btn-browse:hover {
-                    background: #E30613;
-                    transform: translateY(-2px);
-                }
-                
-                /* Main Container */
                 .mylearning-container {
                     background: #f8fafc;
                     min-height: 100vh;
@@ -338,15 +371,14 @@ const MyLearning = () => {
                 .mylearning-inner {
                     max-width: 1200px;
                     margin: 0 auto;
-                    font-family: 'Segoe UI', Roboto, sans-serif;
                 }
                 
                 /* Header */
                 .mylearning-header {
                     background: white;
-                    border-radius: 16px;
+                    border-radius: 20px;
                     padding: 24px 32px;
-                    margin-bottom: 40px;
+                    margin-bottom: 32px;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                     border: 1px solid #e2e8f0;
                 }
@@ -389,45 +421,90 @@ const MyLearning = () => {
                     margin: 0;
                 }
                 
-                .mylearning-header strong {
-                    color: #000B29;
+                .header-stats {
+                    display: flex;
+                    gap: 12px;
                 }
                 
-                .header-stats .stat-badge {
-                    background: #eef2ff;
-                    padding: 10px 20px;
+                .stat-badge {
+                    padding: 8px 16px;
                     border-radius: 40px;
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    color: #000B29;
+                    font-size: 13px;
                     font-weight: 600;
+                }
+                
+                .stat-badge.approved {
+                    background: #dcfce7;
+                    color: #16a34a;
+                }
+                
+                .stat-badge.pending {
+                    background: #fef3c7;
+                    color: #d97706;
+                }
+                
+                .stat-badge.rejected {
+                    background: #fee2e2;
+                    color: #dc2626;
+                }
+                
+                /* Tabs */
+                .mylearning-tabs {
+                    display: flex;
+                    gap: 12px;
+                    margin-bottom: 32px;
+                    flex-wrap: wrap;
+                }
+                
+                .tab-btn {
+                    padding: 10px 24px;
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 40px;
                     font-size: 14px;
+                    font-weight: 600;
+                    color: #64748b;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.3s ease;
                 }
                 
-                /* Section Title */
-                .section-title {
-                    margin-bottom: 28px;
+                .tab-btn.active {
+                    background: #000B29;
+                    color: white;
+                    border-color: #000B29;
                 }
                 
-                .section-title h2 {
-                    color: #1e293b;
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin: 0 0 8px 0;
+                .tab-count {
+                    background: rgba(0,0,0,0.1);
+                    padding: 2px 8px;
+                    border-radius: 20px;
+                    font-size: 11px;
                 }
                 
-                .title-underline {
-                    width: 60px;
-                    height: 3px;
-                    background: #e30613;
-                    border-radius: 3px;
+                .tab-btn.active .tab-count {
+                    background: rgba(255,255,255,0.2);
+                }
+                
+                .tab-count.pending {
+                    background: #fef3c7;
+                    color: #d97706;
+                }
+                
+                .tab-count.rejected {
+                    background: #fee2e2;
+                    color: #dc2626;
                 }
                 
                 /* Courses Grid */
                 .courses-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
                     gap: 28px;
                 }
                 
@@ -443,21 +520,34 @@ const MyLearning = () => {
                 .course-card:hover {
                     transform: translateY(-4px);
                     box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
-                    border-color: #e30613;
                 }
                 
-                .card-badge {
+                .card-status {
                     position: absolute;
                     top: 16px;
                     right: 16px;
-                    background: #22c55e;
-                    color: white;
                     padding: 4px 12px;
                     border-radius: 20px;
                     font-size: 11px;
                     font-weight: 700;
-                    letter-spacing: 0.5px;
-                    z-index: 1;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                
+                .card-status.approved {
+                    background: #dcfce7;
+                    color: #16a34a;
+                }
+                
+                .card-status.pending {
+                    background: #fef3c7;
+                    color: #d97706;
+                }
+                
+                .card-status.rejected {
+                    background: #fee2e2;
+                    color: #dc2626;
                 }
                 
                 .card-icon {
@@ -476,14 +566,13 @@ const MyLearning = () => {
                     font-size: 20px;
                     font-weight: 700;
                     margin: 0 0 16px 0;
-                    line-height: 1.3;
                 }
                 
                 .card-meta {
                     display: flex;
                     flex-direction: column;
                     gap: 10px;
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
                 }
                 
                 .meta-item {
@@ -496,29 +585,6 @@ const MyLearning = () => {
                 
                 .meta-item svg {
                     color: #e30613;
-                }
-                
-                .card-progress {
-                    margin: 20px 0;
-                }
-                
-                .progress-bar {
-                    height: 6px;
-                    background: #e2e8f0;
-                    border-radius: 10px;
-                    overflow: hidden;
-                    margin-bottom: 8px;
-                }
-                
-                .progress-fill {
-                    height: 100%;
-                    background: #e30613;
-                    border-radius: 10px;
-                }
-                
-                .progress-text {
-                    font-size: 12px;
-                    color: #64748b;
                 }
                 
                 .continue-btn {
@@ -541,115 +607,194 @@ const MyLearning = () => {
                 .continue-btn:hover {
                     background: #e30613;
                     transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(227,6,19,0.2);
                 }
                 
-                /* Status Cards */
-                .status-card {
-                    background: white;
-                    border-radius: 20px;
-                    padding: 48px 32px;
-                    text-align: center;
-                    border: 1px solid #e2e8f0;
-                    max-width: 500px;
+                /* Payment Cards */
+                .payments-section {
+                    max-width: 600px;
                     margin: 0 auto;
                 }
                 
-                .status-card.rejected {
-                    border-top: 4px solid #dc2626;
-                }
-                
-                .status-card.pending {
-                    border-top: 4px solid #f59e0b;
-                }
-                
-                .status-icon {
-                    width: 80px;
-                    height: 80px;
-                    background: #fef2f2;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin: 0 auto 20px;
-                    color: #dc2626;
-                }
-                
-                .status-icon.pending-icon {
-                    background: #fef3c7;
-                    color: #f59e0b;
-                }
-                
-                .status-card h2 {
-                    color: #1e293b;
-                    font-size: 24px;
-                    margin-bottom: 12px;
-                }
-                
-                .status-card p {
-                    color: #64748b;
-                    margin-bottom: 20px;
-                }
-                
-                .rejection-reason {
-                    background: #fee2e2;
-                    padding: 12px 16px;
-                    border-radius: 12px;
-                    font-size: 14px;
-                    color: #dc2626;
+                .payment-card {
+                    background: white;
+                    border-radius: 20px;
+                    overflow: hidden;
+                    border: 1px solid #e2e8f0;
                     margin-bottom: 24px;
                 }
                 
-                .status-buttons {
-                    display: flex;
-                    gap: 16px;
-                    justify-content: center;
-                    flex-wrap: wrap;
+                .payment-card.pending {
+                    border-left: 4px solid #f59e0b;
                 }
                 
-                .btn-contact {
-                    padding: 12px 28px;
-                    background: #ef4444;
+                .payment-card.rejected {
+                    border-left: 4px solid #dc2626;
+                }
+                
+                .payment-icon {
+                    background: #fef3c7;
+                    padding: 32px;
+                    text-align: center;
+                    color: #d97706;
+                }
+                
+                .payment-icon.rejected-icon {
+                    background: #fee2e2;
+                    color: #dc2626;
+                }
+                
+                .payment-content {
+                    padding: 24px;
+                }
+                
+                .payment-content h3 {
+                    color: #1e293b;
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin: 0 0 16px 0;
+                }
+                
+                .payment-details {
+                    display: flex;
+                    gap: 24px;
+                    margin: 16px 0;
+                    padding: 12px;
+                    background: #f8fafc;
+                    border-radius: 12px;
+                }
+                
+                .detail-item {
+                    display: flex;
+                    gap: 8px;
+                    font-size: 13px;
+                }
+                
+                .detail-item span {
+                    color: #64748b;
+                }
+                
+                .detail-item strong {
+                    color: #1e293b;
+                }
+                
+                .pending-message {
+                    background: #fef3c7;
+                    padding: 12px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 13px;
+                    color: #92400e;
+                    margin: 16px 0;
+                }
+                
+                .rejection-reason-box {
+                    background: #fee2e2;
+                    padding: 16px;
+                    border-radius: 12px;
+                    margin: 16px 0;
+                }
+                
+                .rejection-reason-box strong {
+                    color: #dc2626;
+                    display: block;
+                    margin-bottom: 8px;
+                }
+                
+                .rejection-reason-box p {
+                    color: #7f1a1a;
+                    margin: 0;
+                    font-size: 14px;
+                }
+                
+                .action-buttons {
+                    display: flex;
+                    gap: 12px;
+                    margin-top: 20px;
+                }
+                
+                .resubmit-btn {
+                    flex: 1;
+                    padding: 12px;
+                    background: #dc2626;
                     color: white;
                     border: none;
                     border-radius: 10px;
                     font-weight: 600;
                     cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
                     transition: all 0.3s ease;
                 }
                 
-                .btn-contact:hover {
-                    background: #dc2626;
+                .resubmit-btn:hover {
+                    background: #b91c1c;
                     transform: translateY(-2px);
                 }
                 
-                .btn-resubmit {
-                    padding: 12px 28px;
-                    background: white;
-                    color: #ef4444;
-                    border: 2px solid #ef4444;
+                .contact-btn, .track-btn {
+                    flex: 1;
+                    padding: 12px;
+                    background: #f1f5f9;
+                    color: #1e293b;
+                    border: none;
                     border-radius: 10px;
                     font-weight: 600;
                     cursor: pointer;
                     transition: all 0.3s ease;
                 }
                 
-                .btn-resubmit:hover {
-                    background: #fef2f2;
-                    transform: translateY(-2px);
+                .contact-btn:hover, .track-btn:hover {
+                    background: #e2e8f0;
                 }
                 
-                .eta-badge {
-                    display: inline-block;
-                    padding: 10px 20px;
-                    background: #fef3c7;
-                    border-radius: 30px;
-                    color: #92400e;
-                    font-size: 13px;
+                .spin {
+                    animation: spin 2s linear infinite;
+                }
+                
+                /* Empty State */
+                .empty-state {
+                    text-align: center;
+                    padding: 60px 20px;
+                    background: white;
+                    border-radius: 20px;
+                    border: 1px solid #e2e8f0;
+                }
+                
+                .empty-icon {
+                    width: 80px;
+                    height: 80px;
+                    background: #f1f5f9;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 20px;
+                    color: #94a3b8;
+                }
+                
+                .empty-state h3 {
+                    color: #1e293b;
+                    margin-bottom: 8px;
+                }
+                
+                .empty-state p {
+                    color: #64748b;
+                    margin-bottom: 24px;
+                }
+                
+                .browse-btn {
+                    padding: 12px 28px;
+                    background: #000B29;
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
                     font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                
+                .browse-btn:hover {
+                    background: #e30613;
                 }
                 
                 /* Responsive */
@@ -669,7 +814,6 @@ const MyLearning = () => {
                     
                     .header-left {
                         flex-direction: column;
-                        text-align: center;
                     }
                     
                     .mylearning-header h1 {
@@ -678,28 +822,15 @@ const MyLearning = () => {
                     
                     .courses-grid {
                         grid-template-columns: 1fr;
-                        gap: 20px;
                     }
                     
-                    .card-content h3 {
-                        font-size: 18px;
-                    }
-                    
-                    .status-card {
-                        padding: 32px 20px;
-                    }
-                    
-                    .status-card h2 {
-                        font-size: 20px;
-                    }
-                    
-                    .status-buttons {
+                    .payment-details {
                         flex-direction: column;
+                        gap: 8px;
                     }
                     
-                    .btn-contact, .btn-resubmit {
-                        width: 100%;
-                        justify-content: center;
+                    .action-buttons {
+                        flex-direction: column;
                     }
                 }
             `}</style>
