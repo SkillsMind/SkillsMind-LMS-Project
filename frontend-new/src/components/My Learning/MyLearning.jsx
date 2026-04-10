@@ -3,7 +3,8 @@ import {
     FaClock, FaCheckCircle, FaPlayCircle, FaFileDownload, 
     FaLock, FaExclamationTriangle, FaHeadset, FaVideo,
     FaGraduationCap, FaBookOpen, FaArrowRight, FaCalendarAlt,
-    FaChalkboardTeacher, FaSpinner, FaHourglassHalf, FaTimesCircle
+    FaChalkboardTeacher, FaSpinner, FaHourglassHalf, FaTimesCircle,
+    FaUserGraduate
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -38,7 +39,10 @@ const MyLearning = () => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
+                console.log('📥 Active Courses Response:', activeRes.data);
+                
                 if (activeRes.data.success && activeRes.data.enrolledCourses) {
+                    // Remove duplicates by courseId and map fields properly
                     const uniqueCourses = [];
                     const seenCourseIds = new Set();
                     
@@ -46,10 +50,21 @@ const MyLearning = () => {
                         const courseId = course.courseId?.toString();
                         if (courseId && !seenCourseIds.has(courseId)) {
                             seenCourseIds.add(courseId);
-                            uniqueCourses.push(course);
+                            
+                            // 🔥 FIX: Get course title from multiple possible fields
+                            const courseTitle = course.courseTitle || course.courseName || course.title || 'Untitled Course';
+                            
+                            uniqueCourses.push({
+                                id: course.courseId,
+                                title: courseTitle,
+                                mode: course.mode || 'Live',
+                                enrollmentDate: course.enrollmentDate,
+                                status: 'active'
+                            });
                         }
                     });
                     
+                    console.log('✅ Processed Active Courses:', uniqueCourses);
                     setActiveCourses(uniqueCourses);
                 }
                 
@@ -58,23 +73,27 @@ const MyLearning = () => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (paymentRes.data && paymentRes.data.status === 'pending') {
-                    setPendingPayments([{
-                        courseId: paymentRes.data.courseId,
-                        courseName: paymentRes.data.courseName,
-                        amount: paymentRes.data.amount,
-                        submittedAt: paymentRes.data.createdAt,
-                        paymentId: paymentRes.data._id
-                    }]);
-                } else if (paymentRes.data && paymentRes.data.status === 'rejected') {
-                    setRejectedPayments([{
-                        courseId: paymentRes.data.courseId,
-                        courseName: paymentRes.data.courseName,
-                        amount: paymentRes.data.amount,
-                        rejectionReason: paymentRes.data.rejectionReason,
-                        rejectedAt: paymentRes.data.updatedAt,
-                        paymentId: paymentRes.data._id
-                    }]);
+                console.log('📥 Payment Status Response:', paymentRes.data);
+                
+                if (paymentRes.data) {
+                    if (paymentRes.data.status === 'pending') {
+                        setPendingPayments([{
+                            courseId: paymentRes.data.courseId,
+                            courseName: paymentRes.data.courseName,
+                            amount: paymentRes.data.amount,
+                            submittedAt: paymentRes.data.createdAt,
+                            paymentId: paymentRes.data._id
+                        }]);
+                    } else if (paymentRes.data.status === 'rejected') {
+                        setRejectedPayments([{
+                            courseId: paymentRes.data.courseId,
+                            courseName: paymentRes.data.courseName,
+                            amount: paymentRes.data.amount,
+                            rejectionReason: paymentRes.data.rejectionReason || 'Payment could not be verified',
+                            rejectedAt: paymentRes.data.updatedAt,
+                            paymentId: paymentRes.data._id
+                        }]);
+                    }
                 }
                 
                 // 3. Fetch REJECTED from enrollment API
@@ -83,12 +102,19 @@ const MyLearning = () => {
                 }).catch(() => ({ data: { rejectedCourses: [] } }));
                 
                 if (rejectedRes.data?.rejectedCourses?.length > 0) {
-                    setRejectedPayments(prev => [...prev, ...rejectedRes.data.rejectedCourses]);
+                    const additionalRejected = rejectedRes.data.rejectedCourses.map(r => ({
+                        courseId: r.courseId,
+                        courseName: r.courseTitle,
+                        rejectionReason: r.rejectionReason,
+                        rejectedAt: r.rejectedAt,
+                        paymentId: r.enrollmentId
+                    }));
+                    setRejectedPayments(prev => [...prev, ...additionalRejected]);
                 }
                 
             } catch (err) {
                 console.error('MyLearning Error:', err);
-                setError("Unable to retrieve records. Check server.");
+                setError("Unable to retrieve records. Please check your connection.");
             } finally {
                 setLoading(false);
             }
@@ -96,6 +122,15 @@ const MyLearning = () => {
         
         fetchAllStatus();
     }, [studentEmail, userId, token, API_URL]);
+
+    const formatDate = (date) => {
+        if (!date) return 'N/A';
+        return new Date(date).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
 
     if (loading) {
         return (
@@ -189,23 +224,27 @@ const MyLearning = () => {
                         ) : (
                             <div className="courses-grid">
                                 {activeCourses.map((course, index) => (
-                                    <div key={course.courseId || index} className="course-card approved">
-                                        <div className="card-status approved">
-                                            <FaCheckCircle /> Active
+                                    <div key={course.id || index} className="course-card">
+                                        <div className="card-badge active">
+                                            <FaCheckCircle /> ACTIVE
                                         </div>
                                         <div className="card-icon">
                                             <FaVideo size={36} />
                                         </div>
                                         <div className="card-content">
-                                            <h3>{course.courseTitle}</h3>
-                                            <div className="card-meta">
+                                            <h3 className="course-title">{course.title}</h3>
+                                            <div className="course-meta">
                                                 <div className="meta-item">
                                                     <FaChalkboardTeacher />
                                                     <span>{course.mode === 'live' ? 'Live Classes' : 'Recorded Course'}</span>
                                                 </div>
                                                 <div className="meta-item">
                                                     <FaCalendarAlt />
-                                                    <span>Enrolled: {course.enrollmentDate ? new Date(course.enrollmentDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+                                                    <span>Enrolled: {formatDate(course.enrollmentDate)}</span>
+                                                </div>
+                                                <div className="meta-item">
+                                                    <FaUserGraduate />
+                                                    <span>Premium Access</span>
                                                 </div>
                                             </div>
                                             <button 
@@ -228,14 +267,14 @@ const MyLearning = () => {
                     <div className="payments-section">
                         {pendingPayments.map((payment, index) => (
                             <div key={index} className="payment-card pending">
-                                <div className="card-status pending">
-                                    <FaHourglassHalf /> Pending Verification
+                                <div className="card-badge pending">
+                                    <FaHourglassHalf /> PENDING
                                 </div>
                                 <div className="payment-icon">
                                     <FaSpinner size={36} className="spin" />
                                 </div>
                                 <div className="payment-content">
-                                    <h3>{payment.courseName}</h3>
+                                    <h3 className="course-title">{payment.courseName}</h3>
                                     <div className="payment-details">
                                         <div className="detail-item">
                                             <span>Amount:</span>
@@ -243,15 +282,15 @@ const MyLearning = () => {
                                         </div>
                                         <div className="detail-item">
                                             <span>Submitted:</span>
-                                            <strong>{new Date(payment.submittedAt).toLocaleDateString()}</strong>
+                                            <strong>{formatDate(payment.submittedAt)}</strong>
                                         </div>
                                     </div>
                                     <div className="pending-message">
                                         <FaClock />
-                                        <span>Your payment is being verified. You'll get access within 2-4 hours.</span>
+                                        <span>Your payment is being verified. You will get access within 2-4 hours after approval.</span>
                                     </div>
                                     <button className="track-btn" onClick={() => navigate('/contact')}>
-                                        Track Status
+                                        Contact Support
                                     </button>
                                 </div>
                             </div>
@@ -264,22 +303,22 @@ const MyLearning = () => {
                     <div className="payments-section">
                         {rejectedPayments.map((payment, index) => (
                             <div key={index} className="payment-card rejected">
-                                <div className="card-status rejected">
-                                    <FaTimesCircle /> Payment Rejected
+                                <div className="card-badge rejected">
+                                    <FaTimesCircle /> REJECTED
                                 </div>
                                 <div className="payment-icon rejected-icon">
                                     <FaExclamationTriangle size={36} />
                                 </div>
                                 <div className="payment-content">
-                                    <h3>{payment.courseName}</h3>
-                                    <div className="rejection-reason-box">
+                                    <h3 className="course-title">{payment.courseName}</h3>
+                                    <div className="rejection-box">
                                         <strong>Reason for rejection:</strong>
                                         <p>{payment.rejectionReason || 'Unable to verify payment details. Please resubmit with correct information.'}</p>
                                     </div>
                                     <div className="payment-details">
                                         <div className="detail-item">
                                             <span>Rejected on:</span>
-                                            <strong>{new Date(payment.rejectedAt || Date.now()).toLocaleDateString()}</strong>
+                                            <strong>{formatDate(payment.rejectedAt)}</strong>
                                         </div>
                                     </div>
                                     <div className="action-buttons">
@@ -461,6 +500,7 @@ const MyLearning = () => {
                     padding: 2px 8px;
                     border-radius: 20px;
                     font-size: 11px;
+                    margin-left: 6px;
                 }
                 
                 .tab-btn.active .tab-count {
@@ -470,7 +510,7 @@ const MyLearning = () => {
                 /* Courses Grid */
                 .courses-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
                     gap: 28px;
                 }
                 
@@ -488,7 +528,7 @@ const MyLearning = () => {
                     box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
                 }
                 
-                .card-status {
+                .card-badge {
                     position: absolute;
                     top: 16px;
                     right: 16px;
@@ -499,19 +539,20 @@ const MyLearning = () => {
                     display: flex;
                     align-items: center;
                     gap: 6px;
+                    z-index: 1;
                 }
                 
-                .card-status.approved {
+                .card-badge.active {
                     background: #dcfce7;
                     color: #16a34a;
                 }
                 
-                .card-status.pending {
+                .card-badge.pending {
                     background: #fef3c7;
                     color: #d97706;
                 }
                 
-                .card-status.rejected {
+                .card-badge.rejected {
                     background: #fee2e2;
                     color: #dc2626;
                 }
@@ -527,17 +568,18 @@ const MyLearning = () => {
                     padding: 24px;
                 }
                 
-                .card-content h3 {
-                    color: #1e293b;
-                    font-size: 20px;
+                .course-title {
+                    font-size: 22px;
                     font-weight: 700;
+                    color: #1e293b;
                     margin: 0 0 16px 0;
+                    line-height: 1.3;
                 }
                 
-                .card-meta {
+                .course-meta {
                     display: flex;
                     flex-direction: column;
-                    gap: 10px;
+                    gap: 12px;
                     margin-bottom: 24px;
                 }
                 
@@ -577,7 +619,7 @@ const MyLearning = () => {
                 
                 /* Payment Cards */
                 .payments-section {
-                    max-width: 600px;
+                    max-width: 650px;
                     margin: 0 auto;
                 }
                 
@@ -587,6 +629,7 @@ const MyLearning = () => {
                     overflow: hidden;
                     border: 1px solid #e2e8f0;
                     margin-bottom: 24px;
+                    position: relative;
                 }
                 
                 .payment-card.pending {
@@ -613,11 +656,9 @@ const MyLearning = () => {
                     padding: 24px;
                 }
                 
-                .payment-content h3 {
-                    color: #1e293b;
+                .payment-content .course-title {
                     font-size: 20px;
-                    font-weight: 700;
-                    margin: 0 0 16px 0;
+                    margin-bottom: 16px;
                 }
                 
                 .payment-details {
@@ -646,7 +687,7 @@ const MyLearning = () => {
                 
                 .pending-message {
                     background: #fef3c7;
-                    padding: 12px;
+                    padding: 12px 16px;
                     border-radius: 12px;
                     display: flex;
                     align-items: center;
@@ -656,20 +697,20 @@ const MyLearning = () => {
                     margin: 16px 0;
                 }
                 
-                .rejection-reason-box {
+                .rejection-box {
                     background: #fee2e2;
                     padding: 16px;
                     border-radius: 12px;
                     margin: 16px 0;
                 }
                 
-                .rejection-reason-box strong {
+                .rejection-box strong {
                     color: #dc2626;
                     display: block;
                     margin-bottom: 8px;
                 }
                 
-                .rejection-reason-box p {
+                .rejection-box p {
                     color: #7f1a1a;
                     margin: 0;
                     font-size: 14px;
@@ -790,6 +831,10 @@ const MyLearning = () => {
                     
                     .courses-grid {
                         grid-template-columns: 1fr;
+                    }
+                    
+                    .course-title {
+                        font-size: 18px;
                     }
                     
                     .payment-details {
