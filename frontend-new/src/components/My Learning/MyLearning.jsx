@@ -10,8 +10,7 @@ import axios from 'axios';
 
 const MyLearning = () => {
     const navigate = useNavigate();
-    const [paymentData, setPaymentData] = useState(null);
-    const [enrollments, setEnrollments] = useState([]);
+    const [activeCourses, setActiveCourses] = useState([]);
     const [pendingPayments, setPendingPayments] = useState([]);
     const [rejectedPayments, setRejectedPayments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,16 +33,16 @@ const MyLearning = () => {
             try {
                 setLoading(true);
                 
-                // 1. Fetch ACTIVE enrollments (payment approved)
-                const enrollRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
+                // 1. Fetch ACTIVE courses (approved)
+                const activeRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (enrollRes.data.success && enrollRes.data.enrolledCourses) {
+                if (activeRes.data.success && activeRes.data.enrolledCourses) {
                     const uniqueCourses = [];
                     const seenCourseIds = new Set();
                     
-                    enrollRes.data.enrolledCourses.forEach(course => {
+                    activeRes.data.enrolledCourses.forEach(course => {
                         const courseId = course.courseId?.toString();
                         if (courseId && !seenCourseIds.has(courseId)) {
                             seenCourseIds.add(courseId);
@@ -51,34 +50,34 @@ const MyLearning = () => {
                         }
                     });
                     
-                    setEnrollments(uniqueCourses);
+                    setActiveCourses(uniqueCourses);
                 }
                 
                 // 2. Fetch PENDING payments
-                const pendingRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
+                const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (pendingRes.data && pendingRes.data.status === 'pending') {
+                if (paymentRes.data && paymentRes.data.status === 'pending') {
                     setPendingPayments([{
-                        courseId: pendingRes.data.courseId,
-                        courseName: pendingRes.data.courseName,
-                        amount: pendingRes.data.amount,
-                        submittedAt: pendingRes.data.createdAt,
-                        paymentId: pendingRes.data._id
+                        courseId: paymentRes.data.courseId,
+                        courseName: paymentRes.data.courseName,
+                        amount: paymentRes.data.amount,
+                        submittedAt: paymentRes.data.createdAt,
+                        paymentId: paymentRes.data._id
                     }]);
-                } else if (pendingRes.data && pendingRes.data.status === 'rejected') {
+                } else if (paymentRes.data && paymentRes.data.status === 'rejected') {
                     setRejectedPayments([{
-                        courseId: pendingRes.data.courseId,
-                        courseName: pendingRes.data.courseName,
-                        amount: pendingRes.data.amount,
-                        rejectionReason: pendingRes.data.rejectionReason,
-                        rejectedAt: pendingRes.data.updatedAt,
-                        paymentId: pendingRes.data._id
+                        courseId: paymentRes.data.courseId,
+                        courseName: paymentRes.data.courseName,
+                        amount: paymentRes.data.amount,
+                        rejectionReason: paymentRes.data.rejectionReason,
+                        rejectedAt: paymentRes.data.updatedAt,
+                        paymentId: paymentRes.data._id
                     }]);
                 }
                 
-                // 3. Also check rejected from enrollment API
+                // 3. Fetch REJECTED from enrollment API
                 const rejectedRes = await axios.get(`${API_URL}/api/enroll/check-rejected/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).catch(() => ({ data: { rejectedCourses: [] } }));
@@ -98,24 +97,6 @@ const MyLearning = () => {
         fetchAllStatus();
     }, [studentEmail, userId, token, API_URL]);
 
-    const getStatusColor = (status) => {
-        switch(status) {
-            case 'approved': return '#22c55e';
-            case 'pending': return '#f59e0b';
-            case 'rejected': return '#dc2626';
-            default: return '#64748b';
-        }
-    };
-
-    const getStatusIcon = (status) => {
-        switch(status) {
-            case 'approved': return <FaCheckCircle size={18} />;
-            case 'pending': return <FaHourglassHalf size={18} />;
-            case 'rejected': return <FaTimesCircle size={18} />;
-            default: return <FaClock size={18} />;
-        }
-    };
-
     if (loading) {
         return (
             <div className="mylearning-loading">
@@ -124,10 +105,6 @@ const MyLearning = () => {
             </div>
         );
     }
-
-    const hasApprovedCourses = enrollments.length > 0;
-    const hasPendingPayments = pendingPayments.length > 0;
-    const hasRejectedPayments = rejectedPayments.length > 0;
 
     return (
         <div className="mylearning-container">
@@ -148,15 +125,15 @@ const MyLearning = () => {
                         <div className="header-stats">
                             <div className="stat-badge approved">
                                 <FaCheckCircle />
-                                <span>{enrollments.length} Active</span>
+                                <span>{activeCourses.length} Active</span>
                             </div>
-                            {hasPendingPayments && (
+                            {pendingPayments.length > 0 && (
                                 <div className="stat-badge pending">
                                     <FaHourglassHalf />
                                     <span>{pendingPayments.length} Pending</span>
                                 </div>
                             )}
-                            {hasRejectedPayments && (
+                            {rejectedPayments.length > 0 && (
                                 <div className="stat-badge rejected">
                                     <FaTimesCircle />
                                     <span>{rejectedPayments.length} Rejected</span>
@@ -167,53 +144,51 @@ const MyLearning = () => {
                 </header>
 
                 {/* Tabs */}
-                {(hasPendingPayments || hasRejectedPayments) && (
-                    <div className="mylearning-tabs">
+                <div className="mylearning-tabs">
+                    <button 
+                        className={`tab-btn ${activeTab === 'approved' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('approved')}
+                    >
+                        <FaCheckCircle /> Active Courses
+                        {activeCourses.length > 0 && <span className="tab-count">{activeCourses.length}</span>}
+                    </button>
+                    {pendingPayments.length > 0 && (
                         <button 
-                            className={`tab-btn ${activeTab === 'approved' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('approved')}
+                            className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('pending')}
                         >
-                            <FaCheckCircle /> Active Courses
-                            {enrollments.length > 0 && <span className="tab-count">{enrollments.length}</span>}
+                            <FaHourglassHalf /> Pending
+                            <span className="tab-count pending">{pendingPayments.length}</span>
                         </button>
-                        {hasPendingPayments && (
-                            <button 
-                                className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('pending')}
-                            >
-                                <FaHourglassHalf /> Pending
-                                <span className="tab-count pending">{pendingPayments.length}</span>
-                            </button>
-                        )}
-                        {hasRejectedPayments && (
-                            <button 
-                                className={`tab-btn ${activeTab === 'rejected' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('rejected')}
-                            >
-                                <FaTimesCircle /> Rejected
-                                <span className="tab-count rejected">{rejectedPayments.length}</span>
-                            </button>
-                        )}
-                    </div>
-                )}
+                    )}
+                    {rejectedPayments.length > 0 && (
+                        <button 
+                            className={`tab-btn ${activeTab === 'rejected' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('rejected')}
+                        >
+                            <FaTimesCircle /> Rejected
+                            <span className="tab-count rejected">{rejectedPayments.length}</span>
+                        </button>
+                    )}
+                </div>
 
-                {/* Active Courses Section */}
+                {/* Active Courses Tab */}
                 {activeTab === 'approved' && (
                     <div className="courses-section">
-                        {enrollments.length === 0 ? (
+                        {activeCourses.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-icon">
                                     <FaBookOpen size={48} />
                                 </div>
                                 <h3>No Active Courses</h3>
-                                <p>You haven't enrolled in any courses yet.</p>
+                                <p>You haven't enrolled in any approved courses yet.</p>
                                 <button className="browse-btn" onClick={() => navigate('/get-enrolment')}>
                                     Browse Courses
                                 </button>
                             </div>
                         ) : (
                             <div className="courses-grid">
-                                {enrollments.map((course, index) => (
+                                {activeCourses.map((course, index) => (
                                     <div key={course.courseId || index} className="course-card approved">
                                         <div className="card-status approved">
                                             <FaCheckCircle /> Active
@@ -248,8 +223,8 @@ const MyLearning = () => {
                     </div>
                 )}
 
-                {/* Pending Payments Section */}
-                {activeTab === 'pending' && (
+                {/* Pending Tab */}
+                {activeTab === 'pending' && pendingPayments.length > 0 && (
                     <div className="payments-section">
                         {pendingPayments.map((payment, index) => (
                             <div key={index} className="payment-card pending">
@@ -284,8 +259,8 @@ const MyLearning = () => {
                     </div>
                 )}
 
-                {/* Rejected Payments Section */}
-                {activeTab === 'rejected' && (
+                {/* Rejected Tab */}
+                {activeTab === 'rejected' && rejectedPayments.length > 0 && (
                     <div className="payments-section">
                         {rejectedPayments.map((payment, index) => (
                             <div key={index} className="payment-card rejected">
@@ -424,6 +399,7 @@ const MyLearning = () => {
                 .header-stats {
                     display: flex;
                     gap: 12px;
+                    flex-wrap: wrap;
                 }
                 
                 .stat-badge {
@@ -489,16 +465,6 @@ const MyLearning = () => {
                 
                 .tab-btn.active .tab-count {
                     background: rgba(255,255,255,0.2);
-                }
-                
-                .tab-count.pending {
-                    background: #fef3c7;
-                    color: #d97706;
-                }
-                
-                .tab-count.rejected {
-                    background: #fee2e2;
-                    color: #dc2626;
                 }
                 
                 /* Courses Grid */
@@ -661,6 +627,7 @@ const MyLearning = () => {
                     padding: 12px;
                     background: #f8fafc;
                     border-radius: 12px;
+                    flex-wrap: wrap;
                 }
                 
                 .detail-item {
@@ -712,6 +679,7 @@ const MyLearning = () => {
                     display: flex;
                     gap: 12px;
                     margin-top: 20px;
+                    flex-wrap: wrap;
                 }
                 
                 .resubmit-btn {
