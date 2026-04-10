@@ -4,11 +4,13 @@ const LiveEnrollment = require('../models/LiveEnrollment');
 const Course = require('../models/Course');
 
 // ==========================================
-// 1. GET: Check ACTIVE enrollments (Payment Approved) - WITH DUPLICATE REMOVAL
+// 1. GET: Check ACTIVE enrollments (Payment Approved) - STRONG DUPLICATE REMOVAL
 // ==========================================
 router.get('/check-enrollment/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
+        
+        console.log(`🔍 Checking active enrollments for user: ${userId}`);
         
         // Get active enrollments from LiveEnrollment
         const activeEnrollments = await LiveEnrollment.find({ 
@@ -21,13 +23,14 @@ router.get('/check-enrollment/:userId', async (req, res) => {
             enrolledStudentIds: userId
         }).select('_id title');
         
-        // 🔥 FIX: Use Map to remove duplicates by courseId
+        // 🔥 STRONG FIX: Use Map to remove duplicates by courseId
+        // Priority: LiveEnrollment wale pehle (kyunki unki date sahi hai)
         const enrolledMap = new Map();
         
         // First add from activeEnrollments (priority - has real enrollment date)
         activeEnrollments.forEach(e => {
             const courseId = e.courseId?.toString();
-            if (courseId && !enrolledMap.has(courseId)) {
+            if (courseId) {
                 enrolledMap.set(courseId, {
                     courseId: e.courseId,
                     courseTitle: e.course,
@@ -37,10 +40,12 @@ router.get('/check-enrollment/:userId', async (req, res) => {
                     studentName: e.fullName,
                     enrollmentId: e._id
                 });
+                console.log(`✅ Added from LiveEnrollment: ${e.course} (${courseId})`);
             }
         });
         
-        // Then add from courses (only if not already added - for backward compatibility)
+        // Then add from courses (ONLY if not already added)
+        let coursesAdded = 0;
         enrolledCoursesFromCourses.forEach(c => {
             const courseId = c._id.toString();
             if (!enrolledMap.has(courseId)) {
@@ -53,12 +58,18 @@ router.get('/check-enrollment/:userId', async (req, res) => {
                     studentName: null,
                     enrollmentId: null
                 });
+                coursesAdded++;
+                console.log(`✅ Added from Course model: ${c.title} (${courseId})`);
+            } else {
+                console.log(`⏭️ Skipping duplicate from Course model: ${c.title} (already in LiveEnrollment)`);
             }
         });
         
         const enrolledCourses = Array.from(enrolledMap.values());
         
-        console.log(`✅ Active enrollments for user ${userId}: ${enrolledCourses.length} unique courses`);
+        console.log(`📊 Final: ${enrolledCourses.length} unique courses for user ${userId}`);
+        console.log(`   - From LiveEnrollment: ${activeEnrollments.length}`);
+        console.log(`   - From Course model (new): ${coursesAdded}`);
         
         res.json({
             success: true,
