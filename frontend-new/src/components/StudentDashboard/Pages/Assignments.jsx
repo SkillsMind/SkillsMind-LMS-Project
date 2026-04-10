@@ -82,7 +82,7 @@ const DeadlineCountdown = ({ dueDate, status }) => {
 };
 
 // ============================================
-// 🆕 UPDATED: Assignments Component with onNavigate prop
+// 🆕 UPDATED: Assignments Component - FIXED API CALLS
 // ============================================
 const Assignments = ({ onNavigate }) => {
   const [filter, setFilter] = useState('all');
@@ -114,6 +114,7 @@ const Assignments = ({ onNavigate }) => {
   const enrolledCoursesRef = useRef(enrolledCourses);
   enrolledCoursesRef.current = enrolledCourses;
 
+  // 🔥🔥🔥 FIXED - Get user data from localStorage (not from /api/auth/me)
   const getUserId = () => {
     try {
       const user = localStorage.getItem('user');
@@ -235,6 +236,7 @@ const Assignments = ({ onNavigate }) => {
     };
   }, []);
 
+  // 🔥🔥🔥 FIXED - Use /api/enroll/check-enrollment instead of /api/auth/me
   const checkEnrollmentAndFetchAssignments = async () => {
     try {
       setLoading(true);
@@ -252,25 +254,29 @@ const Assignments = ({ onNavigate }) => {
       let enrolledCourseIds = [];
       
       try {
-        const userRes = await axios.get(`${API_BASE}/auth/me`, {
+        // 🔥🔥🔥 FIXED - Use enrollment API instead of auth/me
+        const enrollRes = await axios.get(`${API_BASE}/enroll/check-enrollment/${currentUserId}`, {
           headers: { Authorization: `Bearer ${currentToken}` }
         });
         
-        const userData = userRes.data.user || userRes.data;
-        enrolledCourseIds = userData?.enrolledCourses || [];
+        console.log('Assignments - Enrollment Check:', enrollRes.data);
         
-      } catch (err1) {
-        try {
-          const profileRes = await axios.get(`${API_BASE}/student-profile/details/${currentUserId}`, {
-            headers: { Authorization: `Bearer ${currentToken}` }
-          });
-          
-          const profile = profileRes.data.profile || profileRes.data;
-          enrolledCourseIds = profile?.enrolledCourses || [];
-        } catch (err2) {
-          setError('Failed to fetch enrollment data');
-          setLoading(false);
-          return;
+        // 🔥 Extract courseIds from enrolledCourses
+        if (enrollRes.data.success && enrollRes.data.enrolledCourses) {
+          enrolledCourseIds = enrollRes.data.enrolledCourses.map(course => course.courseId);
+        }
+        
+      } catch (err) {
+        console.error('Enrollment fetch error:', err);
+        // 🔥 Fallback - try to get from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            enrolledCourseIds = userData.enrolledCourses || [];
+          } catch (e) {
+            console.error('Error parsing user data:', e);
+          }
         }
       }
       
@@ -286,6 +292,7 @@ const Assignments = ({ onNavigate }) => {
       }
       
     } catch (err) {
+      console.error('Check enrollment error:', err);
       setError('Failed to check enrollment');
       setLoading(false);
     }
@@ -314,6 +321,7 @@ const Assignments = ({ onNavigate }) => {
         setExpandedCourses(expanded);
       }
     } catch (err) {
+      console.error('Fetch assignments error:', err);
       toast.error(err.response?.data?.error || 'Failed to load assignments');
     } finally {
       setLoading(false);
@@ -557,50 +565,41 @@ const Assignments = ({ onNavigate }) => {
     setSubmitModal(true);
   };
 
- // ============================================
-// 🆕 UPDATED: Open Assignment Builder - With Real Student Data
-// ============================================
-const openAssignmentBuilder = (assignment) => {
-  // 🔥 Get real user data from localStorage
-  const userStr = localStorage.getItem('user');
-  let userData = {};
-  try {
-    userData = JSON.parse(userStr) || {};
-  } catch (e) {
-    console.error('Error parsing user data:', e);
-  }
+  const openAssignmentBuilder = (assignment) => {
+    const userStr = localStorage.getItem('user');
+    let userData = {};
+    try {
+      userData = JSON.parse(userStr) || {};
+    } catch (e) {
+      console.error('Error parsing user data:', e);
+    }
 
-  // 🔥 Prepare complete assignment data with real student info
-  const assignmentData = {
-    _id: assignment._id,
-    courseId: assignment.courseId,
-    title: assignment.title,
-    courseName: assignment.courseName,
-    courseAssignmentNo: assignment.courseAssignmentNo,
-    description: assignment.description,
-    dueDate: assignment.dueDate,
-    totalMarks: assignment.totalMarks,
-    // 🔥 Real student data
-    studentName: userData.name || userData.fullName || userData.username || 'Student',
-    studentEmail: userData.email || '',
-    studentId: userData.studentId || userData._id || userData.id || '',
-    // 🔥 Course data
-    courseCode: assignment.courseCode || '',
-    assignmentNo: assignment.assignmentNo || assignment.courseAssignmentNo
+    const assignmentData = {
+      _id: assignment._id,
+      courseId: assignment.courseId,
+      title: assignment.title,
+      courseName: assignment.courseName,
+      courseAssignmentNo: assignment.courseAssignmentNo,
+      description: assignment.description,
+      dueDate: assignment.dueDate,
+      totalMarks: assignment.totalMarks,
+      studentName: userData.name || userData.fullName || userData.username || 'Student',
+      studentEmail: userData.email || '',
+      studentId: userData.studentId || userData._id || userData.id || '',
+      courseCode: assignment.courseCode || '',
+      assignmentNo: assignment.assignmentNo || assignment.courseAssignmentNo
+    };
+
+    console.log('🔥 Opening Assignment Builder with data:', assignmentData);
+
+    localStorage.setItem('currentAssignment', JSON.stringify(assignmentData));
+    
+    if (onNavigate) {
+      onNavigate('assignment-builder');
+    } else {
+      window.location.href = `/assignment-builder?id=${assignment._id}&courseId=${assignment.courseId}`;
+    }
   };
-
-  console.log('🔥 Opening Assignment Builder with data:', assignmentData);
-
-  // Store in localStorage
-  localStorage.setItem('currentAssignment', JSON.stringify(assignmentData));
-  
-  // Navigate internally
-  if (onNavigate) {
-    onNavigate('assignment-builder');
-  } else {
-    window.location.href = `/assignment-builder?id=${assignment._id}&courseId=${assignment.courseId}`;
-  }
-};
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
     FaClock, FaCheckCircle, FaPlayCircle, FaFileDownload, 
-    FaLock, FaExclamationTriangle, FaHeadset, FaVideo 
+    FaLock, FaExclamationTriangle, FaHeadset, FaVideo,
+    FaGraduationCap // 🔥 Added for multiple courses
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -9,33 +10,77 @@ import axios from 'axios';
 const MyLearning = () => {
     const navigate = useNavigate();
     const [paymentData, setPaymentData] = useState(null);
+    const [enrollments, setEnrollments] = useState([]); // 🔥 Multiple enrollments ke liye
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const studentEmail = localStorage.getItem('studentEmail'); 
+    const studentEmail = localStorage.getItem('studentEmail');
+    const userId = localStorage.getItem('userId'); // 🔥 Added
+    const token = localStorage.getItem('token'); // 🔥 Added
 
     useEffect(() => {
         const fetchStatus = async () => {
-            if (!studentEmail) {
+            if (!studentEmail || !userId) {
                 setError("Session expired. Please log in again.");
                 setLoading(false);
                 return;
             }
+            
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/payments/my-status/${studentEmail}`);
-                if (res.data) {
-                    setPaymentData(res.data);
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                
+                // 🔥🔥🔥 FIXED - Pehle Enrollment API se fetch karo 🔥🔥🔥
+                const enrollRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                console.log('MyLearning - Enrollments:', enrollRes.data);
+                
+                // 🔥 Agar enrollments hain, toh unko store karo
+                if (enrollRes.data.success && enrollRes.data.enrolledCourses && enrollRes.data.enrolledCourses.length > 0) {
+                    setEnrollments(enrollRes.data.enrolledCourses);
+                    // First enrollment ko paymentData mein bhi store karo (backward compatibility)
+                    setPaymentData({
+                        status: 'approved',
+                        studentName: enrollRes.data.enrolledCourses[0].studentName,
+                        courseName: enrollRes.data.enrolledCourses[0].courseTitle,
+                        courseId: enrollRes.data.enrolledCourses[0].courseId,
+                        _id: enrollRes.data.enrolledCourses[0].enrollmentId
+                    });
+                    setLoading(false);
+                    return;
+                }
+                
+                // 🔥 Fallback - Payment API se check karo
+                const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (paymentRes.data) {
+                    setPaymentData(paymentRes.data);
+                    // Single course ko enrollments array mein bhi add karo
+                    if (paymentRes.data.status === 'approved') {
+                        setEnrollments([{
+                            courseId: paymentRes.data.courseId,
+                            courseTitle: paymentRes.data.courseName,
+                            studentName: paymentRes.data.studentName,
+                            enrollmentId: paymentRes.data._id,
+                            paymentStatus: 'active'
+                        }]);
+                    }
                 } else {
                     setError("No enrollment record found.");
                 }
             } catch (err) {
+                console.error('MyLearning Error:', err);
                 setError("Unable to retrieve records. Check server.");
             } finally {
                 setLoading(false);
             }
         };
+        
         fetchStatus();
-    }, [studentEmail]);
+    }, [studentEmail, userId, token]);
 
     if (loading) {
         return (
@@ -46,7 +91,7 @@ const MyLearning = () => {
         );
     }
 
-    if (error || !paymentData) {
+    if (error) {
         return (
             <div className="mylearning-error">
                 <FaLock size={60} color="#64748b" />
@@ -59,9 +104,10 @@ const MyLearning = () => {
         );
     }
 
-    const currentStatus = paymentData.status ? paymentData.status.toLowerCase() : 'pending';
-    const isApproved = currentStatus === 'approved';
-    const isRejected = currentStatus === 'rejected';
+    // 🔥 Multiple courses dikhane ka logic
+    const hasApprovedCourses = enrollments.length > 0 || (paymentData && paymentData.status === 'approved');
+    const hasRejectedCourses = paymentData && paymentData.status === 'rejected';
+    const hasPendingCourses = paymentData && paymentData.status === 'pending';
 
     return (
         <div className="mylearning-container">
@@ -70,70 +116,43 @@ const MyLearning = () => {
                 {/* Header */}
                 <header className="mylearning-header">
                     <h1>Student Dashboard</h1>
-                    <p>Welcome back, <strong>{paymentData.studentName}</strong></p>
+                    <p>Welcome back, <strong>{paymentData?.studentName || enrollments[0]?.studentName || 'Student'}</strong></p>
                 </header>
 
-                {/* REJECTED STATE */}
-                {/* REJECTED STATE */}
-{isRejected && (
-    <div className="mylearning-card mylearning-card-rejected">
-        <div className="mylearning-icon-circle mylearning-icon-rejected">
-            <FaExclamationTriangle size={45} color="#E13630" />
-        </div>
-        <h2>Payment Verification Failed</h2>
-        <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
-        {paymentData.rejectionReason && (
-            <div className="rejection-reason" style={{ 
-                background: '#fee2e2', 
-                padding: '12px', 
-                borderRadius: '8px', 
-                marginBottom: '20px',
-                fontSize: '14px',
-                color: '#dc2626'
-            }}>
-                <strong>Reason:</strong> {paymentData.rejectionReason}
-            </div>
-        )}
-        <div className="mylearning-btn-group">
-            <button className="mylearning-btn-contact" onClick={() => navigate('/contact')}>
-                <FaHeadset /> Contact Support
-            </button>
-            <button className="mylearning-btn-resubmit" onClick={() => {
-                navigate('/payment-method/' + paymentData.courseId, {
-                    state: {
-                        enrollmentData: {
-                            fullName: paymentData.studentName,
-                            email: paymentData.studentEmail,
-                            cnic: paymentData.studentCnic
-                        },
-                        mode: paymentData.enrollmentMode || 'live',
-                        resubmit: true,
-                        previousPaymentId: paymentData._id
-                    }
-                });
-            }}>
-                Re-submit Payment
-            </button>
-        </div>
-    </div>
-)}
-
-                {/* PENDING STATE */}
-                {!isApproved && !isRejected && (
-                    <div className="mylearning-card mylearning-card-pending">
-                        <div className="mylearning-icon-circle mylearning-icon-pending">
-                            <FaClock size={45} color="#fab005" />
+                {/* 🔥🔥🔥 MULTIPLE COURSES VIEW 🔥🔥🔥 */}
+                {hasApprovedCourses && enrollments.length > 1 && (
+                    <div className="mylearning-multiple-courses">
+                        <div className="mylearning-approved-header">
+                            <FaGraduationCap size={28} />
+                            <h2>Your Active Courses ({enrollments.length})</h2>
                         </div>
-                        <h2>Verification in Progress</h2>
-                        <p>Our team is currently reviewing your payment for <strong>{paymentData.courseName}</strong>.</p>
-                        <div className="mylearning-eta">
-                            ⏳ Expected Time: 2 - 4 Business Hours
+                        
+                        <div className="courses-grid">
+                            {enrollments.map((course, index) => (
+                                <div key={index} className="course-card-mini">
+                                    <div className="course-mini-banner">
+                                        <FaVideo size={30} color="#22c55e" />
+                                    </div>
+                                    <div className="course-mini-content">
+                                        <div className="mylearning-badge">ACTIVE</div>
+                                        <h3>{course.courseTitle}</h3>
+                                        <p>Mode: {course.mode || 'Live'} • Enrolled: {new Date(course.enrollmentDate).toLocaleDateString()}</p>
+                                        <button 
+                                            className="mylearning-btn-start" 
+                                            onClick={() => navigate('/student-dashboard')}
+                                            style={{ width: '100%', marginTop: '15px' }}
+                                        >
+                                            <FaPlayCircle size={16} /> Continue Learning
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
 
-                {/* APPROVED STATE */}
-                {isApproved && (
+                {/* SINGLE COURSE - APPROVED STATE */}
+                {hasApprovedCourses && enrollments.length <= 1 && (
                     <div className="mylearning-approved">
                         <div className="mylearning-approved-header">
                             <FaCheckCircle size={28} />
@@ -153,7 +172,7 @@ const MyLearning = () => {
                             {/* Right Content */}
                             <div className="mylearning-content">
                                 <div className="mylearning-badge">PREMIUM ENROLLMENT</div>
-                                <h2>{paymentData.courseName}</h2>
+                                <h2>{paymentData?.courseName || enrollments[0]?.courseTitle}</h2>
                                 <p>Your enrollment is successful. You now have full access to live interactive sessions, mentor support, and all exclusive learning resources.</p>
                                 
                                 <div className="mylearning-action-buttons">
@@ -165,6 +184,64 @@ const MyLearning = () => {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* REJECTED STATE */}
+                {hasRejectedCourses && (
+                    <div className="mylearning-card mylearning-card-rejected">
+                        <div className="mylearning-icon-circle mylearning-icon-rejected">
+                            <FaExclamationTriangle size={45} color="#E13630" />
+                        </div>
+                        <h2>Payment Verification Failed</h2>
+                        <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
+                        {paymentData.rejectionReason && (
+                            <div className="rejection-reason" style={{ 
+                                background: '#fee2e2', 
+                                padding: '12px', 
+                                borderRadius: '8px', 
+                                marginBottom: '20px',
+                                fontSize: '14px',
+                                color: '#dc2626'
+                            }}>
+                                <strong>Reason:</strong> {paymentData.rejectionReason}
+                            </div>
+                        )}
+                        <div className="mylearning-btn-group">
+                            <button className="mylearning-btn-contact" onClick={() => navigate('/contact')}>
+                                <FaHeadset /> Contact Support
+                            </button>
+                            <button className="mylearning-btn-resubmit" onClick={() => {
+                                navigate('/payment-method/' + paymentData.courseId, {
+                                    state: {
+                                        enrollmentData: {
+                                            fullName: paymentData.studentName,
+                                            email: paymentData.studentEmail,
+                                            cnic: paymentData.studentCnic
+                                        },
+                                        mode: paymentData.enrollmentMode || 'live',
+                                        resubmit: true,
+                                        previousPaymentId: paymentData._id
+                                    }
+                                });
+                            }}>
+                                Re-submit Payment
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* PENDING STATE */}
+                {hasPendingCourses && (
+                    <div className="mylearning-card mylearning-card-pending">
+                        <div className="mylearning-icon-circle mylearning-icon-pending">
+                            <FaClock size={45} color="#fab005" />
+                        </div>
+                        <h2>Verification in Progress</h2>
+                        <p>Our team is currently reviewing your payment for <strong>{paymentData.courseName}</strong>.</p>
+                        <div className="mylearning-eta">
+                            ⏳ Expected Time: 2 - 4 Business Hours
                         </div>
                     </div>
                 )}
@@ -276,6 +353,53 @@ const MyLearning = () => {
                 
                 .mylearning-header strong {
                     color: #000B29;
+                }
+                
+                /* Multiple Courses Grid */
+                .mylearning-multiple-courses {
+                    margin-bottom: 40px;
+                }
+                
+                .courses-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 24px;
+                    margin-top: 20px;
+                }
+                
+                .course-card-mini {
+                    background: #fff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+                    border: 1px solid #e2e8f0;
+                    transition: transform 0.3s ease;
+                }
+                
+                .course-card-mini:hover {
+                    transform: translateY(-5px);
+                }
+                
+                .course-mini-banner {
+                    background: #000B29;
+                    padding: 30px;
+                    text-align: center;
+                }
+                
+                .course-mini-content {
+                    padding: 24px;
+                }
+                
+                .course-mini-content h3 {
+                    color: #000B29;
+                    font-size: 18px;
+                    margin: 10px 0;
+                }
+                
+                .course-mini-content p {
+                    color: #64748b;
+                    font-size: 13px;
+                    margin-bottom: 15px;
                 }
                 
                 /* Common Card Styles */
@@ -529,8 +653,11 @@ const MyLearning = () => {
                    RESPONSIVE BREAKPOINTS
                 ============================================ */
                 
-                /* Tablet (768px - 1024px) */
                 @media (max-width: 1024px) {
+                    .courses-grid {
+                        grid-template-columns: repeat(2, 1fr);
+                    }
+                    
                     .mylearning-approved-card {
                         flex-direction: column;
                     }
@@ -547,21 +674,16 @@ const MyLearning = () => {
                         padding: 20px;
                     }
                     
-                    .mylearning-banner h3 {
-                        font-size: 18px;
-                    }
-                    
-                    .mylearning-banner p {
-                        font-size: 13px;
-                    }
-                    
                     .mylearning-content {
                         padding: 40px;
                     }
                 }
                 
-                /* Mobile (481px - 768px) */
                 @media (max-width: 768px) {
+                    .courses-grid {
+                        grid-template-columns: 1fr;
+                    }
+                    
                     .mylearning-container {
                         padding: 30px 16px;
                     }
@@ -570,20 +692,8 @@ const MyLearning = () => {
                         font-size: 28px;
                     }
                     
-                    .mylearning-header p {
-                        font-size: 14px;
-                    }
-                    
                     .mylearning-card {
                         padding: 30px 20px;
-                    }
-                    
-                    .mylearning-card h2 {
-                        font-size: 24px;
-                    }
-                    
-                    .mylearning-card p {
-                        font-size: 14px;
                     }
                     
                     .mylearning-btn-group {
@@ -597,18 +707,10 @@ const MyLearning = () => {
                         justify-content: center;
                     }
                     
-                    .mylearning-approved-header h2 {
-                        font-size: 20px;
-                    }
-                    
                     .mylearning-banner {
                         flex-direction: column;
                         text-align: center;
                         padding: 30px 20px;
-                    }
-                    
-                    .mylearning-banner-icon {
-                        margin-bottom: 15px;
                     }
                     
                     .mylearning-content {
@@ -620,26 +722,11 @@ const MyLearning = () => {
                         margin: 0 auto 15px;
                     }
                     
-                    .mylearning-content h2 {
-                        font-size: 24px;
-                    }
-                    
-                    .mylearning-content p {
-                        font-size: 15px;
-                    }
-                    
                     .mylearning-action-buttons {
                         justify-content: center;
                     }
-                    
-                    .mylearning-btn-start,
-                    .mylearning-btn-resources {
-                        padding: 12px 25px;
-                        font-size: 14px;
-                    }
                 }
                 
-                /* Small Mobile (up to 480px) */
                 @media (max-width: 480px) {
                     .mylearning-container {
                         padding: 20px 12px;
@@ -647,50 +734,6 @@ const MyLearning = () => {
                     
                     .mylearning-header h1 {
                         font-size: 24px;
-                    }
-                    
-                    .mylearning-card {
-                        padding: 25px 15px;
-                    }
-                    
-                    .mylearning-card h2 {
-                        font-size: 20px;
-                    }
-                    
-                    .mylearning-icon-circle {
-                        width: 70px;
-                        height: 70px;
-                    }
-                    
-                    .mylearning-icon-circle svg {
-                        width: 35px !important;
-                        height: 35px !important;
-                    }
-                    
-                    .mylearning-eta {
-                        font-size: 12px;
-                        padding: 8px 16px;
-                    }
-                    
-                    .mylearning-banner {
-                        padding: 25px 15px;
-                    }
-                    
-                    .mylearning-banner-icon {
-                        padding: 15px;
-                    }
-                    
-                    .mylearning-banner-icon svg {
-                        width: 35px !important;
-                        height: 35px !important;
-                    }
-                    
-                    .mylearning-banner h3 {
-                        font-size: 16px;
-                    }
-                    
-                    .mylearning-content {
-                        padding: 25px 15px;
                     }
                     
                     .mylearning-content h2 {

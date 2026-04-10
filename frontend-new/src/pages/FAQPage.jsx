@@ -97,7 +97,7 @@ const FAQPage = () => {
       icon: <Instagram size={24} />,
       link: 'https://instagram.com/skillsmind',
       color: '#E4405F',
-      username: '@skillsmind'
+      username: 'skillsmind786'
     },
     {
       name: 'Email',

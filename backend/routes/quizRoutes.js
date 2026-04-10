@@ -5,12 +5,10 @@ const Quiz = require('../models/Quiz');
 const Course = require('../models/Course');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { launchBrowser } = require('../utils/browser');
+const puppeteer = require('puppeteer');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
-
-
 
 // Admin check helper
 const isAdmin = (req) => {
@@ -45,7 +43,6 @@ const getGrade = (percentage) => {
 // ==========================================
 const generateQuizNumber = async (courseId) => {
   try {
-    // 🔥 Find the last quiz for THIS SPECIFIC COURSE
     const lastQuiz = await Quiz.findOne(
       { courseId: courseId }, 
       { quizNumber: 1 }
@@ -54,41 +51,34 @@ const generateQuizNumber = async (courseId) => {
     let sequenceNumber = 1;
     
     if (lastQuiz && lastQuiz.quizNumber) {
-      // Extract number from existing quizNumber (e.g., "WEB-QUIZ-005" or "QUIZ-0005" -> 5)
       const match = lastQuiz.quizNumber.match(/(\d+)$/);
       if (match) {
         sequenceNumber = parseInt(match[1]) + 1;
       }
     }
     
-    // Get course info for prefix
     const course = await Course.findById(courseId).select('title category').lean();
     let prefix = 'QUIZ';
     
     if (course) {
-      // Create prefix from course title (e.g., "Web Development" -> "WEB")
       const courseName = course.title || course.category || 'COURSE';
       prefix = courseName
         .split(' ')
         .map(word => word.charAt(0).toUpperCase())
         .join('')
-        .substring(0, 4); // Max 4 characters
+        .substring(0, 4);
     }
     
-    // Format: WEB-QUIZ-001, WEB-QUIZ-002, etc.
     const quizNumber = `${prefix}-QUIZ-${String(sequenceNumber).padStart(3, '0')}`;
     
-    // 🔥 Double check if this number already exists (safety check)
     const exists = await Quiz.findOne({ quizNumber: quizNumber });
     if (exists) {
-      // If exists, try with timestamp
       return `${prefix}-QUIZ-${String(sequenceNumber).padStart(3, '0')}-${Date.now().toString().slice(-4)}`;
     }
     
     return quizNumber;
   } catch (error) {
     console.error('Error generating quiz number:', error);
-    // Fallback: use timestamp
     return `QUIZ-${Date.now()}`;
   }
 };
@@ -97,7 +87,6 @@ const generateQuizNumber = async (courseId) => {
 // ADMIN ROUTES
 // ==========================================
 
-// Get all quizzes (Admin)
 router.get('/', auth, async (req, res) => {
   try {
     if (!isAdmin(req)) {
@@ -116,7 +105,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// 🔥 CREATE NEW QUIZ (FIXED VERSION)
 router.post('/', auth, async (req, res) => {
   try {
     console.log('🔵 Create Quiz Request:', req.body);
@@ -127,7 +115,6 @@ router.post('/', auth, async (req, res) => {
 
     const { title, description, courseId, duration, passingMarks, status, questions } = req.body;
 
-    // Validation
     if (!title || !courseId || !questions || !Array.isArray(questions) || questions.length === 0) {
       return res.status(400).json({
         success: false,
@@ -144,7 +131,6 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Course not found' });
     }
 
-    // Validate questions
     const validatedQuestions = questions.map((q, idx) => {
       if (!q.questionText || !q.options || q.options.length < 2) {
         throw new Error(`Question ${idx + 1}: Invalid data`);
@@ -159,17 +145,15 @@ router.post('/', auth, async (req, res) => {
       };
     });
 
-    // 🔥 FIX: Generate course-wise unique quiz number
     const quizNumber = await generateQuizNumber(courseId);
     console.log('🆕 Generated Quiz Number:', quizNumber);
 
-    // Create quiz object
     const quizData = {
       title: title.trim(),
       description: (description || '').trim(),
       courseId: new mongoose.Types.ObjectId(courseId),
       courseName: course.title,
-      quizNumber: quizNumber, // 🔥 Explicitly set unique number
+      quizNumber: quizNumber,
       createdBy: new mongoose.Types.ObjectId(req.user.id || req.user._id),
       duration: parseInt(duration) || 30,
       passingMarks: parseInt(passingMarks) || 50,
@@ -177,7 +161,6 @@ router.post('/', auth, async (req, res) => {
       questions: validatedQuestions
     };
 
-    // Create and save quiz
     const quiz = new Quiz(quizData);
     await quiz.save();
     
@@ -187,7 +170,6 @@ router.post('/', auth, async (req, res) => {
       title: quiz.title
     });
 
-    // 🔥 Notify enrolled students if quiz is active
     if (status === 'active' && course.enrolledStudentIds && course.enrolledStudentIds.length > 0) {
       try {
         const io = req.app.get('io');
@@ -229,7 +211,6 @@ router.post('/', auth, async (req, res) => {
   } catch (error) {
     console.error('❌ Create quiz error:', error);
     
-    // 🔥 Better error handling for duplicate key
     if (error.code === 11000) {
       return res.status(400).json({ 
         success: false, 
@@ -242,7 +223,6 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Update quiz (Admin)
 router.put('/:id', auth, async (req, res) => {
   try {
     if (!isAdmin(req)) {
@@ -254,7 +234,6 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Quiz not found' });
     }
 
-    // Fields that can be updated
     const updatableFields = ['title', 'description', 'duration', 'passingMarks', 'status', 'questions'];
     
     updatableFields.forEach(field => {
@@ -282,7 +261,6 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Toggle quiz status
 router.patch('/:id/status', auth, async (req, res) => {
   try {
     if (!isAdmin(req)) {
@@ -302,7 +280,6 @@ router.patch('/:id/status', auth, async (req, res) => {
 
     if (!quiz) return res.status(404).json({ success: false, error: 'Quiz not found' });
 
-    // Notify students if activated
     if (status === 'active') {
       try {
         const course = await Course.findById(quiz.courseId);
@@ -334,7 +311,6 @@ router.patch('/:id/status', auth, async (req, res) => {
   }
 });
 
-// Delete quiz
 router.delete('/:id', auth, async (req, res) => {
   try {
     if (!isAdmin(req)) {
@@ -360,7 +336,6 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Get quiz submissions (Admin)
 router.get('/:id/submissions', auth, async (req, res) => {
   try {
     if (!isAdmin(req)) {
@@ -391,31 +366,24 @@ router.get('/:id/submissions', auth, async (req, res) => {
 });
 
 // ==========================================
-// STUDENT ROUTES
+// STUDENT ROUTES - FIXED (SAME AS ASSIGNMENT)
 // ==========================================
 
-// 🔥 Get available quizzes for student (FIXED - Shows only enrolled course quizzes)
+// 🔥 Get available quizzes for student (SAME LOGIC AS ASSIGNMENTS)
 router.get('/my-quizzes', auth, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const user = await User.findById(userId);
     
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    // Get enrolled course IDs from various possible fields
-    let enrolledCourseIds = [];
+    console.log('🔍 Quiz fetch for user:', userId);
     
-    if (user.enrolledCourses && Array.isArray(user.enrolledCourses)) {
-      enrolledCourseIds = user.enrolledCourses;
-    } else if (user.courses && Array.isArray(user.courses)) {
-      enrolledCourseIds = user.courses;
-    } else if (user.enrolledCourseIds && Array.isArray(user.enrolledCourseIds)) {
-      enrolledCourseIds = user.enrolledCourseIds;
-    }
-
-    console.log('👤 User enrolled courses:', enrolledCourseIds);
+    // 🔥 SAME AS ASSIGNMENT: Sirf Course.enrolledStudentIds se check karo
+    const coursesWithStudent = await Course.find({
+      enrolledStudentIds: userId
+    }).select('_id');
+    
+    const enrolledCourseIds = coursesWithStudent.map(c => c._id.toString());
+    
+    console.log('✅ Found courses for quizzes:', enrolledCourseIds);
 
     if (enrolledCourseIds.length === 0) {
       return res.json({ 
@@ -483,11 +451,12 @@ router.get('/:id/take', auth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Quiz not found or inactive' });
     }
 
-    const user = await User.findById(userId);
-    const enrolledIds = (user.enrolledCourses || user.courses || [])
-      .map(id => id.toString());
+    // Check if user is enrolled in this quiz's course
+    const course = await Course.findById(quiz.courseId);
+    const isEnrolled = course && course.enrolledStudentIds && 
+      course.enrolledStudentIds.some(id => id.toString() === userId);
     
-    if (!enrolledIds.includes(quiz.courseId.toString())) {
+    if (!isEnrolled) {
       return res.status(403).json({ success: false, error: 'Not enrolled in this course' });
     }
 
@@ -990,7 +959,6 @@ router.get('/:id/result-pdf/:studentId', auth, async (req, res) => {
       </html>
     `;
 
-    // Generate PDF
     let browser;
     try {
       browser = await puppeteer.launch({
@@ -1271,7 +1239,6 @@ router.get('/:id/bulk-results-pdf', auth, async (req, res) => {
       </html>
     `;
 
-    // Generate PDF
     let browser;
     try {
       browser = await puppeteer.launch({
@@ -1311,7 +1278,6 @@ router.get('/:id/bulk-results-pdf', auth, async (req, res) => {
 // EMAIL SENDING ROUTE
 // ==========================================
 
-// Send result email to student
 router.post('/:id/send-result', auth, async (req, res) => {
   try {
     if (!isAdmin(req)) {

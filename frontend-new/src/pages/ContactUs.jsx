@@ -47,7 +47,7 @@ const ContactUs = () => {
 
   const socialLinks = [
     { name: 'WhatsApp', icon: <MessageCircle size={22} />, link: 'https://wa.me/923116735509', color: '#25D366' },
-    { name: 'Instagram', icon: <Instagram size={22} />, link: 'https://instagram.com/skillsmind', color: '#E4405F' },
+    { name: 'Instagram', icon: <Instagram size={22} />, link: 'https://instagram.com/skillsmind786', color: '#E4405F' },
     { name: 'Email', icon: <Mail size={22} />, link: 'mailto:skillsmind786@gmail.com', color: '#e30613' }
   ];
 

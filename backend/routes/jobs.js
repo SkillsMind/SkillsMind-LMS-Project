@@ -4,60 +4,13 @@ const mongoose = require('mongoose');
 const Job = require('../models/Job');
 const Course = require('../models/Course');
 const User = require('../models/User');
-const StudentCourse = require('../models/StudentCourse');
-const LiveEnrollment = require('../models/LiveEnrollment');
 const auth = require('../middleware/auth');
 
-// ==========================================
-// HELPER: Get Student's Enrolled Course IDs
-// ==========================================
-const getStudentCourseIds = async (studentId) => {
-    const courseIds = [];
-    
-    // Method 1: User.enrolledCourses
-    const user = await User.findById(studentId).select('enrolledCourses email');
-    if (user?.enrolledCourses?.length > 0) {
-        courseIds.push(...user.enrolledCourses.map(id => id.toString()));
-    }
-    
-    // Method 2: StudentCourse model
-    const studentCourses = await StudentCourse.find({
-        $or: [
-            { studentId: new mongoose.Types.ObjectId(studentId) },
-            { studentId: studentId }
-        ],
-        status: { $in: ['active', 'completed', 'enrolled'] }
-    }).populate('courseId', '_id');
-    
-    studentCourses.forEach(sc => {
-        if (sc.courseId?._id) courseIds.push(sc.courseId._id.toString());
-    });
-    
-    // Method 3: LiveEnrollment (by email)
-    if (user?.email) {
-        const liveEnrollments = await LiveEnrollment.find({ email: user.email });
-        for (const enrollment of liveEnrollments) {
-            if (enrollment.course) {
-                const course = await Course.findOne({ title: enrollment.course });
-                if (course) courseIds.push(course._id.toString());
-            }
-        }
-    }
-    
-    // Method 4: Course.enrolledStudentIds
-    const coursesWithStudent = await Course.find({
-        enrolledStudentIds: { $in: [new mongoose.Types.ObjectId(studentId), studentId] }
-    });
-    coursesWithStudent.forEach(c => courseIds.push(c._id.toString()));
-    
-    return [...new Set(courseIds)];
-};
-
-// ==========================================
+// ============================================
 // ADMIN ROUTES
-// ==========================================
+// ============================================
 
-// @route   GET /api/jobs
+// Get all jobs (Admin)
 router.get('/', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
@@ -87,7 +40,25 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// @route   POST /api/jobs
+// Get courses for admin dropdown
+router.get('/courses', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
+            return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+
+        const courses = await Course.find({ isHide: false })
+            .select('_id title code name')
+            .sort({ title: 1 });
+
+        res.json({ success: true, count: courses.length, data: courses });
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Create job (Admin)
 router.post('/', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
@@ -111,7 +82,6 @@ router.post('/', auth, async (req, res) => {
             deadline
         } = req.body;
 
-        // Validation
         if (!title || !company || !description || !applicationUrl || !deadline) {
             return res.status(400).json({
                 success: false,
@@ -126,11 +96,7 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
-        // Validate courses exist
-        const courseIds = relevantCourses.map(id => 
-            mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null
-        ).filter(id => id !== null);
-
+        const courseIds = relevantCourses.filter(id => mongoose.Types.ObjectId.isValid(id));
         if (courseIds.length === 0) {
             return res.status(400).json({
                 success: false,
@@ -146,7 +112,6 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
-        // Create job
         const newJob = new Job({
             title: title.trim(),
             company: company.trim(),
@@ -161,7 +126,8 @@ router.post('/', auth, async (req, res) => {
             salary: salary?.trim() || 'Not disclosed',
             applicationUrl: applicationUrl.trim(),
             deadline: new Date(deadline),
-            createdBy: req.user.id
+            createdBy: req.user.id,
+            isActive: true
         });
 
         await newJob.save();
@@ -185,7 +151,7 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// @route   PUT /api/jobs/:id
+// Update job (Admin)
 router.put('/:id', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
@@ -221,9 +187,7 @@ router.put('/:id', auth, async (req, res) => {
             updateData.skills = updateData.skills.split(',').map(s => s.trim()).filter(s => s);
         }
         if (updateData.relevantCourses) {
-            updateData.relevantCourses = updateData.relevantCourses.map(id => 
-                mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null
-            ).filter(id => id !== null);
+            updateData.relevantCourses = updateData.relevantCourses.filter(id => mongoose.Types.ObjectId.isValid(id));
         }
 
         const updatedJob = await Job.findByIdAndUpdate(
@@ -249,7 +213,7 @@ router.put('/:id', auth, async (req, res) => {
     }
 });
 
-// @route   DELETE /api/jobs/:id
+// Delete job (soft delete)
 router.delete('/:id', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
@@ -293,19 +257,74 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-// ==========================================
-// STUDENT ROUTES (REAL-TIME)
-// ==========================================
+// ============================================
+// 🔥 STUDENT ROUTES (STRONG SYSTEM - 3 SOURCES)
+// ============================================
 
-// @route   GET /api/jobs/student/available
+// Get available jobs for student based on enrolled courses
 router.get('/student/available', auth, async (req, res) => {
     try {
-        const studentId = req.user.id;
+        const userId = req.user.id || req.user._id;
         
-        // Get enrolled courses using helper
-        const courseIds = await getStudentCourseIds(studentId);
+        console.log('🔍 Jobs fetch for user:', userId);
         
-        if (courseIds.length === 0) {
+        // 🔥🔥🔥 CRITICAL FIX: Get enrolled courses from 3 sources 🔥🔥🔥
+        let enrolledCourseIds = [];
+        
+        // Source 1: User model (enrolledCourses)
+        const user = await User.findById(userId).select('enrolledCourses email');
+        if (user && user.enrolledCourses && Array.isArray(user.enrolledCourses)) {
+            enrolledCourseIds = user.enrolledCourses.map(id => id.toString());
+            console.log('✅ Source 1 - User.enrolledCourses:', enrolledCourseIds.length, 'courses');
+        }
+        
+        // Source 2: LiveEnrollment (status: active)
+        try {
+            const LiveEnrollment = require('../models/LiveEnrollment');
+            const liveEnrollments = await LiveEnrollment.find({
+                userId: userId,
+                status: 'active'
+            }).select('courseId');
+            
+            console.log('✅ Source 2 - LiveEnrollment found:', liveEnrollments.length);
+            
+            liveEnrollments.forEach(enrollment => {
+                if (enrollment.courseId) {
+                    const courseIdStr = enrollment.courseId.toString();
+                    if (!enrolledCourseIds.includes(courseIdStr)) {
+                        enrolledCourseIds.push(courseIdStr);
+                    }
+                }
+            });
+        } catch (e) {
+            console.log('⚠️ LiveEnrollment fetch error:', e.message);
+        }
+        
+        // Source 3: Course.enrolledStudentIds (backup)
+        try {
+            const coursesWithStudent = await Course.find({
+                enrolledStudentIds: userId
+            }).select('_id title');
+            
+            console.log('✅ Source 3 - Course.enrolledStudentIds:', coursesWithStudent.length, 'courses');
+            
+            coursesWithStudent.forEach(course => {
+                const courseIdStr = course._id.toString();
+                if (!enrolledCourseIds.includes(courseIdStr)) {
+                    enrolledCourseIds.push(courseIdStr);
+                }
+            });
+        } catch (e) {
+            console.log('⚠️ Course fetch error:', e.message);
+        }
+
+        // Remove duplicates
+        enrolledCourseIds = [...new Set(enrolledCourseIds)];
+        
+        console.log('🔥 FINAL enrolledCourseIds for jobs:', enrolledCourseIds);
+
+        if (enrolledCourseIds.length === 0) {
+            console.log('❌ No enrolled courses found');
             return res.json({
                 success: true,
                 count: 0,
@@ -314,7 +333,10 @@ router.get('/student/available', auth, async (req, res) => {
             });
         }
 
-        const courseObjectIds = courseIds.map(id => new mongoose.Types.ObjectId(id));
+        // Convert to ObjectIds
+        const courseObjectIds = enrolledCourseIds
+            .filter(id => mongoose.Types.ObjectId.isValid(id))
+            .map(id => new mongoose.Types.ObjectId(id));
 
         // Get matching jobs
         const jobs = await Job.find({
@@ -325,13 +347,20 @@ router.get('/student/available', auth, async (req, res) => {
         .populate('relevantCourses', 'title code')
         .sort({ postedAt: -1 });
 
+        console.log(`📚 Found ${jobs.length} matching jobs for user`);
+
         res.json({
             success: true,
             count: jobs.length,
-            data: jobs
+            data: jobs,
+            debug: {
+                enrolledCourseCount: enrolledCourseIds.length,
+                matchingJobsCount: jobs.length
+            }
         });
+        
     } catch (error) {
-        console.error('Error fetching student jobs:', error);
+        console.error('❌ Error fetching student jobs:', error);
         res.status(500).json({
             success: false,
             message: 'Server error while fetching jobs',
@@ -340,14 +369,64 @@ router.get('/student/available', auth, async (req, res) => {
     }
 });
 
-// @route   GET /api/jobs/student/by-type/:type
+// Get jobs by type for student
 router.get('/student/by-type/:type', auth, async (req, res) => {
     try {
         const { type } = req.params;
-        const studentId = req.user.id;
+        const userId = req.user.id || req.user._id;
         
-        const courseIds = await getStudentCourseIds(studentId);
-        const courseObjectIds = courseIds.map(id => new mongoose.Types.ObjectId(id));
+        console.log('🔍 Jobs fetch by type:', type, 'for user:', userId);
+        
+        // 🔥 Get enrolled courses from 3 sources
+        let enrolledCourseIds = [];
+        
+        // Source 1: User model
+        const user = await User.findById(userId).select('enrolledCourses');
+        if (user && user.enrolledCourses && Array.isArray(user.enrolledCourses)) {
+            enrolledCourseIds = user.enrolledCourses.map(id => id.toString());
+        }
+        
+        // Source 2: LiveEnrollment
+        try {
+            const LiveEnrollment = require('../models/LiveEnrollment');
+            const liveEnrollments = await LiveEnrollment.find({
+                userId: userId,
+                status: 'active'
+            }).select('courseId');
+            
+            liveEnrollments.forEach(enrollment => {
+                if (enrollment.courseId) {
+                    const courseIdStr = enrollment.courseId.toString();
+                    if (!enrolledCourseIds.includes(courseIdStr)) {
+                        enrolledCourseIds.push(courseIdStr);
+                    }
+                }
+            });
+        } catch (e) {}
+        
+        // Source 3: Course.enrolledStudentIds
+        try {
+            const coursesWithStudent = await Course.find({
+                enrolledStudentIds: userId
+            }).select('_id');
+            
+            coursesWithStudent.forEach(course => {
+                const courseIdStr = course._id.toString();
+                if (!enrolledCourseIds.includes(courseIdStr)) {
+                    enrolledCourseIds.push(courseIdStr);
+                }
+            });
+        } catch (e) {}
+
+        enrolledCourseIds = [...new Set(enrolledCourseIds)];
+        
+        if (enrolledCourseIds.length === 0) {
+            return res.json({ success: true, count: 0, data: [] });
+        }
+
+        const courseObjectIds = enrolledCourseIds
+            .filter(id => mongoose.Types.ObjectId.isValid(id))
+            .map(id => new mongoose.Types.ObjectId(id));
 
         const jobs = await Job.find({
             relevantCourses: { $in: courseObjectIds },

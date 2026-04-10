@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const Payment = require('../models/Payment');
 const LiveEnrollment = require('../models/LiveEnrollment'); // ADD THIS
 const Course = require('../models/Course'); // ADD THIS
+const User = require('../models/User'); // ADD THIS - CRITICAL FIX
 const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -44,7 +45,7 @@ router.get('/all-payments', async (req, res) => {
     }
 });
 
-// B. Update Status (Approve/Reject) - WITH LIVE ENROLLMENT SYNC
+// B. Update Status (Approve/Reject) - WITH LIVE ENROLLMENT SYNC + USER UPDATE
 router.put('/update-status/:id', async (req, res) => {
     const { status, rejectionReason } = req.body;
     try {
@@ -72,7 +73,7 @@ router.put('/update-status/:id', async (req, res) => {
         const updated = payment;
         let enrollmentMessage = '';
 
-        // 🔥 CRITICAL FIX: Sync with LiveEnrollment
+        // 🔥🔥🔥 CRITICAL FIX: Sync with LiveEnrollment AND User model AND Course model
         if (status.toLowerCase() === 'approved') {
             try {
                 // Find pending enrollment for this student and course
@@ -88,17 +89,23 @@ router.put('/update-status/:id', async (req, res) => {
                     enrollment.paymentApprovedAt = new Date();
                     await enrollment.save();
                     
-                    // Also update Course enrolled students
+                    // 🔥 CRITICAL: Update Course enrolled students
                     await Course.findByIdAndUpdate(updated.courseId, {
                         $addToSet: { enrolledStudentIds: updated.studentId },
                         $inc: { enrolledStudents: 1 }
                     });
                     
+                    // 🔥🔥🔥 CRITICAL FIX: Also update User.enrolledCourses (for assignmentroutes.js compatibility)
+                    await User.findByIdAndUpdate(updated.studentId, {
+                        $addToSet: { enrolledCourses: updated.courseId }
+                    });
+                    
                     enrollmentMessage = ' & Enrollment Activated';
                     console.log(`✅ LiveEnrollment activated for student: ${updated.studentId}`);
+                    console.log(`✅ User.enrolledCourses updated for student: ${updated.studentId}`);
+                    console.log(`✅ Course.enrolledStudentIds updated for course: ${updated.courseId}`);
                 } else {
                     // Try to find by email if studentId not set
-                    const User = require('../models/User');
                     const student = await User.findOne({ email: updated.studentEmail });
                     if (student) {
                         const enrollByEmail = await LiveEnrollment.findOne({
@@ -117,7 +124,14 @@ router.put('/update-status/:id', async (req, res) => {
                                 $inc: { enrolledStudents: 1 }
                             });
                             
+                            // 🔥🔥🔥 CRITICAL FIX: Also update User.enrolledCourses
+                            await User.findByIdAndUpdate(student._id, {
+                                $addToSet: { enrolledCourses: updated.courseId }
+                            });
+                            
                             enrollmentMessage = ' & Enrollment Activated';
+                            console.log(`✅ LiveEnrollment activated by email for student: ${student._id}`);
+                            console.log(`✅ User.enrolledCourses updated by email for student: ${student._id}`);
                         }
                     }
                 }
@@ -129,7 +143,6 @@ router.put('/update-status/:id', async (req, res) => {
         else if (status.toLowerCase() === 'rejected') {
             // Update LiveEnrollment to cancelled
             try {
-                const User = require('../models/User');
                 let student = null;
                 
                 if (updated.studentId) {
@@ -297,7 +310,6 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
         
         let receiptPath = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
-        const User = require('../models/User');
         const student = await User.findOne({ email: studentEmail });
         
         if (!student) {

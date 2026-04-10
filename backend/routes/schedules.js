@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Schedule = require('../models/Schedule');
 const Course = require('../models/Course');
 const User = require('../models/User');
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 NEW: CHECK SCHEDULE CONFLICTS
+// CHECK SCHEDULE CONFLICTS
 // ==========================================
 router.post('/check-conflict', async (req, res) => {
     try {
@@ -41,14 +42,12 @@ router.post('/check-conflict', async (req, res) => {
         const date = new Date(sessionDate);
         const [hours, minutes] = time.split(':').map(Number);
         
-        // Create date objects for comparison
         const classStart = new Date(date);
         classStart.setHours(hours, minutes, 0, 0);
         
         const classEnd = new Date(classStart);
         classEnd.setMinutes(classEnd.getMinutes() + (parseInt(duration) || 60));
 
-        // Find all schedules for this course on this date
         const startOfDay = new Date(date);
         startOfDay.setHours(0, 0, 0, 0);
         
@@ -63,14 +62,12 @@ router.post('/check-conflict', async (req, res) => {
             }
         };
 
-        // Exclude current schedule if editing
         if (excludeId) {
             query._id = { $ne: excludeId };
         }
 
         const existingSchedules = await Schedule.find(query);
 
-        // Check for time overlaps
         const conflicts = existingSchedules.filter(schedule => {
             const [sHours, sMinutes] = schedule.time.split(':').map(Number);
             const scheduleStart = new Date(date);
@@ -79,7 +76,6 @@ router.post('/check-conflict', async (req, res) => {
             const scheduleEnd = new Date(scheduleStart);
             scheduleEnd.setMinutes(scheduleEnd.getMinutes() + (schedule.duration || 60));
 
-            // Check overlap
             return (classStart < scheduleEnd && classEnd > scheduleStart);
         });
 
@@ -103,7 +99,7 @@ router.post('/check-conflict', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 NEW: GET SCHEDULES BY COURSE AND WEEK (For Week Edit)
+// GET SCHEDULES BY COURSE AND WEEK (For Week Edit)
 // ==========================================
 router.get('/course/:courseId/week/:weekNumber', auth, async (req, res) => {
     try {
@@ -213,46 +209,159 @@ router.get('/course/:courseId', async (req, res) => {
 });
 
 // ==========================================
-// GET STUDENT'S SCHEDULES WITH LINK VISIBILITY CHECK
+// 🔥 GET STUDENT'S SCHEDULES (FIXED - 3 SOURCES LIKE ASSIGNMENT/QUIZ)
 // ==========================================
 router.get('/my-schedules/student', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).populate('enrolledCourses');
+        const userId = req.user.id || req.user._id;
         
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
+        console.log('🔍 Schedule fetch for user:', userId);
+        
+        // 🔥🔥🔥 CRITICAL FIX: Get enrolled courses from 3 sources 🔥🔥🔥
+        let enrolledCourseIds = [];
+        
+        // Source 1: User model (enrolledCourses)
+        const user = await User.findById(userId).select('enrolledCourses');
+        if (user && user.enrolledCourses && Array.isArray(user.enrolledCourses)) {
+            enrolledCourseIds = user.enrolledCourses.map(id => id.toString());
+            console.log('✅ Source 1 - User.enrolledCourses:', enrolledCourseIds.length);
+        }
+        
+        // Source 2: LiveEnrollment (status: active)
+        try {
+            const LiveEnrollment = require('../models/LiveEnrollment');
+            const liveEnrollments = await LiveEnrollment.find({
+                userId: userId,
+                status: 'active'
+            }).select('courseId');
+            
+            liveEnrollments.forEach(enrollment => {
+                if (enrollment.courseId) {
+                    const courseIdStr = enrollment.courseId.toString();
+                    if (!enrolledCourseIds.includes(courseIdStr)) {
+                        enrolledCourseIds.push(courseIdStr);
+                    }
+                }
+            });
+            console.log('✅ Source 2 - LiveEnrollment:', liveEnrollments.length, 'courses found');
+        } catch (e) {
+            console.log('⚠️ LiveEnrollment fetch error:', e.message);
+        }
+        
+        // Source 3: Course.enrolledStudentIds (backup)
+        try {
+            const coursesWithStudent = await Course.find({
+                enrolledStudentIds: userId
+            }).select('_id');
+            
+            coursesWithStudent.forEach(course => {
+                const courseIdStr = course._id.toString();
+                if (!enrolledCourseIds.includes(courseIdStr)) {
+                    enrolledCourseIds.push(courseIdStr);
+                }
+            });
+            console.log('✅ Source 3 - Course.enrolledStudentIds:', coursesWithStudent.length, 'courses found');
+        } catch (e) {
+            console.log('⚠️ Course fetch error:', e.message);
+        }
+
+        // Remove duplicates
+        enrolledCourseIds = [...new Set(enrolledCourseIds)];
+        
+        console.log('🔥🔥🔥 FINAL enrolledCourseIds for schedules:', enrolledCourseIds);
+
+        if (enrolledCourseIds.length === 0) {
+            return res.json({ 
+                success: true, 
+                data: [],
+                message: 'No enrolled courses found'
             });
         }
 
-        const courseIds = user.enrolledCourses.map(c => c._id);
+        // Convert to ObjectIds
+        const objectIds = enrolledCourseIds
+            .filter(id => mongoose.Types.ObjectId.isValid(id))
+            .map(id => new mongoose.Types.ObjectId(id));
+
+        if (objectIds.length === 0) {
+            return res.json({ 
+                success: true, 
+                data: [],
+                message: 'No valid course IDs found'
+            });
+        }
+
         const now = new Date();
         
+        // Find schedules for enrolled courses
         const schedules = await Schedule.find({ 
-            courseId: { $in: courseIds },
+            courseId: { $in: objectIds },
             status: { $ne: 'cancelled' }
         })
-        .populate('courseId', 'title thumbnail')
+        .populate('courseId', 'title thumbnail startDate duration')
         .sort({ weekNumber: 1, sessionNumber: 1, sessionDate: 1, time: 1 });
 
-        // Process schedules to control meeting link visibility
+        console.log(`📚 Found ${schedules.length} schedules for user`);
+
+        // Process schedules
         const processedSchedules = schedules.map(schedule => {
             const scheduleObj = schedule.toObject();
-            const sessionDateTime = new Date(schedule.sessionDate);
-            const [hours, minutes] = schedule.time.split(':').map(Number);
-            sessionDateTime.setHours(hours, minutes, 0, 0);
             
-            const showLinkTime = new Date(sessionDateTime.getTime() - (schedule.showLinkBeforeMinutes * 60000));
+            // Calculate actual date if not set
+            if (!scheduleObj.sessionDate && scheduleObj.courseId?.startDate) {
+                try {
+                    const startDate = new Date(scheduleObj.courseId.startDate);
+                    if (!isNaN(startDate.getTime())) {
+                        const weekStart = new Date(startDate);
+                        weekStart.setDate(startDate.getDate() + (scheduleObj.weekNumber - 1) * 7);
+                        
+                        const dayIndex = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].indexOf(scheduleObj.day);
+                        if (dayIndex !== -1) {
+                            const scheduleDate = new Date(weekStart);
+                            scheduleDate.setDate(weekStart.getDate() + dayIndex);
+                            scheduleObj.calculatedDate = scheduleDate;
+                            scheduleObj.formattedDate = scheduleDate.toLocaleDateString();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Date calculation error:', e);
+                }
+            } else if (scheduleObj.sessionDate) {
+                scheduleObj.calculatedDate = new Date(scheduleObj.sessionDate);
+                scheduleObj.formattedDate = new Date(scheduleObj.sessionDate).toLocaleDateString();
+            }
             
-            // Only show meeting link if it's time
-            if (now < showLinkTime) {
+            // Calculate status based on actual date/time
+            if (scheduleObj.calculatedDate) {
+                const [hours, minutes] = scheduleObj.time.split(':').map(Number);
+                const classStart = new Date(scheduleObj.calculatedDate);
+                classStart.setHours(hours || 0, minutes || 0, 0, 0);
+                
+                const classEnd = new Date(classStart);
+                classEnd.setMinutes(classEnd.getMinutes() + (scheduleObj.duration || 60));
+                
+                const nowTime = new Date();
+                
+                if (nowTime > classEnd) {
+                    scheduleObj.actualStatus = 'completed';
+                } else if (nowTime >= classStart && nowTime <= classEnd) {
+                    scheduleObj.actualStatus = 'ongoing';
+                } else {
+                    scheduleObj.actualStatus = 'upcoming';
+                }
+                
+                scheduleObj.isToday = scheduleObj.calculatedDate.toDateString() === new Date().toDateString();
+            } else {
+                scheduleObj.actualStatus = scheduleObj.status || 'upcoming';
+                scheduleObj.isToday = false;
+            }
+            
+            // Handle meeting link visibility
+            if (scheduleObj.meetingLink && scheduleObj.actualStatus !== 'completed') {
+                scheduleObj.linkVisible = true;
+            } else {
                 delete scheduleObj.meetingLink;
                 scheduleObj.linkVisible = false;
-                scheduleObj.linkAvailableAt = showLinkTime;
-                scheduleObj.countdownMinutes = Math.ceil((showLinkTime - now) / 60000);
-            } else {
-                scheduleObj.linkVisible = true;
             }
             
             return scheduleObj;
@@ -260,8 +369,10 @@ router.get('/my-schedules/student', auth, async (req, res) => {
 
         res.json({ 
             success: true, 
+            count: processedSchedules.length,
             data: processedSchedules 
         });
+        
     } catch (err) {
         console.error('Get My Schedules Error:', err);
         res.status(500).json({ 
@@ -272,7 +383,7 @@ router.get('/my-schedules/student', auth, async (req, res) => {
 });
 
 // ==========================================
-// 🔥 CREATE SINGLE SCHEDULE (FIXED)
+// CREATE SINGLE SCHEDULE (Admin only)
 // ==========================================
 router.post('/', auth, async (req, res) => {
     try {
@@ -301,7 +412,6 @@ router.post('/', auth, async (req, res) => {
             sessionNumber
         } = req.body;
 
-        // Validation
         if (!title || !courseId || !day || !time || !sessionDate) {
             return res.status(400).json({
                 success: false,
@@ -309,7 +419,6 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
-        // Validate time format
         const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
         if (!timeRegex.test(time)) {
             return res.status(400).json({
@@ -318,7 +427,6 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
-        // Check for conflicts
         const date = new Date(sessionDate);
         const [hours, minutes] = time.split(':').map(Number);
         const classStart = new Date(date);
@@ -329,30 +437,23 @@ router.post('/', auth, async (req, res) => {
 
         const startOfDay = new Date(date);
         startOfDay.setHours(0, 0, 0, 0);
-        
         const endOfDay = new Date(date);
         endOfDay.setHours(23, 59, 59, 999);
 
         const existingSchedules = await Schedule.find({
             courseId: courseId,
-            sessionDate: {
-                $gte: startOfDay,
-                $lte: endOfDay
-            }
+            sessionDate: { $gte: startOfDay, $lte: endOfDay }
         });
 
         const conflicts = existingSchedules.filter(schedule => {
             const [sHours, sMinutes] = schedule.time.split(':').map(Number);
             const scheduleStart = new Date(date);
             scheduleStart.setHours(sHours, sMinutes, 0, 0);
-            
             const scheduleEnd = new Date(scheduleStart);
             scheduleEnd.setMinutes(scheduleEnd.getMinutes() + (schedule.duration || 60));
-
             return (classStart < scheduleEnd && classEnd > scheduleStart);
         });
 
-        // Calculate week number based on course start date if not provided
         let calculatedWeekNumber = weekNumber;
         if (!calculatedWeekNumber) {
             const course = await Course.findById(courseId);
@@ -390,11 +491,8 @@ router.post('/', auth, async (req, res) => {
 
         const schedule = new Schedule(scheduleData);
         await schedule.save();
-
-        // Populate course info for response
         await schedule.populate('courseId', 'title');
 
-        // Emit socket event if available
         const io = req.app.get('io');
         if (io && schedule.courseId) {
             io.to(`course_${schedule.courseId._id}`).emit('scheduleCreated', {
@@ -420,7 +518,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // ==========================================
-// 🔥 BATCH CREATE FROM WEEK-WISE DATA
+// BATCH CREATE FROM WEEK-WISE DATA
 // ==========================================
 router.post('/batch-create', auth, async (req, res) => {
     try {
@@ -433,15 +531,12 @@ router.post('/batch-create', auth, async (req, res) => {
 
         const { 
             courseId, 
-            startDate, 
-            durationWeeks,
             schedules,
             instructor,
             color,
             notifyStudents
         } = req.body;
 
-        // Validate required fields
         if (!courseId || !schedules || !Array.isArray(schedules)) {
             return res.status(400).json({
                 success: false,
@@ -449,7 +544,6 @@ router.post('/batch-create', auth, async (req, res) => {
             });
         }
 
-        // Validate each schedule
         for (const sched of schedules) {
             if (!sched.sessionDate || !sched.time || !sched.topic) {
                 return res.status(400).json({
@@ -459,10 +553,8 @@ router.post('/batch-create', auth, async (req, res) => {
             }
         }
 
-        // Generate batch ID
         const batchId = `BATCH_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        // Add batchId and other common fields to each schedule
         const schedulesToInsert = schedules.map((sched, index) => ({
             ...sched,
             batchId,
@@ -476,19 +568,15 @@ router.post('/batch-create', auth, async (req, res) => {
             updatedAt: new Date()
         }));
 
-        // Save all schedules
         const createdSchedules = await Schedule.insertMany(schedulesToInsert);
 
-        // Notify students if needed
-        if (notifyStudents) {
-            const io = req.app.get('io');
-            if (io) {
-                io.to(`course_${courseId}`).emit('batchScheduleCreated', {
-                    courseId,
-                    batchId,
-                    count: createdSchedules.length
-                });
-            }
+        const io = req.app.get('io');
+        if (io && notifyStudents) {
+            io.to(`course_${courseId}`).emit('batchScheduleCreated', {
+                courseId,
+                batchId,
+                count: createdSchedules.length
+            });
         }
 
         res.status(201).json({ 
@@ -510,7 +598,7 @@ router.post('/batch-create', auth, async (req, res) => {
 });
 
 // ==========================================
-// 🔥 NEW: UPDATE OR CREATE WEEK SCHEDULES (For Week Edit)
+// UPDATE OR CREATE WEEK SCHEDULES (For Week Edit)
 // ==========================================
 router.post('/week-update/:courseId/:weekNumber', auth, async (req, res) => {
     try {
@@ -531,19 +619,13 @@ router.post('/week-update/:courseId/:weekNumber', auth, async (req, res) => {
             });
         }
 
-        // Get existing schedules for this week
         const existingSchedules = await Schedule.find({
             courseId: courseId,
             weekNumber: parseInt(weekNumber)
         });
 
-        const results = {
-            created: [],
-            updated: [],
-            deleted: []
-        };
+        const results = { created: [], updated: [], deleted: [] };
 
-        // Process each day
         for (let i = 0; i < days.length; i++) {
             const dayData = days[i];
             
@@ -569,7 +651,6 @@ router.post('/week-update/:courseId/:weekNumber', auth, async (req, res) => {
             };
 
             if (dayData._isExisting && dayData._originalId) {
-                // Update existing
                 const updated = await Schedule.findByIdAndUpdate(
                     dayData._originalId,
                     scheduleData,
@@ -577,7 +658,6 @@ router.post('/week-update/:courseId/:weekNumber', auth, async (req, res) => {
                 );
                 if (updated) results.updated.push(updated);
             } else {
-                // Create new
                 scheduleData.createdAt = new Date();
                 const created = new Schedule(scheduleData);
                 await created.save();
@@ -585,7 +665,6 @@ router.post('/week-update/:courseId/:weekNumber', auth, async (req, res) => {
             }
         }
 
-        // Delete removed schedules
         const currentIds = days
             .filter(d => d._isExisting && d._originalId)
             .map(d => d._originalId);
@@ -597,7 +676,6 @@ router.post('/week-update/:courseId/:weekNumber', auth, async (req, res) => {
             results.deleted.push(sched._id);
         }
 
-        // Emit socket event
         const io = req.app.get('io');
         if (io) {
             io.to(`course_${courseId}`).emit('weekScheduleUpdated', {
@@ -639,7 +717,6 @@ router.put('/:id', auth, async (req, res) => {
             });
         }
 
-        // Validate ID format
         if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
             return res.status(400).json({ 
                 success: false, 
@@ -647,12 +724,7 @@ router.put('/:id', auth, async (req, res) => {
             });
         }
 
-        const updateData = {
-            ...req.body,
-            updatedAt: new Date()
-        };
-
-        // Ensure sessionDate is Date object
+        const updateData = { ...req.body, updatedAt: new Date() };
         if (updateData.sessionDate) {
             updateData.sessionDate = new Date(updateData.sessionDate);
         }
@@ -704,7 +776,6 @@ router.delete('/:id', auth, async (req, res) => {
             });
         }
 
-        // Validate ID format
         if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
             return res.status(400).json({ 
                 success: false, 
@@ -771,7 +842,7 @@ router.delete('/batch/:batchId', auth, async (req, res) => {
 });
 
 // ==========================================
-// 🔥 NEW: GET UPCOMING SCHEDULES (For Dashboard)
+// GET UPCOMING SCHEDULES (For Dashboard)
 // ==========================================
 router.get('/dashboard/upcoming', auth, async (req, res) => {
     try {
@@ -781,10 +852,7 @@ router.get('/dashboard/upcoming', auth, async (req, res) => {
         tomorrow.setHours(23, 59, 59, 999);
 
         const schedules = await Schedule.find({
-            sessionDate: {
-                $gte: now,
-                $lte: tomorrow
-            },
+            sessionDate: { $gte: now, $lte: tomorrow },
             status: { $in: ['upcoming', 'ongoing'] }
         })
         .populate('courseId', 'title thumbnail')

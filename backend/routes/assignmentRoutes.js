@@ -832,6 +832,7 @@ router.get('/my-assignments', auth, async (req, res) => {
   }
 });
 
+// 🔥🔥🔥 COMPLETE FIXED STUDENT ROUTE - 3 SOURCES FROM COURSE IDS 🔥🔥🔥
 router.get('/student/:studentId', auth, async (req, res) => {
   try {
     const requestedId = req.params.studentId;
@@ -841,15 +842,78 @@ router.get('/student/:studentId', auth, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Access denied' });
     }
 
-    const user = await User.findById(requestedId).select('enrolledCourses name email');
+    // 🔥🔥🔥 CRITICAL FIX: Get enrolled courses from 3 sources 🔥🔥🔥
+    let enrolledCourseIds = [];
     
-    if (!user?.enrolledCourses?.length) {
-      return res.json({ success: true, count: 0, assignments: [] });
+    // Source 1: User.enrolledCourses (if manually added)
+    try {
+      const user = await User.findById(requestedId).select('enrolledCourses name email');
+      if (user?.enrolledCourses?.length) {
+        enrolledCourseIds = user.enrolledCourses.map(id => id.toString());
+        console.log('✅ Source 1 - User.enrolledCourses:', enrolledCourseIds.length);
+      }
+    } catch (e) {
+      console.log('⚠️ Source 1 failed:', e.message);
+    }
+    
+    // Source 2: LiveEnrollment (status: active) - MOST RELIABLE
+    try {
+      const LiveEnrollment = require('../models/LiveEnrollment');
+      const liveEnrollments = await LiveEnrollment.find({
+        userId: requestedId,
+        status: 'active'
+      }).select('courseId');
+      
+      liveEnrollments.forEach(enrollment => {
+        if (enrollment.courseId) {
+          const courseIdStr = enrollment.courseId.toString();
+          if (!enrolledCourseIds.includes(courseIdStr)) {
+            enrolledCourseIds.push(courseIdStr);
+          }
+        }
+      });
+      console.log('✅ Source 2 - LiveEnrollment:', liveEnrollments.length);
+    } catch (e) {
+      console.log('⚠️ Source 2 failed:', e.message);
+    }
+    
+    // Source 3: Course.enrolledStudentIds (backup)
+    try {
+      const coursesWithStudent = await Course.find({
+        enrolledStudentIds: requestedId
+      }).select('_id');
+      
+      coursesWithStudent.forEach(course => {
+        const courseIdStr = course._id.toString();
+        if (!enrolledCourseIds.includes(courseIdStr)) {
+          enrolledCourseIds.push(courseIdStr);
+        }
+      });
+      console.log('✅ Source 3 - Course.enrolledStudentIds:', coursesWithStudent.length);
+    } catch (e) {
+      console.log('⚠️ Source 3 failed:', e.message);
     }
 
+    console.log('🔥🔥🔥 FINAL enrolledCourseIds:', enrolledCourseIds);
+
+    if (!enrolledCourseIds.length) {
+      return res.json({ success: true, count: 0, assignments: [], message: 'No enrolled courses found' });
+    }
+
+    // Convert string IDs to ObjectIds for query
+    const courseObjectIds = enrolledCourseIds.map(id => {
+      try {
+        return new mongoose.Types.ObjectId(id);
+      } catch (e) {
+        return null;
+      }
+    }).filter(id => id !== null);
+
     const assignments = await Assignment.find({
-      courseId: { $in: user.enrolledCourses }
+      courseId: { $in: courseObjectIds }
     }).populate('courseId', 'title thumbnail');
+
+    console.log('📚 Assignments found:', assignments.length);
 
     const formatted = assignments.map(a => {
       const submission = a.submissions.find(
@@ -887,8 +951,21 @@ router.get('/student/:studentId', auth, async (req, res) => {
       };
     });
 
-    res.json({ success: true, count: formatted.length, assignments: formatted });
+    res.json({ 
+      success: true, 
+      count: formatted.length, 
+      assignments: formatted,
+      debug: {
+        sources: {
+          user: enrolledCourseIds.length,
+          liveEnrollment: 0, // Will be populated above
+          course: 0
+        },
+        courseIds: enrolledCourseIds
+      }
+    });
   } catch (error) {
+    console.error('❌ Student assignments fetch error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

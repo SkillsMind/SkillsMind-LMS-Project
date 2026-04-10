@@ -55,33 +55,61 @@ const StudentDashboard = () => {
   const [studentName, setStudentName] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // 🔥🔥🔥 FIXED - User ID bhi lo, sirf email nahi 🔥🔥🔥
   const studentEmail = localStorage.getItem('studentEmail');
+  const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (!studentEmail) { 
+      // 🔥 Dono check karo - email aur userId
+      if (!studentEmail || !userId || !token) { 
         navigate('/login'); 
         return; 
       }
       
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/payments/my-status/${studentEmail}`);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         
-        if (!res.data || res.data.status.toLowerCase() !== 'approved') {
-          navigate('/my-learning');
+        // 🔥🔥🔥 FIXED - Pehle Enrollment API se check karo 🔥🔥🔥
+        const enrollRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('StudentDashboard - Enrollment Check:', enrollRes.data);
+        
+        // 🔥 Agar LiveEnrollment mein courses hain, toh allow karo
+        if (enrollRes.data.success && enrollRes.data.enrolledCourses && enrollRes.data.enrolledCourses.length > 0) {
+          setStudentName(enrollRes.data.enrolledCourses[0]?.studentName || "Student");
+          setLoading(false);
           return;
         }
         
-        setStudentName(res.data.studentName || "Student");
-        setLoading(false);
+        // 🔥 Fallback - Agar LiveEnrollment empty hai, toh Payment se check karo
+        console.log('⚠️ No LiveEnrollment, checking Payment API...');
+        const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('StudentDashboard - Payment Check:', paymentRes.data);
+        
+        if (paymentRes.data && paymentRes.data.status === 'approved') {
+          setStudentName(paymentRes.data.studentName || "Student");
+          setLoading(false);
+          return;
+        }
+        
+        // 🔥 Dono mein nahi mila, toh MyLearning pe bhejo
+        navigate('/my-learning');
         
       } catch (err) {
+        console.error('Access check error:', err);
         navigate('/my-learning');
       }
     };
 
     checkAccess();
-  }, [studentEmail, navigate]);
+  }, [studentEmail, userId, token, navigate]);
 
   // ======== FULL WHITE BACKGROUND + HIDE NAVBARS ========
   useEffect(() => {
@@ -165,15 +193,12 @@ const StudentDashboard = () => {
     
     switch(page) {
       case 'profile':
-        // My Profile click par Profile page khule
         setActiveTab('profile');
         break;
       case 'settings':
-        // Settings page khule
         setActiveTab('settings');
         break;
       case 'logout':
-        // Logout logic
         handleLogout();
         break;
       default:
@@ -183,9 +208,7 @@ const StudentDashboard = () => {
 
   // ======== LOGOUT HANDLER ========
   const handleLogout = () => {
-    // Clear all localStorage
     localStorage.clear();
-    // Redirect to login page
     navigate('/login');
   };
 
@@ -208,10 +231,7 @@ const StudentDashboard = () => {
       case 'tasks': return <TasksAssignments {...props} />;
       case 'calendar': return <CalendarSchedule {...props} />;
       case 'profile': return <Profile {...props} />;
-      
-      // ✅ SETTINGS CASE ADDED
       case 'settings': return <Settings {...props} />;
-      
       case 'schedule': return <Schedule {...props} />;
       case 'homework': return <Homework {...props} />;
       case 'assignments': return <Assignments {...props} />;
@@ -222,13 +242,10 @@ const StudentDashboard = () => {
       case 'progress': return <Progress {...props} />;
       case 'notices': return <Notices {...props} />;
       case 'timeline': return <Timeline {...props} />;
-      
       case 'assignment-builder': return <AssignmentBuilder {...props} />;
-      
       case 'announcements': return <AnnouncementsPage {...props} />;
       case 'important-links': return <ImportantLinksPage {...props} />;
       case 'opportunities': return <OpportunitiesPage {...props} />;
-      
       case 'skilltree': return <SkillTree {...props} />;
       case 'focusmode': return <FocusMode {...props} />;
       case 'aibuddy': return <AIStudyBuddy {...props} />;
@@ -239,7 +256,6 @@ const StudentDashboard = () => {
       case 'challenges': return <DailyChallenges {...props} />;
       case 'resources': return <ResourceExchange {...props} />;
       case 'mentors': return <MentorBooking {...props} />;
-      
       default: return <DashboardHome {...props} />;
     }
   };
