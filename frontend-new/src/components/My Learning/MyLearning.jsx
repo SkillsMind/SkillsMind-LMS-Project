@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     FaClock, FaCheckCircle, FaPlayCircle, FaFileDownload, 
     FaLock, FaExclamationTriangle, FaHeadset, FaVideo,
-    FaGraduationCap
+    FaGraduationCap, FaBookOpen, FaArrowRight, FaCalendarAlt,
+    FaChalkboardTeacher, FaStar, FaUsers
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -29,7 +30,6 @@ const MyLearning = () => {
             try {
                 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                 
-                // 🔥 Fetch enrollments from backend
                 const enrollRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -37,11 +37,9 @@ const MyLearning = () => {
                 console.log('MyLearning - Raw Enrollments:', enrollRes.data);
                 
                 if (enrollRes.data.success && enrollRes.data.enrolledCourses && enrollRes.data.enrolledCourses.length > 0) {
-                    // 🔥 STRONG DUPLICATE REMOVAL - by courseId
                     const uniqueCourses = [];
                     const seenCourseIds = new Set();
                     
-                    // Sort so that 'live' mode comes first (priority)
                     const sortedCourses = [...enrollRes.data.enrolledCourses].sort((a, b) => {
                         if (a.mode === 'live' && b.mode !== 'live') return -1;
                         if (a.mode !== 'live' && b.mode === 'live') return 1;
@@ -53,12 +51,9 @@ const MyLearning = () => {
                         if (courseId && !seenCourseIds.has(courseId)) {
                             seenCourseIds.add(courseId);
                             uniqueCourses.push(course);
-                        } else if (courseId) {
-                            console.log(`⏭️ Skipping duplicate course: ${course.courseTitle} (${course.mode})`);
                         }
                     });
                     
-                    console.log(`📊 Unique courses after dedup: ${uniqueCourses.length} (from ${enrollRes.data.enrolledCourses.length})`);
                     setEnrollments(uniqueCourses);
                     
                     if (uniqueCourses.length > 0) {
@@ -74,7 +69,6 @@ const MyLearning = () => {
                     return;
                 }
                 
-                // 🔥 Fallback - Payment API se check karo
                 const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -128,7 +122,6 @@ const MyLearning = () => {
         );
     }
 
-    // 🔥 Status logic
     const hasApprovedCourses = enrollments.length > 0;
     const hasRejectedCourses = paymentData && paymentData.status === 'rejected';
     const hasPendingCourses = paymentData && paymentData.status === 'pending';
@@ -137,36 +130,71 @@ const MyLearning = () => {
         <div className="mylearning-container">
             <div className="mylearning-inner">
                 
-                {/* Header */}
+                {/* Header with Stats */}
                 <header className="mylearning-header">
-                    <h1>Student Dashboard</h1>
-                    <p>Welcome back, <strong>{paymentData?.studentName || enrollments[0]?.studentName || 'Student'}</strong></p>
+                    <div className="header-content">
+                        <div className="header-left">
+                            <div className="header-icon">
+                                <FaGraduationCap size={32} />
+                            </div>
+                            <div>
+                                <h1>My Learning Dashboard</h1>
+                                <p>Welcome back, <strong>{paymentData?.studentName || enrollments[0]?.studentName || 'Student'}</strong></p>
+                            </div>
+                        </div>
+                        <div className="header-stats">
+                            <div className="stat-badge">
+                                <FaBookOpen />
+                                <span>{enrollments.length} Active Courses</span>
+                            </div>
+                        </div>
+                    </div>
                 </header>
 
-                {/* 🔥 MULTIPLE COURSES VIEW */}
+                {/* Active Courses Section */}
                 {hasApprovedCourses && enrollments.length >= 1 && (
-                    <div className="mylearning-multiple-courses">
-                        <div className="mylearning-approved-header">
-                            <FaGraduationCap size={28} />
-                            <h2>Your Active Courses ({enrollments.length})</h2>
+                    <div className="courses-section">
+                        <div className="section-title">
+                            <h2>Your Active Courses</h2>
+                            <div className="title-underline"></div>
                         </div>
                         
                         <div className="courses-grid">
                             {enrollments.map((course, index) => (
-                                <div key={course.courseId || index} className="course-card-mini">
-                                    <div className="course-mini-banner">
-                                        <FaVideo size={30} color="#22c55e" />
+                                <div key={course.courseId || index} className="course-card">
+                                    <div className="card-badge">ACTIVE</div>
+                                    <div className="card-icon">
+                                        <FaVideo size={36} />
                                     </div>
-                                    <div className="course-mini-content">
-                                        <div className="mylearning-badge">ACTIVE</div>
+                                    <div className="card-content">
                                         <h3>{course.courseTitle}</h3>
-                                        <p>Mode: {course.mode || 'Live'} • Enrolled: {course.enrollmentDate ? new Date(course.enrollmentDate).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+                                        <div className="card-meta">
+                                            <div className="meta-item">
+                                                <FaChalkboardTeacher size={12} />
+                                                <span>{course.mode === 'live' ? 'Live Classes' : 'Recorded Course'}</span>
+                                            </div>
+                                            <div className="meta-item">
+                                                <FaCalendarAlt size={12} />
+                                                <span>Enrolled: {course.enrollmentDate ? new Date(course.enrollmentDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="meta-item">
+                                                <FaUsers size={12} />
+                                                <span>Premium Access</span>
+                                            </div>
+                                        </div>
+                                        <div className="card-progress">
+                                            <div className="progress-bar">
+                                                <div className="progress-fill" style={{ width: '65%' }}></div>
+                                            </div>
+                                            <span className="progress-text">65% Complete</span>
+                                        </div>
                                         <button 
-                                            className="mylearning-btn-start" 
+                                            className="continue-btn"
                                             onClick={() => navigate('/student-dashboard')}
-                                            style={{ width: '100%', marginTop: '15px' }}
                                         >
-                                            <FaPlayCircle size={16} /> Continue Learning
+                                            <FaPlayCircle size={16} />
+                                            Continue Learning
+                                            <FaArrowRight size={14} />
                                         </button>
                                     </div>
                                 </div>
@@ -175,31 +203,24 @@ const MyLearning = () => {
                     </div>
                 )}
 
-                {/* REJECTED STATE */}
+                {/* Rejected State */}
                 {hasRejectedCourses && (
-                    <div className="mylearning-card mylearning-card-rejected">
-                        <div className="mylearning-icon-circle mylearning-icon-rejected">
-                            <FaExclamationTriangle size={45} color="#E13630" />
+                    <div className="status-card rejected">
+                        <div className="status-icon">
+                            <FaExclamationTriangle size={48} />
                         </div>
                         <h2>Payment Verification Failed</h2>
                         <p>We couldn't verify the payment for <strong>{paymentData.courseName}</strong>.</p>
                         {paymentData.rejectionReason && (
-                            <div className="rejection-reason" style={{ 
-                                background: '#fee2e2', 
-                                padding: '12px', 
-                                borderRadius: '8px', 
-                                marginBottom: '20px',
-                                fontSize: '14px',
-                                color: '#dc2626'
-                            }}>
+                            <div className="rejection-reason">
                                 <strong>Reason:</strong> {paymentData.rejectionReason}
                             </div>
                         )}
-                        <div className="mylearning-btn-group">
-                            <button className="mylearning-btn-contact" onClick={() => navigate('/contact')}>
+                        <div className="status-buttons">
+                            <button className="btn-contact" onClick={() => navigate('/contact')}>
                                 <FaHeadset /> Contact Support
                             </button>
-                            <button className="mylearning-btn-resubmit" onClick={() => {
+                            <button className="btn-resubmit" onClick={() => {
                                 navigate('/payment-method/' + paymentData.courseId, {
                                     state: {
                                         enrollmentData: {
@@ -219,24 +240,27 @@ const MyLearning = () => {
                     </div>
                 )}
 
-                {/* PENDING STATE */}
+                {/* Pending State */}
                 {hasPendingCourses && (
-                    <div className="mylearning-card mylearning-card-pending">
-                        <div className="mylearning-icon-circle mylearning-icon-pending">
-                            <FaClock size={45} color="#fab005" />
+                    <div className="status-card pending">
+                        <div className="status-icon pending-icon">
+                            <FaClock size={48} />
                         </div>
                         <h2>Verification in Progress</h2>
                         <p>Our team is currently reviewing your payment for <strong>{paymentData.courseName}</strong>.</p>
-                        <div className="mylearning-eta">
+                        <div className="eta-badge">
                             ⏳ Expected Time: 2 - 4 Business Hours
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* CSS Styles - Same as before */}
+            {/* CSS Styles */}
             <style>{`
-                /* ... keep all existing CSS styles ... */
+                /* ============================================
+                   MYLEARNING - PROFESSIONAL DESIGN
+                ============================================ */
+                
                 .mylearning-loading {
                     text-align: center;
                     padding: 100px 20px;
@@ -254,11 +278,11 @@ const MyLearning = () => {
                     border-radius: 50%;
                     width: 50px;
                     height: 50px;
-                    animation: mylearning-spin 1s linear infinite;
+                    animation: spin 1s linear infinite;
                     margin-bottom: 20px;
                 }
                 
-                @keyframes mylearning-spin {
+                @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
@@ -293,7 +317,7 @@ const MyLearning = () => {
                     background: #000B29;
                     color: white;
                     border: none;
-                    border-radius: 10px;
+                    border-radius: 8px;
                     cursor: pointer;
                     font-weight: bold;
                     transition: all 0.3s ease;
@@ -304,209 +328,376 @@ const MyLearning = () => {
                     transform: translateY(-2px);
                 }
                 
+                /* Main Container */
                 .mylearning-container {
-                    background: #fff;
+                    background: #f8fafc;
                     min-height: 100vh;
                     padding: 40px 20px;
                 }
                 
                 .mylearning-inner {
-                    max-width: 1100px;
+                    max-width: 1200px;
                     margin: 0 auto;
                     font-family: 'Segoe UI', Roboto, sans-serif;
                 }
                 
+                /* Header */
                 .mylearning-header {
+                    background: white;
+                    border-radius: 16px;
+                    padding: 24px 32px;
                     margin-bottom: 40px;
-                    text-align: left;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                    border: 1px solid #e2e8f0;
+                }
+                
+                .header-content {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                }
+                
+                .header-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                }
+                
+                .header-icon {
+                    width: 56px;
+                    height: 56px;
+                    background: linear-gradient(135deg, #000B29, #001541);
+                    border-radius: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
                 }
                 
                 .mylearning-header h1 {
                     color: #000B29;
-                    font-size: 32px;
-                    margin-bottom: 10px;
+                    font-size: 28px;
+                    margin: 0 0 4px 0;
+                    font-weight: 700;
                 }
                 
                 .mylearning-header p {
                     color: #64748b;
-                    font-size: 16px;
+                    font-size: 14px;
+                    margin: 0;
                 }
                 
                 .mylearning-header strong {
                     color: #000B29;
                 }
                 
-                .mylearning-multiple-courses {
-                    margin-bottom: 40px;
+                .header-stats .stat-badge {
+                    background: #eef2ff;
+                    padding: 10px 20px;
+                    border-radius: 40px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    color: #000B29;
+                    font-weight: 600;
+                    font-size: 14px;
                 }
                 
+                /* Section Title */
+                .section-title {
+                    margin-bottom: 28px;
+                }
+                
+                .section-title h2 {
+                    color: #1e293b;
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin: 0 0 8px 0;
+                }
+                
+                .title-underline {
+                    width: 60px;
+                    height: 3px;
+                    background: #e30613;
+                    border-radius: 3px;
+                }
+                
+                /* Courses Grid */
                 .courses-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                    gap: 24px;
-                    margin-top: 20px;
+                    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                    gap: 28px;
                 }
                 
-                .course-card-mini {
-                    background: #fff;
-                    border-radius: 16px;
+                .course-card {
+                    background: white;
+                    border-radius: 20px;
                     overflow: hidden;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+                    transition: all 0.3s ease;
                     border: 1px solid #e2e8f0;
-                    transition: transform 0.3s ease;
+                    position: relative;
                 }
                 
-                .course-card-mini:hover {
-                    transform: translateY(-5px);
+                .course-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
+                    border-color: #e30613;
                 }
                 
-                .course-mini-banner {
-                    background: #000B29;
-                    padding: 30px;
+                .card-badge {
+                    position: absolute;
+                    top: 16px;
+                    right: 16px;
+                    background: #22c55e;
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.5px;
+                    z-index: 1;
+                }
+                
+                .card-icon {
+                    background: linear-gradient(135deg, #000B29, #001541);
+                    padding: 32px;
                     text-align: center;
+                    color: white;
                 }
                 
-                .course-mini-content {
+                .card-content {
                     padding: 24px;
                 }
                 
-                .course-mini-content h3 {
-                    color: #000B29;
-                    font-size: 18px;
-                    margin: 10px 0;
+                .card-content h3 {
+                    color: #1e293b;
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin: 0 0 16px 0;
+                    line-height: 1.3;
                 }
                 
-                .course-mini-content p {
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 15px;
+                .card-meta {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    margin-bottom: 20px;
                 }
                 
-                .mylearning-card {
-                    background: #fff;
-                    padding: 40px 30px;
-                    border-radius: 24px;
-                    text-align: center;
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-                }
-                
-                .mylearning-card-rejected {
-                    box-shadow: 0 20px 40px rgba(239, 68, 68, 0.1);
-                    border: 1px solid #fee2e2;
-                }
-                
-                .mylearning-card-pending {
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-                    border: 1px solid #e2e8f0;
-                }
-                
-                .mylearning-icon-circle {
-                    width: 90px;
-                    height: 90px;
-                    border-radius: 50%;
+                .meta-item {
                     display: flex;
                     align-items: center;
-                    justify-content: center;
-                    margin: 0 auto 25px;
-                }
-                
-                .mylearning-icon-rejected {
-                    background: #fef2f2;
-                }
-                
-                .mylearning-icon-pending {
-                    background: #fff9db;
-                }
-                
-                .mylearning-card h2 {
-                    color: #000B29;
-                    font-size: 28px;
-                    margin-bottom: 15px;
-                }
-                
-                .mylearning-card p {
+                    gap: 10px;
                     color: #64748b;
-                    max-width: 600px;
-                    margin: 0 auto 30px;
-                    line-height: 1.8;
+                    font-size: 13px;
                 }
                 
-                .mylearning-btn-group {
-                    display: flex;
-                    justify-content: center;
-                    gap: 20px;
-                    flex-wrap: wrap;
+                .meta-item svg {
+                    color: #e30613;
                 }
                 
-                .mylearning-btn-contact {
-                    padding: 15px 35px;
-                    background: #ef4444;
+                .card-progress {
+                    margin: 20px 0;
+                }
+                
+                .progress-bar {
+                    height: 6px;
+                    background: #e2e8f0;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    margin-bottom: 8px;
+                }
+                
+                .progress-fill {
+                    height: 100%;
+                    background: #e30613;
+                    border-radius: 10px;
+                }
+                
+                .progress-text {
+                    font-size: 12px;
+                    color: #64748b;
+                }
+                
+                .continue-btn {
+                    width: 100%;
+                    padding: 12px;
+                    background: #000B29;
                     color: white;
                     border: none;
                     border-radius: 12px;
+                    font-weight: 600;
+                    font-size: 14px;
                     cursor: pointer;
-                    font-weight: bold;
                     display: flex;
                     align-items: center;
+                    justify-content: center;
                     gap: 10px;
                     transition: all 0.3s ease;
                 }
                 
-                .mylearning-btn-contact:hover {
+                .continue-btn:hover {
+                    background: #e30613;
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 20px rgba(227,6,19,0.2);
+                }
+                
+                /* Status Cards */
+                .status-card {
+                    background: white;
+                    border-radius: 20px;
+                    padding: 48px 32px;
+                    text-align: center;
+                    border: 1px solid #e2e8f0;
+                    max-width: 500px;
+                    margin: 0 auto;
+                }
+                
+                .status-card.rejected {
+                    border-top: 4px solid #dc2626;
+                }
+                
+                .status-card.pending {
+                    border-top: 4px solid #f59e0b;
+                }
+                
+                .status-icon {
+                    width: 80px;
+                    height: 80px;
+                    background: #fef2f2;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 20px;
+                    color: #dc2626;
+                }
+                
+                .status-icon.pending-icon {
+                    background: #fef3c7;
+                    color: #f59e0b;
+                }
+                
+                .status-card h2 {
+                    color: #1e293b;
+                    font-size: 24px;
+                    margin-bottom: 12px;
+                }
+                
+                .status-card p {
+                    color: #64748b;
+                    margin-bottom: 20px;
+                }
+                
+                .rejection-reason {
+                    background: #fee2e2;
+                    padding: 12px 16px;
+                    border-radius: 12px;
+                    font-size: 14px;
+                    color: #dc2626;
+                    margin-bottom: 24px;
+                }
+                
+                .status-buttons {
+                    display: flex;
+                    gap: 16px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
+                
+                .btn-contact {
+                    padding: 12px 28px;
+                    background: #ef4444;
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.3s ease;
+                }
+                
+                .btn-contact:hover {
                     background: #dc2626;
                     transform: translateY(-2px);
                 }
                 
-                .mylearning-btn-resubmit {
-                    padding: 15px 35px;
+                .btn-resubmit {
+                    padding: 12px 28px;
                     background: white;
                     color: #ef4444;
                     border: 2px solid #ef4444;
-                    border-radius: 12px;
+                    border-radius: 10px;
+                    font-weight: 600;
                     cursor: pointer;
-                    font-weight: bold;
                     transition: all 0.3s ease;
                 }
                 
-                .mylearning-btn-resubmit:hover {
+                .btn-resubmit:hover {
                     background: #fef2f2;
                     transform: translateY(-2px);
                 }
                 
-                .mylearning-eta {
+                .eta-badge {
                     display: inline-block;
                     padding: 10px 20px;
-                    background: #f8fafc;
+                    background: #fef3c7;
                     border-radius: 30px;
-                    color: #64748b;
-                    font-size: 14px;
-                    border: 1px solid #e2e8f0;
+                    color: #92400e;
+                    font-size: 13px;
+                    font-weight: 600;
                 }
                 
+                /* Responsive */
                 @media (max-width: 768px) {
-                    .courses-grid {
-                        grid-template-columns: 1fr;
+                    .mylearning-container {
+                        padding: 20px 16px;
                     }
                     
-                    .mylearning-container {
-                        padding: 30px 16px;
+                    .mylearning-header {
+                        padding: 20px;
+                    }
+                    
+                    .header-content {
+                        flex-direction: column;
+                        text-align: center;
+                    }
+                    
+                    .header-left {
+                        flex-direction: column;
+                        text-align: center;
                     }
                     
                     .mylearning-header h1 {
-                        font-size: 28px;
+                        font-size: 24px;
                     }
                     
-                    .mylearning-card {
-                        padding: 30px 20px;
+                    .courses-grid {
+                        grid-template-columns: 1fr;
+                        gap: 20px;
                     }
                     
-                    .mylearning-btn-group {
+                    .card-content h3 {
+                        font-size: 18px;
+                    }
+                    
+                    .status-card {
+                        padding: 32px 20px;
+                    }
+                    
+                    .status-card h2 {
+                        font-size: 20px;
+                    }
+                    
+                    .status-buttons {
                         flex-direction: column;
-                        align-items: center;
                     }
                     
-                    .mylearning-btn-contact,
-                    .mylearning-btn-resubmit {
+                    .btn-contact, .btn-resubmit {
                         width: 100%;
                         justify-content: center;
                     }
