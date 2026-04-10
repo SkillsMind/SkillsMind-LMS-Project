@@ -24,8 +24,9 @@ const LiveEnrollment = () => {
     const courseDuration = location.state?.course?.duration || "3 Months";
     const courseLevel = location.state?.course?.level || "Beginner";
     
-    // Pre-filled data agar pending enrollment ho
-    const existingEnrollment = location.state?.existingEnrollment;
+    // Existing enrollment data if any
+    const [existingEnrollment, setExistingEnrollment] = useState(null);
+    const [checkingExisting, setCheckingExisting] = useState(true);
 
     const formattedName = realTimeTitle 
         ? realTimeTitle 
@@ -36,13 +37,13 @@ const LiveEnrollment = () => {
     const [selectedCourse, setSelectedCourse] = useState(formattedName);
     
     const [formData, setFormData] = useState({
-        fullName: existingEnrollment?.formData?.fullName || location.state?.enrollmentData?.fullName || '',
-        email: existingEnrollment?.formData?.email || location.state?.enrollmentData?.email || '',
-        city: existingEnrollment?.formData?.city || '',
-        phone: existingEnrollment?.formData?.phone || location.state?.enrollmentData?.phone || '',
-        address: existingEnrollment?.formData?.address || '',
-        dob: existingEnrollment?.formData?.dob || '',
-        gender: existingEnrollment?.formData?.gender || 'male',
+        fullName: '',
+        email: '',
+        city: '',
+        phone: '',
+        address: '',
+        dob: '',
+        gender: 'male',
         agreeTerms: false,
         course: formattedName 
     });
@@ -62,34 +63,84 @@ const LiveEnrollment = () => {
         { day: 'Fri', signups: stats.activeNow > 0 ? stats.activeNow * 15 : 400 },
     ];
 
-    useEffect(() => {
-        // Agar already pending enrollment hai toh form pre-fill hoga upar se hi
-        if (existingEnrollment) {
-            Swal.fire({
-                title: 'Resume Registration?',
-                text: 'You already started registration for this course. Complete your payment now?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, Go to Payment',
-                cancelButtonText: 'Update Details First'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    navigate(`/payment-method/${courseId || existingEnrollment.courseId}`, {
-                        state: {
-                            course: selectedCourse,
-                            amount: coursePrice,
-                            image: courseImage,
-                            duration: courseDuration,
-                            level: courseLevel,
-                            enrollmentId: existingEnrollment.enrollmentId,
-                            enrollmentData: existingEnrollment.formData
-                        }
-                    });
-                }
-                // Agar cancel kare toh yahin rahega form ke saath pre-filled data
-            });
-        }
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+    // ✅ Check for existing pending enrollment
+    useEffect(() => {
+        const checkExistingEnrollment = async () => {
+            if (!userId || !courseId) {
+                setCheckingExisting(false);
+                return;
+            }
+            
+            try {
+                const response = await axios.get(`${API_URL}/api/enroll/check-pending/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (response.data.success && response.data.pendingCourses) {
+                    const existing = response.data.pendingCourses.find(
+                        p => p.courseId === courseId
+                    );
+                    
+                    if (existing) {
+                        setExistingEnrollment(existing);
+                        setFormData(prev => ({
+                            ...prev,
+                            fullName: existing.formData?.fullName || '',
+                            email: existing.formData?.email || '',
+                            city: existing.formData?.city || '',
+                            phone: existing.formData?.phone || '',
+                            address: existing.formData?.address || '',
+                            dob: existing.formData?.dob || '',
+                            gender: existing.formData?.gender || 'male'
+                        }));
+                        
+                        // Show notification about existing pending enrollment
+                        Swal.fire({
+                            title: 'Pending Registration Found',
+                            html: `You have a pending registration for <strong>${selectedCourse}</strong>.<br/><br/>Do you want to continue with the existing registration?`,
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, Continue',
+                            cancelButtonText: 'Start Fresh',
+                            confirmButtonColor: '#000B29',
+                            cancelButtonColor: '#64748b'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User wants to continue, keep the pre-filled data
+                                console.log('Continuing with existing enrollment:', existing.enrollmentId);
+                            } else {
+                                // User wants to start fresh, clear the data
+                                setExistingEnrollment(null);
+                                setFormData({
+                                    fullName: '',
+                                    email: '',
+                                    city: '',
+                                    phone: '',
+                                    address: '',
+                                    dob: '',
+                                    gender: 'male',
+                                    agreeTerms: false,
+                                    course: formattedName
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking pending enrollment:', error);
+            } finally {
+                setCheckingExisting(false);
+            }
+        };
+        
+        checkExistingEnrollment();
+    }, [userId, courseId, token, API_URL, selectedCourse]);
+
+    useEffect(() => {
         if (realTimeTitle) {
             setSelectedCourse(realTimeTitle);
             setFormData(prev => ({ ...prev, course: realTimeTitle }));
@@ -102,7 +153,7 @@ const LiveEnrollment = () => {
 
         const fetchRealTimeStats = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/stats`);
+                const response = await axios.get(`${API_URL}/api/stats`);
                 setStats({
                     totalStudents: response.data.totalRegistered || 0,
                     profilesBuilt: response.data.profilesBuilt || 0,
@@ -123,7 +174,7 @@ const LiveEnrollment = () => {
         fetchRealTimeStats();
         const interval = setInterval(fetchRealTimeStats, 10000);
         return () => clearInterval(interval);
-    }, [courseName, realTimeTitle, existingEnrollment]); 
+    }, [courseName, realTimeTitle, API_URL]); 
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -140,8 +191,6 @@ const LiveEnrollment = () => {
             Swal.fire('Error', 'Please agree to the security terms.', 'error');
             return;
         }
-
-        const userId = localStorage.getItem('userId');
         
         if (!userId) {
             Swal.fire('Error', 'Please login again to continue.', 'error');
@@ -166,7 +215,9 @@ const LiveEnrollment = () => {
         console.log('📤 Sending to backend:', submitData);
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/enroll/live-register`, submitData);
+            const response = await axios.post(`${API_URL}/api/enroll/live-register`, submitData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             console.log('📥 Backend response:', response.data);
 
@@ -224,6 +275,17 @@ const LiveEnrollment = () => {
             Swal.fire('Error', errorMsg, 'error');
         }
     };
+
+    if (checkingExisting) {
+        return (
+            <div className="sm-final-portal">
+                <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                    <div className="spinner"></div>
+                    <p style={{ marginLeft: '10px' }}>Checking existing registration...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="sm-final-portal">

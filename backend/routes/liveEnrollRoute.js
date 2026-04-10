@@ -3,36 +3,62 @@ const router = express.Router();
 const LiveEnrollment = require('../models/LiveEnrollment');
 const Course = require('../models/Course');
 
-// 1. GET: Check ACTIVE enrollments (Payment Approved)
+// ==========================================
+// 1. GET: Check ACTIVE enrollments (Payment Approved) - WITH DUPLICATE REMOVAL
+// ==========================================
 router.get('/check-enrollment/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         
+        // Get active enrollments from LiveEnrollment
         const activeEnrollments = await LiveEnrollment.find({ 
             userId: userId,
             status: 'active' 
         });
         
+        // Get courses where student is enrolled (backup source)
         const enrolledCoursesFromCourses = await Course.find({
             enrolledStudentIds: userId
         }).select('_id title');
         
-        const enrolledCourses = [
-            ...activeEnrollments.map(e => ({
-                courseId: e.courseId,
-                courseTitle: e.course,
-                mode: e.mode || 'live',
-                enrollmentDate: e.createdAt,
-                paymentStatus: 'active'
-            })),
-            ...enrolledCoursesFromCourses.map(c => ({
-                courseId: c._id,
-                courseTitle: c.title,
-                mode: 'course',
-                enrollmentDate: null,
-                paymentStatus: 'active'
-            }))
-        ];
+        // 🔥 FIX: Use Map to remove duplicates by courseId
+        const enrolledMap = new Map();
+        
+        // First add from activeEnrollments (priority - has real enrollment date)
+        activeEnrollments.forEach(e => {
+            const courseId = e.courseId?.toString();
+            if (courseId && !enrolledMap.has(courseId)) {
+                enrolledMap.set(courseId, {
+                    courseId: e.courseId,
+                    courseTitle: e.course,
+                    mode: e.mode || 'live',
+                    enrollmentDate: e.createdAt,
+                    paymentStatus: 'active',
+                    studentName: e.fullName,
+                    enrollmentId: e._id
+                });
+            }
+        });
+        
+        // Then add from courses (only if not already added - for backward compatibility)
+        enrolledCoursesFromCourses.forEach(c => {
+            const courseId = c._id.toString();
+            if (!enrolledMap.has(courseId)) {
+                enrolledMap.set(courseId, {
+                    courseId: c._id,
+                    courseTitle: c.title,
+                    mode: 'course',
+                    enrollmentDate: null,
+                    paymentStatus: 'active',
+                    studentName: null,
+                    enrollmentId: null
+                });
+            }
+        });
+        
+        const enrolledCourses = Array.from(enrolledMap.values());
+        
+        console.log(`✅ Active enrollments for user ${userId}: ${enrolledCourses.length} unique courses`);
         
         res.json({
             success: true,
@@ -50,7 +76,9 @@ router.get('/check-enrollment/:userId', async (req, res) => {
     }
 });
 
+// ==========================================
 // 2. GET: Check PENDING enrollments (Form filled, payment not approved)
+// ==========================================
 router.get('/check-pending/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -86,7 +114,9 @@ router.get('/check-pending/:userId', async (req, res) => {
     }
 });
 
+// ==========================================
 // 3. GET: All enrollments (Admin purpose)
+// ==========================================
 router.get('/all', async (req, res) => {
     try {
         const enrollments = await LiveEnrollment.find().sort({ createdAt: -1 });
@@ -97,7 +127,9 @@ router.get('/all', async (req, res) => {
     }
 });
 
+// ==========================================
 // 4. POST: Save enrollment with PENDING status
+// ==========================================
 router.post('/live-register', async (req, res) => {
     try {
         const { userId, fullName, email, city, phone, address, dob, gender, course, courseId, profilePic } = req.body;
@@ -125,7 +157,7 @@ router.post('/live-register', async (req, res) => {
             });
         }
 
-        // Check if already has PENDING enrollment - UPDATE KAREGA NAHI TOH NAYA BANAYEGA
+        // Check if already has PENDING enrollment
         const existingPending = await LiveEnrollment.findOne({
             userId: userId,
             course: course,
@@ -194,7 +226,9 @@ router.post('/live-register', async (req, res) => {
     }
 });
 
+// ==========================================
 // 5. PATCH: Update enrollment status to ACTIVE (Admin use)
+// ==========================================
 router.patch('/update-status/:enrollmentId', async (req, res) => {
     try {
         const { enrollmentId } = req.params;
@@ -225,7 +259,9 @@ router.patch('/update-status/:enrollmentId', async (req, res) => {
     }
 });
 
+// ==========================================
 // 6. GET: Single enrollment details by user and course (for pre-filling form)
+// ==========================================
 router.get('/enrollment-details/:userId/:courseId', async (req, res) => {
     try {
         const { userId, courseId } = req.params;
@@ -252,7 +288,9 @@ router.get('/enrollment-details/:userId/:courseId', async (req, res) => {
     }
 });
 
+// ==========================================
 // 7. DELETE: Delete enrollment record
+// ==========================================
 router.delete('/delete/:id', async (req, res) => {
     try {
         const deletedUser = await LiveEnrollment.findByIdAndDelete(req.params.id);
@@ -264,7 +302,9 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
-// 🔥 8. GET: Check REJECTED enrollments (Payment Rejected by Admin)
+// ==========================================
+// 8. GET: Check REJECTED enrollments (Payment Rejected by Admin)
+// ==========================================
 router.get('/check-rejected/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
