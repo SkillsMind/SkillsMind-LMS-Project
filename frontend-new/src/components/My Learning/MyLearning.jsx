@@ -34,7 +34,7 @@ const MyLearning = () => {
             try {
                 setLoading(true);
                 
-                // 1. Fetch ACTIVE courses (approved)
+                // 1. Fetch ACTIVE courses (only admin approved - backend is now strict)
                 const activeRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -42,7 +42,7 @@ const MyLearning = () => {
                 console.log('📥 Active Courses Response:', activeRes.data);
                 
                 if (activeRes.data.success && activeRes.data.enrolledCourses) {
-                    // Remove duplicates by courseId and map fields properly
+                    // Backend now ensures only truly active enrollments are returned
                     const uniqueCourses = [];
                     const seenCourseIds = new Set();
                     
@@ -51,7 +51,6 @@ const MyLearning = () => {
                         if (courseId && !seenCourseIds.has(courseId)) {
                             seenCourseIds.add(courseId);
                             
-                            // 🔥 FIX: Get course title from multiple possible fields
                             const courseTitle = course.courseTitle || course.courseName || course.title || 'Untitled Course';
                             
                             uniqueCourses.push({
@@ -68,48 +67,40 @@ const MyLearning = () => {
                     setActiveCourses(uniqueCourses);
                 }
                 
-                // 2. Fetch PENDING payments
-                const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
+                // 2. Fetch ALL payments to categorize them properly
+                const paymentsRes = await axios.get(`${API_URL}/api/payments/my-all-payments/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                console.log('📥 Payment Status Response:', paymentRes.data);
+                console.log('📥 All Payments Response:', paymentsRes.data);
                 
-                if (paymentRes.data) {
-                    if (paymentRes.data.status === 'pending') {
-                        setPendingPayments([{
-                            courseId: paymentRes.data.courseId,
-                            courseName: paymentRes.data.courseName,
-                            amount: paymentRes.data.amount,
-                            submittedAt: paymentRes.data.createdAt,
-                            paymentId: paymentRes.data._id
-                        }]);
-                    } else if (paymentRes.data.status === 'rejected') {
-                        setRejectedPayments([{
-                            courseId: paymentRes.data.courseId,
-                            courseName: paymentRes.data.courseName,
-                            amount: paymentRes.data.amount,
-                            rejectionReason: paymentRes.data.rejectionReason || 'Payment could not be verified',
-                            rejectedAt: paymentRes.data.updatedAt,
-                            paymentId: paymentRes.data._id
-                        }]);
-                    }
-                }
-                
-                // 3. Fetch REJECTED from enrollment API
-                const rejectedRes = await axios.get(`${API_URL}/api/enroll/check-rejected/${userId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }).catch(() => ({ data: { rejectedCourses: [] } }));
-                
-                if (rejectedRes.data?.rejectedCourses?.length > 0) {
-                    const additionalRejected = rejectedRes.data.rejectedCourses.map(r => ({
-                        courseId: r.courseId,
-                        courseName: r.courseTitle,
-                        rejectionReason: r.rejectionReason,
-                        rejectedAt: r.rejectedAt,
-                        paymentId: r.enrollmentId
-                    }));
-                    setRejectedPayments(prev => [...prev, ...additionalRejected]);
+                if (paymentsRes.data.success && paymentsRes.data.payments) {
+                    const pending = [];
+                    const rejected = [];
+                    
+                    paymentsRes.data.payments.forEach(p => {
+                        if (p.status === 'pending') {
+                            pending.push({
+                                courseId: p.courseId,
+                                courseName: p.courseName,
+                                amount: p.amount,
+                                submittedAt: p.createdAt,
+                                paymentId: p.paymentId
+                            });
+                        } else if (p.status === 'rejected') {
+                            rejected.push({
+                                courseId: p.courseId,
+                                courseName: p.courseName,
+                                amount: p.amount,
+                                rejectionReason: p.rejectionReason || 'Payment could not be verified',
+                                rejectedAt: p.createdAt,
+                                paymentId: p.paymentId
+                            });
+                        }
+                    });
+                    
+                    setPendingPayments(pending);
+                    setRejectedPayments(rejected);
                 }
                 
             } catch (err) {
@@ -130,6 +121,20 @@ const MyLearning = () => {
             month: '2-digit',
             year: 'numeric'
         });
+    };
+
+    // 🔥 Safety check before navigating to dashboard
+    const handleContinueLearning = (course) => {
+        if (course.status === 'active') {
+            navigate('/student-dashboard');
+        } else {
+            Swal.fire({
+                title: 'Access Denied',
+                text: 'Your enrollment is not yet active. Please complete payment or wait for approval.',
+                icon: 'warning',
+                confirmButtonColor: '#000B29'
+            });
+        }
     };
 
     if (loading) {
@@ -249,7 +254,7 @@ const MyLearning = () => {
                                             </div>
                                             <button 
                                                 className="continue-btn"
-                                                onClick={() => navigate('/student-dashboard')}
+                                                onClick={() => handleContinueLearning(course)}
                                             >
                                                 <FaPlayCircle /> Continue Learning
                                                 <FaArrowRight />
