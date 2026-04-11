@@ -2,74 +2,36 @@ const express = require('express');
 const router = express.Router();
 const LiveEnrollment = require('../models/LiveEnrollment');
 const Course = require('../models/Course');
+const Payment = require('../models/Payment'); // 🔥 ADDED: Import Payment model
+const User = require('../models/User'); // 🔥 ADDED: Import User model
 
 // ==========================================
-// 1. GET: Check ACTIVE enrollments (Payment Approved) - STRONG DUPLICATE REMOVAL
+// 1. GET: Check ACTIVE enrollments ONLY (Strict - No Backup Source)
 // ==========================================
 router.get('/check-enrollment/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         
-        console.log(`🔍 Checking active enrollments for user: ${userId}`);
+        console.log(`🔍 Checking ACTIVE enrollments for user: ${userId}`);
         
-        // Get active enrollments from LiveEnrollment
+        // 🔥 STRICT FIX: Only check LiveEnrollment with status 'active'
+        // NO backup source from Course model to avoid unauthorized access
         const activeEnrollments = await LiveEnrollment.find({ 
             userId: userId,
             status: 'active' 
-        });
+        }).populate('courseId', 'title category');
         
-        // Get courses where student is enrolled (backup source)
-        const enrolledCoursesFromCourses = await Course.find({
-            enrolledStudentIds: userId
-        }).select('_id title');
-        
-        // 🔥 STRONG FIX: Use Map to remove duplicates by courseId
-        // Priority: LiveEnrollment wale pehle (kyunki unki date sahi hai)
-        const enrolledMap = new Map();
-        
-        // First add from activeEnrollments (priority - has real enrollment date)
-        activeEnrollments.forEach(e => {
-            const courseId = e.courseId?.toString();
-            if (courseId) {
-                enrolledMap.set(courseId, {
-                    courseId: e.courseId,
-                    courseTitle: e.course,
-                    mode: e.mode || 'live',
-                    enrollmentDate: e.createdAt,
-                    paymentStatus: 'active',
-                    studentName: e.fullName,
-                    enrollmentId: e._id
-                });
-                console.log(`✅ Added from LiveEnrollment: ${e.course} (${courseId})`);
-            }
-        });
-        
-        // Then add from courses (ONLY if not already added)
-        let coursesAdded = 0;
-        enrolledCoursesFromCourses.forEach(c => {
-            const courseId = c._id.toString();
-            if (!enrolledMap.has(courseId)) {
-                enrolledMap.set(courseId, {
-                    courseId: c._id,
-                    courseTitle: c.title,
-                    mode: 'course',
-                    enrollmentDate: null,
-                    paymentStatus: 'active',
-                    studentName: null,
-                    enrollmentId: null
-                });
-                coursesAdded++;
-                console.log(`✅ Added from Course model: ${c.title} (${courseId})`);
-            } else {
-                console.log(`⏭️ Skipping duplicate from Course model: ${c.title} (already in LiveEnrollment)`);
-            }
-        });
-        
-        const enrolledCourses = Array.from(enrolledMap.values());
-        
-        console.log(`📊 Final: ${enrolledCourses.length} unique courses for user ${userId}`);
-        console.log(`   - From LiveEnrollment: ${activeEnrollments.length}`);
-        console.log(`   - From Course model (new): ${coursesAdded}`);
+        const enrolledCourses = activeEnrollments.map(e => ({
+            courseId: e.courseId?._id || e.courseId,
+            courseTitle: e.course || e.courseId?.title,
+            mode: e.mode || 'live',
+            enrollmentDate: e.createdAt,
+            paymentStatus: 'active',
+            studentName: e.fullName,
+            enrollmentId: e._id
+        }));
+
+        console.log(`✅ Found ${enrolledCourses.length} ACTIVE enrollments for user ${userId}`);
         
         res.json({
             success: true,
@@ -88,7 +50,51 @@ router.get('/check-enrollment/:userId', async (req, res) => {
 });
 
 // ==========================================
-// 2. GET: Check PENDING enrollments (Form filled, payment not approved)
+// 2. GET: Check Payment Status for All Courses (NEW ENDPOINT)
+// ==========================================
+router.get('/check-payment-status/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Get user email first
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        
+        // Get all payments for this user
+        const payments = await Payment.find({ 
+            studentEmail: user.email 
+        }).sort({ createdAt: -1 });
+        
+        // Create a map of courseId -> paymentStatus
+        const paymentStatusMap = {};
+        payments.forEach(p => {
+            // Only keep the latest status for each course
+            if (!paymentStatusMap[p.courseId]) {
+                paymentStatusMap[p.courseId] = {
+                    status: p.status, // 'pending', 'approved', 'rejected'
+                    paymentId: p._id,
+                    rejectionReason: p.rejectionReason,
+                    amount: p.amount,
+                    submittedAt: p.createdAt
+                };
+            }
+        });
+        
+        res.json({
+            success: true,
+            paymentStatuses: paymentStatusMap
+        });
+        
+    } catch (error) {
+        console.error("Payment status check error:", error);
+        res.status(500).json({ success: false, paymentStatuses: {} });
+    }
+});
+
+// ==========================================
+// 3. GET: Check PENDING enrollments (Form filled, payment pending)
 // ==========================================
 router.get('/check-pending/:userId', async (req, res) => {
     try {
@@ -126,7 +132,62 @@ router.get('/check-pending/:userId', async (req, res) => {
 });
 
 // ==========================================
-// 3. GET: All enrollments (Admin purpose)
+// 4. GET: Check REJECTED enrollments (Payment Rejected by Admin)
+// ==========================================
+router.get('/check-rejected/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // 🔥 FIXED: Check both 'cancelled' status AND rejected payments
+        const rejectedEnrollments = await LiveEnrollment.find({ 
+            userId: userId,
+            status: 'cancelled'
+        });
+        
+        // Also check payments with rejected status for additional info
+        const user = await User.findById(userId);
+        let rejectedPayments = [];
+        if (user) {
+            rejectedPayments = await Payment.find({
+                studentEmail: user.email,
+                status: 'rejected'
+            });
+        }
+        
+        // Merge data
+        const rejectedCourses = rejectedEnrollments.map(e => {
+            // Find matching payment for rejection reason
+            const matchingPayment = rejectedPayments.find(p => 
+                p.courseId.toString() === (e.courseId?.toString() || e.courseId)
+            );
+            
+            return {
+                enrollmentId: e._id,
+                courseId: e.courseId,
+                courseTitle: e.course,
+                rejectionReason: matchingPayment?.rejectionReason || e.rejectionReason || 'Payment verification failed',
+                rejectedAt: e.paymentRejectedAt || matchingPayment?.updatedAt,
+                formData: {
+                    fullName: e.fullName,
+                    email: e.email,
+                    phone: e.phone
+                },
+                paymentId: matchingPayment?._id
+            };
+        });
+        
+        res.json({
+            success: true,
+            rejectedCourses: rejectedCourses
+        });
+    } catch (error) {
+        console.error("Rejected check error:", error);
+        res.status(500).json({ success: false, rejectedCourses: [] });
+    }
+});
+
+// ==========================================
+// 5. GET: All enrollments (Admin purpose)
 // ==========================================
 router.get('/all', async (req, res) => {
     try {
@@ -139,7 +200,7 @@ router.get('/all', async (req, res) => {
 });
 
 // ==========================================
-// 4. POST: Save enrollment with PENDING status
+// 6. POST: Save enrollment with PENDING status
 // ==========================================
 router.post('/live-register', async (req, res) => {
     try {
@@ -238,7 +299,7 @@ router.post('/live-register', async (req, res) => {
 });
 
 // ==========================================
-// 5. PATCH: Update enrollment status to ACTIVE (Admin use)
+// 7. PATCH: Update enrollment status to ACTIVE (Admin use)
 // ==========================================
 router.patch('/update-status/:enrollmentId', async (req, res) => {
     try {
@@ -255,12 +316,20 @@ router.patch('/update-status/:enrollmentId', async (req, res) => {
         
         await enrollment.save();
         
+        // 🔥 IMPORTANT: Only add to Course.enrolledStudentIds when status is 'active'
         if (status === 'active' && enrollment.courseId) {
             await Course.findByIdAndUpdate(enrollment.courseId, {
                 $addToSet: { enrolledStudentIds: enrollment.userId },
                 $inc: { enrolledStudents: 1 }
             });
             console.log("✅ Course updated with active student:", enrollment.courseId);
+        }
+        
+        // If rejected, remove from course enrolled list (safety)
+        if (status === 'cancelled' && enrollment.courseId) {
+            await Course.findByIdAndUpdate(enrollment.courseId, {
+                $pull: { enrolledStudentIds: enrollment.userId }
+            });
         }
         
         res.json({ success: true, message: `Enrollment status updated to ${status}` });
@@ -271,7 +340,7 @@ router.patch('/update-status/:enrollmentId', async (req, res) => {
 });
 
 // ==========================================
-// 6. GET: Single enrollment details by user and course (for pre-filling form)
+// 8. GET: Single enrollment details by user and course
 // ==========================================
 router.get('/enrollment-details/:userId/:courseId', async (req, res) => {
     try {
@@ -300,7 +369,7 @@ router.get('/enrollment-details/:userId/:courseId', async (req, res) => {
 });
 
 // ==========================================
-// 7. DELETE: Delete enrollment record
+// 9. DELETE: Delete enrollment record
 // ==========================================
 router.delete('/delete/:id', async (req, res) => {
     try {
@@ -310,40 +379,6 @@ router.delete('/delete/:id', async (req, res) => {
         res.status(200).json({ success: true, message: "Record Deleted Successfully" });
     } catch (error) {
         res.status(500).json({ message: "Delete Error", error });
-    }
-});
-
-// ==========================================
-// 8. GET: Check REJECTED enrollments (Payment Rejected by Admin)
-// ==========================================
-router.get('/check-rejected/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        
-        const rejectedEnrollments = await LiveEnrollment.find({ 
-            userId: userId,
-            status: 'cancelled',
-            paymentRejectedAt: { $exists: true }
-        });
-        
-        res.json({
-            success: true,
-            rejectedCourses: rejectedEnrollments.map(e => ({
-                enrollmentId: e._id,
-                courseId: e.courseId,
-                courseTitle: e.course,
-                rejectionReason: e.rejectionReason,
-                rejectedAt: e.paymentRejectedAt,
-                formData: {
-                    fullName: e.fullName,
-                    email: e.email,
-                    phone: e.phone
-                }
-            }))
-        });
-    } catch (error) {
-        console.error("Rejected check error:", error);
-        res.status(500).json({ success: false, rejectedCourses: [] });
     }
 });
 

@@ -9,7 +9,7 @@ const Course = require('../models/Course');
 const User = require('../models/User');
 const fs = require('fs');
 const path = require('path');
-const mongoose = require('mongoose');  // ✅ YEH LINE IMPORTANT HAI
+const mongoose = require('mongoose');
 
 // Multer Setup
 const storage = multer.diskStorage({
@@ -45,7 +45,7 @@ router.get('/all-payments', async (req, res) => {
     }
 });
 
-// B. Update Status (Approve/Reject)
+// B. Update Status (Approve/Reject) - FIXED LOGIC
 router.put('/update-status/:id', async (req, res) => {
     const { status, rejectionReason } = req.body;
     try {
@@ -72,7 +72,7 @@ router.put('/update-status/:id', async (req, res) => {
         const updated = payment;
         let enrollmentMessage = '';
 
-        // APPROVED: Give Access
+        // APPROVED: Give Access - STRICT LOGIC
         if (status.toLowerCase() === 'approved') {
             try {
                 let student = null;
@@ -90,17 +90,24 @@ router.put('/update-status/:id', async (req, res) => {
                 if (student && updated.courseId) {
                     let courseObjectId = new mongoose.Types.ObjectId(updated.courseId);
                     
-                    await LiveEnrollment.findOneAndUpdate(
-                        { userId: student._id, courseId: updated.courseId, status: 'pending' },
-                        { status: 'active', paymentApprovedAt: new Date() },
-                        { upsert: true }
+                    // 🔥 CRITICAL: Update LiveEnrollment to 'active' ONLY when payment approved
+                    const enrollmentUpdate = await LiveEnrollment.findOneAndUpdate(
+                        { userId: student._id, courseId: updated.courseId },
+                        { 
+                            status: 'active', 
+                            paymentApprovedAt: new Date(),
+                            paymentId: payment._id
+                        },
+                        { upsert: true, new: true }
                     );
                     
+                    // Add to user's enrolled courses
                     await User.findByIdAndUpdate(
                         student._id,
                         { $addToSet: { enrolledCourses: courseObjectId } }
                     );
                     
+                    // Add to course's enrolled students
                     await Course.findByIdAndUpdate(
                         courseObjectId,
                         { 
@@ -110,12 +117,13 @@ router.put('/update-status/:id', async (req, res) => {
                     );
                     
                     enrollmentMessage = ' & Access Granted';
+                    console.log(`✅ PAYMENT APPROVED: Student ${student._id} granted access to course ${courseObjectId}`);
                 }
             } catch (err) {
                 console.error("Approval error:", err);
             }
         } 
-        // REJECTED: Remove Access
+        // REJECTED: Remove Access - STRICT LOGIC
         else if (status.toLowerCase() === 'rejected') {
             try {
                 let student = null;
@@ -129,21 +137,25 @@ router.put('/update-status/:id', async (req, res) => {
                 if (student && updated.courseId) {
                     let courseObjectId = new mongoose.Types.ObjectId(updated.courseId);
                     
+                    // 🔥 CRITICAL: Update LiveEnrollment to 'cancelled' when payment rejected
                     await LiveEnrollment.findOneAndUpdate(
                         { userId: student._id, courseId: updated.courseId },
                         { 
                             status: 'cancelled', 
                             rejectionReason: rejectionReason,
-                            paymentRejectedAt: new Date()
+                            paymentRejectedAt: new Date(),
+                            paymentId: payment._id
                         },
                         { upsert: true }
                     );
                     
+                    // Remove from user's enrolled courses
                     await User.findByIdAndUpdate(
                         student._id,
                         { $pull: { enrolledCourses: courseObjectId } }
                     );
                     
+                    // Remove from course's enrolled students
                     await Course.findByIdAndUpdate(
                         courseObjectId,
                         { 
@@ -153,15 +165,16 @@ router.put('/update-status/:id', async (req, res) => {
                     );
                     
                     enrollmentMessage = ' & Access Removed';
+                    console.log(`❌ PAYMENT REJECTED: Student ${student._id} removed from course ${courseObjectId}`);
                 }
             } catch (err) {
                 console.error("Rejection error:", err);
             }
         }
 
-        // Email
+        // Send Email Notification
         const isApproved = status.toLowerCase() === 'approved';
-        const themeColor = isApproved ? '#5e6160' : '#e31e24'; 
+        const themeColor = isApproved ? '#10b981' : '#e31e24'; 
         const dashboardUrl = process.env.FRONTEND_URL || "http://localhost:5173/my-learning";
 
         const statusMailOptions = {
@@ -176,10 +189,10 @@ router.put('/update-status/:id', async (req, res) => {
                         </div>
                         <div style="padding: 40px 30px;">
                             <h2>Hello ${updated.studentName},</h2>
-                            <p>${isApproved ? `Great news! Your payment for ${updated.courseName} has been verified.` : `Your payment for ${updated.courseName} could not be verified.`}</p>
-                            ${!isApproved && updated.rejectionReason ? `<div style="background:#fee2e2;padding:12px;border-radius:8px;"><strong>Reason:</strong> ${updated.rejectionReason}</div>` : ''}
+                            <p>${isApproved ? `Great news! Your payment for ${updated.courseName} has been verified and approved.` : `Your payment for ${updated.courseName} could not be verified.`}</p>
+                            ${!isApproved && updated.rejectionReason ? `<div style="background:#fee2e2;padding:12px;border-radius:8px;margin:15px 0;"><strong>Reason:</strong> ${updated.rejectionReason}</div>` : ''}
                             <div style="text-align:center;margin-top:30px;">
-                                <a href="${dashboardUrl}" style="background:${themeColor};color:white;padding:12px 30px;text-decoration:none;border-radius:6px;">${isApproved ? 'Go to Dashboard' : 'Contact Support'}</a>
+                                <a href="${dashboardUrl}" style="background:${themeColor};color:white;padding:12px 30px;text-decoration:none;border-radius:6px;display:inline-block;">${isApproved ? 'Go to Dashboard' : 'Contact Support'}</a>
                             </div>
                         </div>
                     </div>
@@ -247,9 +260,61 @@ router.get('/rejection-reason/:id', async (req, res) => {
 // STUDENT ROUTES
 // ==========================================
 
+// 🔥 NEW ENDPOINT: Get all payments for a user (for checking status before re-payment)
+router.get('/my-all-payments/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        
+        const payments = await Payment.find({ 
+            studentEmail: user.email 
+        }).sort({ createdAt: -1 });
+        
+        res.json({
+            success: true,
+            payments: payments.map(p => ({
+                courseId: p.courseId,
+                status: p.status,
+                paymentId: p._id,
+                rejectionReason: p.rejectionReason,
+                amount: p.amount,
+                courseName: p.courseName,
+                createdAt: p.createdAt,
+                isReplaced: p.isReplaced
+            }))
+        });
+    } catch (error) {
+        console.error("Error fetching user payments:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// Get single payment status by email (latest only)
+router.get('/my-status/:email', async (req, res) => {
+    try {
+        const studentEmail = req.params.email;
+        const payment = await Payment.findOne({ studentEmail: studentEmail })
+            .populate('studentId', 'name email')
+            .sort({ createdAt: -1 });
+        
+        if (!payment) {
+            return res.status(200).json(null);
+        }
+        
+        res.status(200).json(payment);
+    } catch (err) {
+        console.error("SkillsMind Dashboard Status Error:", err.message);
+        res.status(500).json({ message: "Server Error", error: err.message });
+    }
+});
+
 router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
     try {
-        const { studentName, studentEmail, studentCnic, courseName, courseId, transactionId, amount, paymentMethod, enrollmentMode, previousPaymentId } = req.body;
+        const { studentName, studentEmail, studentCnic, courseName, courseId, transactionId, amount, paymentMethod, enrollmentMode, previousPaymentId, enrollmentId } = req.body;
         
         let receiptPath = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
@@ -259,6 +324,20 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
             return res.status(404).json({ 
                 success: false, 
                 message: 'Student not found. Please register first.' 
+            });
+        }
+        
+        // 🔥 CHECK: If there's already a pending payment for this course, don't allow duplicate
+        const existingPending = await Payment.findOne({
+            studentEmail: studentEmail,
+            courseId: courseId,
+            status: 'pending'
+        });
+        
+        if (existingPending && !previousPaymentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'You already have a pending payment for this course. Please wait for admin approval.'
             });
         }
         
@@ -282,7 +361,8 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
             amount, 
             paymentMethod,
             transactionReceipt: receiptPath,
-            status: 'pending'
+            status: 'pending',
+            enrollmentId: enrollmentId // Link to LiveEnrollment if provided
         });
 
         await newPayment.save();
@@ -310,25 +390,6 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
     } catch (error) {
         console.error("Payment submission error:", error);
         res.status(500).json({ message: 'Error saving payment', error: error.message });
-    }
-});
-
-// Get payment status
-router.get('/my-status/:email', async (req, res) => {
-    try {
-        const studentEmail = req.params.email;
-        const payment = await Payment.findOne({ studentEmail: studentEmail })
-            .populate('studentId', 'name email')
-            .sort({ createdAt: -1 });
-        
-        if (!payment) {
-            return res.status(200).json(null);
-        }
-        
-        res.status(200).json(payment);
-    } catch (err) {
-        console.error("SkillsMind Dashboard Status Error:", err.message);
-        res.status(500).json({ message: "Server Error", error: err.message });
     }
 });
 

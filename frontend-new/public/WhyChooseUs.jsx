@@ -21,25 +21,24 @@ const WhyChooseUs = () => {
 
   const fullText = "We don't just teach code; we build careers. Our holistic approach combines theoretical knowledge with hands-on projects.";
 
-  // IMAGES FROM PUBLIC FOLDER (ROOT)
   const cardImages = [
     {
-      src: "/Mentor.PNG",
+      src: "Public/Mentor.PNG",
       label: "Expert Teaching",
       icon: <Star size={14} fill="rgb(209, 10, 23)" color="rgb(209, 10, 23)" />
     },
     {
-      src: "/Course.png",
+      src: "public/Course.png",
       label: "Weekly Tasks",
       icon: <Clock size={14} color="#000B29" />
     },
     {
-      src: "/image.png",
+      src: "public/image.png",
       label: "Credit Transfer",
       icon: <Users size={14} color="#000B29" />
     },
     {
-      src: "/Certificate.png",
+      src: "public/Certificate.png",
       label: "Certification",
       icon: <Award size={14} color="rgb(209, 10, 23)" />
     }
@@ -105,6 +104,7 @@ const WhyChooseUs = () => {
           <div className="clear-image-side">
             <div className="left-image-wrapper">
               
+              {/* Left Aligned Image Container */}
               <div className="left-image-box">
                 {cardImages.map((img, index) => (
                   <div 
@@ -116,15 +116,18 @@ const WhyChooseUs = () => {
                 ))}
               </div>
               
+              {/* Tag */}
               <div className="floating-tag">
                 {cardImages[activeCard].icon}
                 <span>{cardImages[activeCard].label}</span>
               </div>
               
+              {/* Play Button */}
               <button className="floating-play-btn">
                 <Play size={24} fill="white" />
               </button>
               
+              {/* Dots */}
               <div className="floating-dots">
                 {cardImages.map((_, idx) => (
                   <button 
