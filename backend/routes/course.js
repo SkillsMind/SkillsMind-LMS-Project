@@ -4,108 +4,32 @@ const multer = require('multer');
 const path = require('path');
 const Course = require('../models/Course');
 const fs = require('fs');
+const { uploadToCloudinary } = require('../utils/cloudinary');
+const cloudinaryUpload = require('../middleware/cloudinaryUpload');
 
-// --- SKILLSMIND MULTER CONFIGURATION ---
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        let dest = 'uploads/';
-        if (file.fieldname === 'instructorIntroVideo' || file.fieldname === 'courseVideo') {
-            dest = 'uploads/videos/';
-        }
-        
-        if (!fs.existsSync(dest)) {
-            fs.mkdirSync(dest, { recursive: true });
-        }
-        cb(null, dest);
-    },
-    filename: (req, file, cb) => {
-        cb(null, 'SkillsMind-' + Date.now() + '-' + file.originalname.replace(/\s+/g, '-'));
+// Helper: Upload to Cloudinary (with better error handling)
+const uploadToCloudinaryHelper = async (file, folder) => {
+    if (!file) {
+        console.log(`⚠️ No file provided for ${folder}`);
+        return null;
     }
-});
-
-const upload = multer({ 
-    storage,
-    limits: { fileSize: 100 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('SkillsMind: Only Images and Videos are allowed!'), false);
-        }
+    
+    // 🔥 FIX: Check if buffer exists (for memory storage)
+    if (!file.buffer) {
+        console.log(`⚠️ No buffer for ${folder}, file may be from disk storage`);
+        return null;
     }
-});
-
-// ==========================================
-// 🔥 SPECIFIC ROUTES FIRST (Pehle yeh chalenge)
-// ==========================================
-
-// GET /api/courses/for-notebook
-router.get('/for-notebook', async (req, res) => {
+    
     try {
-        const courses = await Course.find({ isHide: false })
-            .select('_id title category')
-            .sort({ title: 1 });
-        
-        const formattedCourses = courses.map(c => ({
-            _id: c._id,
-            code: c.category ? c.category.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100) : 'GEN' + Math.floor(Math.random() * 100),
-            name: c.title,
-            category: c.category
-        }));
-
-        res.json({
-            success: true,
-            count: formattedCourses.length,
-            data: formattedCourses
-        });
-    } catch (err) {
-        console.error("Courses for notebook error:", err);
-        res.status(500).json({ success: false, error: err.message });
+        console.log(`📤 Uploading to Cloudinary: ${folder}, file size: ${file.buffer.length} bytes, type: ${file.mimetype}`);
+        const result = await uploadToCloudinary(file.buffer, folder);
+        console.log(`✅ Uploaded to Cloudinary: ${result.secure_url}`);
+        return result.secure_url;
+    } catch (error) {
+        console.error(`❌ Cloudinary upload error to ${folder}:`, error.message);
+        return null;
     }
-});
-
-// GET /api/courses/for-assignments
-router.get('/for-assignments', async (req, res) => {
-    try {
-        const courses = await Course.find({ isHide: false })
-            .select('_id title category enrolledStudentIds')
-            .sort({ title: 1 });
-
-        res.json({
-            success: true,
-            courses: courses.map(c => ({
-                _id: c._id,
-                title: c.title,
-                category: c.category,
-                enrolledCount: c.enrolledStudentIds?.length || 0
-            }))
-        });
-    } catch (err) {
-        console.error("Courses for assignments error:", err);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// GET /api/courses/simple/list
-router.get('/simple/list', async (req, res) => {
-    try {
-        const courses = await Course.find({ isHide: false })
-            .select('_id title category enrolledStudentIds')
-            .sort({ title: 1 });
-        
-        res.json({
-            success: true,
-            courses: courses.map(c => ({
-                _id: c._id,
-                title: c.title,
-                category: c.category,
-                enrolledCount: c.enrolledStudentIds?.length || 0
-            }))
-        });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+};
 
 // ==========================================
 // 🔥 GET ALL COURSES
@@ -122,16 +46,17 @@ router.get(['/', '/all'], async (req, res) => {
 });
 
 // ==========================================
-// 🔥 ADD NEW COURSE
+// 🔥 ADD NEW COURSE (Cloudinary Upload)
 // ==========================================
-router.post('/add', upload.fields([
+router.post('/add', cloudinaryUpload.fields([
     { name: 'thumbnail', maxCount: 1 },
     { name: 'profilePic', maxCount: 1 },
     { name: 'courseVideo', maxCount: 1 },
     { name: 'instructorIntroVideo', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        console.log('📚 Adding new course...');
+        console.log('📚 Adding new course with Cloudinary...');
+        console.log('Files received:', req.files ? Object.keys(req.files) : 'No files');
         
         let instructorData = {};
         let syllabusData = [];
@@ -143,31 +68,41 @@ router.post('/add', upload.fields([
             console.log('Parse error:', e.message);
         }
 
-        const fixPath = (fileArr, folder) => {
-            if (fileArr && fileArr[0]) {
-                return `/${folder}${fileArr[0].filename}`.replace(/\\/g, '/').replace(/\/+/g, '/');
-            }
-            return '';
-        };
+        // Upload files to Cloudinary
+        const thumbnailUrl = req.files?.['thumbnail']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['thumbnail'][0], 'courses/thumbnails') 
+            : null;
+        
+        const courseVideoUrl = req.files?.['courseVideo']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['courseVideo'][0], 'courses/videos') 
+            : null;
+        
+        const profilePicUrl = req.files?.['profilePic']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['profilePic'][0], 'instructors/profiles') 
+            : null;
+        
+        const introVideoUrl = req.files?.['instructorIntroVideo']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['instructorIntroVideo'][0], 'instructors/videos') 
+            : null;
 
         const courseFields = {
             title: req.body.title,
-            description: req.body.description,
+            description: req.body.description || '',
             price: Number(req.body.price),
-            duration: req.body.duration,
-            level: req.body.level,
+            duration: req.body.duration || '3 Months',
+            level: req.body.level || 'Beginner',
             category: req.body.category,
-            badge: req.body.badge,
-            videoUrl: req.body.videoUrl, 
-            thumbnail: fixPath(req.files['thumbnail'], 'uploads/'),
-            videoFile: fixPath(req.files['courseVideo'], 'uploads/videos/'),
+            badge: req.body.badge || 'Premium',
+            videoUrl: req.body.videoUrl || '',
+            thumbnail: thumbnailUrl || '',
+            videoFile: courseVideoUrl || '',
             instructor: {
                 name: instructorData.name || '',
                 bio: instructorData.bio || '',
                 expertise: instructorData.expertise || [],
                 studentsTaught: instructorData.studentsTaught || 0,
-                profilePic: fixPath(req.files['profilePic'], 'uploads/'),
-                introVideoFile: fixPath(req.files['instructorIntroVideo'], 'uploads/videos/'),
+                profilePic: profilePicUrl || '',
+                introVideoFile: introVideoUrl || '',
                 introVideoUrl: instructorData.introVideoUrl || ''
             },
             syllabus: syllabusData,
@@ -176,8 +111,17 @@ router.post('/add', upload.fields([
 
         const newCourse = new Course(courseFields);
         await newCourse.save();
-        console.log('✅ Course added:', newCourse.title);
-        res.status(201).json({ success: true, message: "🚀 SkillsMind: Course Launched!" });
+        
+        console.log('✅ Course added successfully:', newCourse.title);
+        console.log('   Thumbnail:', thumbnailUrl);
+        console.log('   Video:', courseVideoUrl);
+        
+        res.status(201).json({ 
+            success: true, 
+            message: "🚀 SkillsMind: Course Launched!", 
+            course: newCourse 
+        });
+        
     } catch (err) {
         console.error("Save Error:", err);
         res.status(500).json({ success: false, error: err.message });
@@ -185,9 +129,9 @@ router.post('/add', upload.fields([
 });
 
 // ==========================================
-// 🔥 UPDATE / EDIT COURSE (FIXED)
+// 🔥 UPDATE COURSE
 // ==========================================
-router.put('/:id', upload.fields([
+router.put('/:id', cloudinaryUpload.fields([
     { name: 'thumbnail', maxCount: 1 },
     { name: 'profilePic', maxCount: 1 },
     { name: 'courseVideo', maxCount: 1 },
@@ -197,13 +141,11 @@ router.put('/:id', upload.fields([
         const { id } = req.params;
         console.log('✏️ Updating course:', id);
         
-        // Check if course exists
         let course = await Course.findById(id);
         if (!course) {
             return res.status(404).json({ success: false, message: "Course not found" });
         }
 
-        // Parse JSON fields
         let instructorData = {};
         let syllabusData = [];
         
@@ -222,14 +164,23 @@ router.put('/:id', upload.fields([
             console.log('Parse error:', e.message);
         }
 
-        const fixPath = (fileArr, folder, oldPath) => {
-            if (fileArr && fileArr[0]) {
-                return `/${folder}${fileArr[0].filename}`.replace(/\\/g, '/').replace(/\/+/g, '/');
-            }
-            return oldPath;
-        };
+        // Upload new files to Cloudinary if provided
+        const thumbnailUrl = req.files?.['thumbnail']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['thumbnail'][0], 'courses/thumbnails') 
+            : course.thumbnail;
+        
+        const courseVideoUrl = req.files?.['courseVideo']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['courseVideo'][0], 'courses/videos') 
+            : course.videoFile;
+        
+        const profilePicUrl = req.files?.['profilePic']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['profilePic'][0], 'instructors/profiles') 
+            : course.instructor?.profilePic;
+        
+        const introVideoUrl = req.files?.['instructorIntroVideo']?.[0] 
+            ? await uploadToCloudinaryHelper(req.files['instructorIntroVideo'][0], 'instructors/videos') 
+            : course.instructor?.introVideoFile;
 
-        // Build update data
         const updateData = {
             title: req.body.title || course.title,
             description: req.body.description || course.description,
@@ -239,35 +190,21 @@ router.put('/:id', upload.fields([
             category: req.body.category || course.category,
             badge: req.body.badge || course.badge,
             videoUrl: req.body.videoUrl !== undefined ? req.body.videoUrl : course.videoUrl,
+            thumbnail: thumbnailUrl,
+            videoFile: courseVideoUrl,
             instructor: {
                 name: instructorData.name || course.instructor?.name || '',
                 bio: instructorData.bio || course.instructor?.bio || '',
                 expertise: instructorData.expertise || course.instructor?.expertise || [],
                 studentsTaught: instructorData.studentsTaught || course.instructor?.studentsTaught || 0,
                 introVideoUrl: instructorData.introVideoUrl || course.instructor?.introVideoUrl || '',
-                profilePic: fixPath(req.files['profilePic'], 'uploads/', course.instructor?.profilePic || ''),
-                introVideoFile: fixPath(req.files['instructorIntroVideo'], 'uploads/videos/', course.instructor?.introVideoFile || '')
+                profilePic: profilePicUrl,
+                introVideoFile: introVideoUrl
             }
         };
 
-        // Handle thumbnail and video file updates
-        if (req.files['thumbnail']) {
-            updateData.thumbnail = fixPath(req.files['thumbnail'], 'uploads/', '');
-        } else {
-            updateData.thumbnail = course.thumbnail;
-        }
-        
-        if (req.files['courseVideo']) {
-            updateData.videoFile = fixPath(req.files['courseVideo'], 'uploads/videos/', '');
-        } else {
-            updateData.videoFile = course.videoFile;
-        }
-
-        // Update syllabus if provided
         if (syllabusData.length > 0) {
             updateData.syllabus = syllabusData;
-        } else {
-            updateData.syllabus = course.syllabus;
         }
 
         const updatedCourse = await Course.findByIdAndUpdate(
@@ -289,71 +226,98 @@ router.put('/:id', upload.fields([
     }
 });
 
-// ==========================================
-// 🔥 TOGGLE HIDE/UNHIDE
-// ==========================================
+// Toggle Hide/Unhide
 router.patch('/toggle-hide/:id', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
-        if (!course) {
-            return res.status(404).json({ success: false, message: "Course not found" });
-        }
-
+        if (!course) return res.status(404).json({ success: false });
         course.isHide = !course.isHide;
         await course.save();
-
-        res.status(200).json({ 
-            success: true, 
-            message: `SkillsMind: Course ${course.isHide ? 'Hidden' : 'Visible'}`, 
-            isHide: course.isHide 
-        });
+        res.json({ success: true, isHide: course.isHide });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// ==========================================
-// 🔥 DELETE COURSE
-// ==========================================
+// Delete Course
 router.delete('/:id', async (req, res) => {
     try {
         await Course.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: "SkillsMind: Course Deleted Successfully" });
+        res.json({ success: true, message: "Course deleted" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// ==========================================
-// 🔥 GET SINGLE COURSE BY ID (Last mein)
-// ==========================================
+// Get Single Course
 router.get('/:id', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
-        if (!course) {
-            return res.status(404).json({ success: false, message: "SkillsMind: Course not found" });
-        }
-        res.status(200).json(course);
+        if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+        res.json(course);
     } catch (err) {
-        console.error("SkillsMind Single Fetch Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// GET /api/courses/:id/students
-router.get('/:id/students', async (req, res) => {
+// For Notebook
+router.get('/for-notebook', async (req, res) => {
     try {
-        const course = await Course.findById(req.params.id)
-            .populate('enrolledStudentIds', 'name email');
+        const courses = await Course.find({ isHide: false }).select('_id title category').sort({ title: 1 });
+        const formattedCourses = courses.map(c => ({
+            _id: c._id,
+            code: c.category ? c.category.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100) : 'GEN' + Math.floor(Math.random() * 100),
+            name: c.title,
+            category: c.category
+        }));
+        res.json({ success: true, count: formattedCourses.length, data: formattedCourses });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
-        if (!course) {
-            return res.status(404).json({ success: false, error: 'Course not found' });
-        }
-
+// For Assignments
+router.get('/for-assignments', async (req, res) => {
+    try {
+        const courses = await Course.find({ isHide: false }).select('_id title category enrolledStudentIds').sort({ title: 1 });
         res.json({
             success: true,
-            students: course.enrolledStudentIds || []
+            courses: courses.map(c => ({
+                _id: c._id,
+                title: c.title,
+                category: c.category,
+                enrolledCount: c.enrolledStudentIds?.length || 0
+            }))
         });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Simple List
+router.get('/simple/list', async (req, res) => {
+    try {
+        const courses = await Course.find({ isHide: false }).select('_id title category enrolledStudentIds').sort({ title: 1 });
+        res.json({
+            success: true,
+            courses: courses.map(c => ({
+                _id: c._id,
+                title: c.title,
+                category: c.category,
+                enrolledCount: c.enrolledStudentIds?.length || 0
+            }))
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Get Students by Course
+router.get('/:id/students', async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id).populate('enrolledStudentIds', 'name email');
+        if (!course) return res.status(404).json({ success: false, error: 'Course not found' });
+        res.json({ success: true, students: course.enrolledStudentIds || [] });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

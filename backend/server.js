@@ -7,7 +7,16 @@ const fs = require('fs');
 const http = require('http');        
 const socketIo = require('socket.io');
 
+// Load environment variables FIRST
 dotenv.config();
+
+// 🔥 DEBUG: Check if Cloudinary env variables are loaded
+console.log('🔧 Environment Check:');
+console.log('   CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME || '❌ Not Set');
+console.log('   CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '✅ Present' : '❌ Not Set');
+console.log('   CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '✅ Present' : '❌ Not Set');
+console.log('   MONGO_URI:', process.env.MONGO_URI ? '✅ Present' : '❌ Not Set');
+
 const app = express();
 
 // Create HTTP server for Socket.IO
@@ -106,10 +115,7 @@ app.use('/api/auth', safeRoute('./routes/auth', 'Auth'));
 app.use('/api/student-profile', safeRoute('./routes/profile', 'Profile'));
 app.use('/api/profile', safeRoute('./routes/profile', 'Profile'));
 app.use('/api/students', safeRoute('./routes/studentRegisterRoutes', 'Students'));
-
-// ✅ FIXED: Changed from './routes/LiveEnrollment' to './routes/liveEnrollRoute'
 app.use('/api/enroll', safeRoute('./routes/liveEnrollRoute', 'Enrollment'));
-
 app.use('/api/courses', safeRoute('./routes/course', 'Courses'));
 app.use('/api/payments', safeRoute('./routes/Paymentreceived', 'Payments'));
 app.use('/api/student-dashboard', safeRoute('./routes/studentDashboard', 'Student Dashboard'));
@@ -124,8 +130,6 @@ app.use('/api/notes', safeRoute('./routes/notes', 'Notes'));
 app.use('/api/schedules', safeRoute('./routes/schedules', 'Schedules'));
 app.use('/api/zoom', safeRoute('./routes/zoom', 'Zoom'));
 app.use('/api/attendance-new', safeRoute('./routes/attendance', 'Attendance New'));
-
-// ✅ NEW: Contact Routes (For Contact Form)
 app.use('/api/contact', safeRoute('./routes/contact', 'Contact'));
 
 // Important Links
