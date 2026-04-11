@@ -57,9 +57,9 @@ const HowItWorks = () => {
 
   // Stats data
   const stats = [
-    { number: '10,000+', label: 'Active Students', icon: <FaUserGraduate /> },
-    { number: '50+', label: 'Expert Instructors', icon: <FaChalkboardTeacher /> },
-    { number: '100+', label: 'Premium Courses', icon: <FaLaptopCode /> },
+    { number: '250+', label: 'Active Students', icon: <FaUserGraduate /> },
+    { number: '4+', label: 'Expert Instructors', icon: <FaChalkboardTeacher /> },
+    { number: '8+', label: 'Premium Courses', icon: <FaLaptopCode /> },
     { number: '95%', label: 'Success Rate', icon: <FaStar /> }
   ];
 
