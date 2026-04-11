@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage,
-    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+    limits: { fileSize: 100 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/')) {
             cb(null, true);
@@ -36,17 +36,16 @@ const upload = multer({
 });
 
 // ==========================================
-// 🔥 FIXED: SPECIFIC ROUTES FIRST (Pehle yeh chalenge)
+// 🔥 SPECIFIC ROUTES FIRST (Pehle yeh chalenge)
 // ==========================================
 
-// 🆕 NOTEBOOK KE LIYE COURSES - Specific route pehle
+// GET /api/courses/for-notebook
 router.get('/for-notebook', async (req, res) => {
     try {
         const courses = await Course.find({ isHide: false })
             .select('_id title category')
             .sort({ title: 1 });
         
-        // Agar code field nahi hai toh title se generate karo
         const formattedCourses = courses.map(c => ({
             _id: c._id,
             code: c.category ? c.category.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100) : 'GEN' + Math.floor(Math.random() * 100),
@@ -65,11 +64,7 @@ router.get('/for-notebook', async (req, res) => {
     }
 });
 
-// ==========================================
-// 🔥 ASSIGNMENT KE LIYE COURSES (PUBLIC - No Auth Required)
-// ==========================================
-
-// GET /api/courses/for-assignments - Admin ke liye courses list
+// GET /api/courses/for-assignments
 router.get('/for-assignments', async (req, res) => {
     try {
         const courses = await Course.find({ isHide: false })
@@ -91,7 +86,7 @@ router.get('/for-assignments', async (req, res) => {
     }
 });
 
-// GET /api/courses/simple/list - Alternative endpoint
+// GET /api/courses/simple/list
 router.get('/simple/list', async (req, res) => {
     try {
         const courses = await Course.find({ isHide: false })
@@ -113,10 +108,8 @@ router.get('/simple/list', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 GENERIC ROUTES BAAD MEIN (Yeh last mein aayenge)
+// 🔥 GET ALL COURSES
 // ==========================================
-
-// 1. GET ALL COURSES (FIXED: Added '/all' to match your Frontend)
 router.get(['/', '/all'], async (req, res) => {
     try {
         const courses = await Course.find().sort({ createdAt: -1 });
@@ -128,7 +121,9 @@ router.get(['/', '/all'], async (req, res) => {
     }
 });
 
-// 2. ADD NEW COURSE
+// ==========================================
+// 🔥 ADD NEW COURSE
+// ==========================================
 router.post('/add', upload.fields([
     { name: 'thumbnail', maxCount: 1 },
     { name: 'profilePic', maxCount: 1 },
@@ -136,8 +131,17 @@ router.post('/add', upload.fields([
     { name: 'instructorIntroVideo', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const instructorData = req.body.instructor ? JSON.parse(req.body.instructor) : {};
-        const syllabusData = req.body.syllabus ? JSON.parse(req.body.syllabus) : [];
+        console.log('📚 Adding new course...');
+        
+        let instructorData = {};
+        let syllabusData = [];
+        
+        try {
+            instructorData = req.body.instructor ? JSON.parse(req.body.instructor) : {};
+            syllabusData = req.body.syllabus ? JSON.parse(req.body.syllabus) : [];
+        } catch (e) {
+            console.log('Parse error:', e.message);
+        }
 
         const fixPath = (fileArr, folder) => {
             if (fileArr && fileArr[0]) {
@@ -155,15 +159,16 @@ router.post('/add', upload.fields([
             category: req.body.category,
             badge: req.body.badge,
             videoUrl: req.body.videoUrl, 
-            
             thumbnail: fixPath(req.files['thumbnail'], 'uploads/'),
             videoFile: fixPath(req.files['courseVideo'], 'uploads/videos/'),
-            
             instructor: {
-                ...instructorData,
+                name: instructorData.name || '',
+                bio: instructorData.bio || '',
+                expertise: instructorData.expertise || [],
+                studentsTaught: instructorData.studentsTaught || 0,
                 profilePic: fixPath(req.files['profilePic'], 'uploads/'),
                 introVideoFile: fixPath(req.files['instructorIntroVideo'], 'uploads/videos/'),
-                introVideoUrl: instructorData.introVideoUrl
+                introVideoUrl: instructorData.introVideoUrl || ''
             },
             syllabus: syllabusData,
             isHide: false 
@@ -171,6 +176,7 @@ router.post('/add', upload.fields([
 
         const newCourse = new Course(courseFields);
         await newCourse.save();
+        console.log('✅ Course added:', newCourse.title);
         res.status(201).json({ success: true, message: "🚀 SkillsMind: Course Launched!" });
     } catch (err) {
         console.error("Save Error:", err);
@@ -178,7 +184,9 @@ router.post('/add', upload.fields([
     }
 });
 
-// 3. UPDATE / EDIT COURSE
+// ==========================================
+// 🔥 UPDATE / EDIT COURSE (FIXED)
+// ==========================================
 router.put('/:id', upload.fields([
     { name: 'thumbnail', maxCount: 1 },
     { name: 'profilePic', maxCount: 1 },
@@ -187,47 +195,109 @@ router.put('/:id', upload.fields([
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const instructorData = req.body.instructor ? JSON.parse(req.body.instructor) : {};
-        const syllabusData = req.body.syllabus ? JSON.parse(req.body.syllabus) : [];
-
-        let course = await Course.findById(id);
-        if (!course) return res.status(404).json({ success: false, message: "Course not found" });
-
-        const fixPath = (fileArr, folder) => {
-            if (fileArr && fileArr[0]) return `/${folder}${fileArr[0].filename}`.replace(/\\/g, '/').replace(/\/+/g, '/');
-            return null;
-        };
-
-        const updateData = {
-            ...req.body,
-            price: req.body.price ? Number(req.body.price) : course.price,
-            instructor: {
-                ...instructorData,
-                profilePic: fixPath(req.files['profilePic'], 'uploads/') || course.instructor.profilePic,
-                introVideoFile: fixPath(req.files['instructorIntroVideo'], 'uploads/videos/') || course.instructor.introVideoFile
-            },
-            syllabus: syllabusData.length > 0 ? syllabusData : course.syllabus
-        };
-
-        const newThumb = fixPath(req.files['thumbnail'], 'uploads/');
-        const newVideo = fixPath(req.files['courseVideo'], 'uploads/videos/');
+        console.log('✏️ Updating course:', id);
         
-        if (newThumb) updateData.thumbnail = newThumb;
-        if (newVideo) updateData.videoFile = newVideo;
+        // Check if course exists
+        let course = await Course.findById(id);
+        if (!course) {
+            return res.status(404).json({ success: false, message: "Course not found" });
+        }
 
-        const updatedCourse = await Course.findByIdAndUpdate(id, { $set: updateData }, { new: true });
+        // Parse JSON fields
+        let instructorData = {};
+        let syllabusData = [];
+        
+        try {
+            if (req.body.instructor) {
+                instructorData = typeof req.body.instructor === 'string' 
+                    ? JSON.parse(req.body.instructor) 
+                    : req.body.instructor;
+            }
+            if (req.body.syllabus) {
+                syllabusData = typeof req.body.syllabus === 'string' 
+                    ? JSON.parse(req.body.syllabus) 
+                    : req.body.syllabus;
+            }
+        } catch (e) {
+            console.log('Parse error:', e.message);
+        }
 
-        res.status(200).json({ success: true, message: "✅ SkillsMind: Course Updated!", course: updatedCourse });
+        const fixPath = (fileArr, folder, oldPath) => {
+            if (fileArr && fileArr[0]) {
+                return `/${folder}${fileArr[0].filename}`.replace(/\\/g, '/').replace(/\/+/g, '/');
+            }
+            return oldPath;
+        };
+
+        // Build update data
+        const updateData = {
+            title: req.body.title || course.title,
+            description: req.body.description || course.description,
+            price: req.body.price ? Number(req.body.price) : course.price,
+            duration: req.body.duration || course.duration,
+            level: req.body.level || course.level,
+            category: req.body.category || course.category,
+            badge: req.body.badge || course.badge,
+            videoUrl: req.body.videoUrl !== undefined ? req.body.videoUrl : course.videoUrl,
+            instructor: {
+                name: instructorData.name || course.instructor?.name || '',
+                bio: instructorData.bio || course.instructor?.bio || '',
+                expertise: instructorData.expertise || course.instructor?.expertise || [],
+                studentsTaught: instructorData.studentsTaught || course.instructor?.studentsTaught || 0,
+                introVideoUrl: instructorData.introVideoUrl || course.instructor?.introVideoUrl || '',
+                profilePic: fixPath(req.files['profilePic'], 'uploads/', course.instructor?.profilePic || ''),
+                introVideoFile: fixPath(req.files['instructorIntroVideo'], 'uploads/videos/', course.instructor?.introVideoFile || '')
+            }
+        };
+
+        // Handle thumbnail and video file updates
+        if (req.files['thumbnail']) {
+            updateData.thumbnail = fixPath(req.files['thumbnail'], 'uploads/', '');
+        } else {
+            updateData.thumbnail = course.thumbnail;
+        }
+        
+        if (req.files['courseVideo']) {
+            updateData.videoFile = fixPath(req.files['courseVideo'], 'uploads/videos/', '');
+        } else {
+            updateData.videoFile = course.videoFile;
+        }
+
+        // Update syllabus if provided
+        if (syllabusData.length > 0) {
+            updateData.syllabus = syllabusData;
+        } else {
+            updateData.syllabus = course.syllabus;
+        }
+
+        const updatedCourse = await Course.findByIdAndUpdate(
+            id, 
+            { $set: updateData }, 
+            { new: true, runValidators: true }
+        );
+
+        console.log('✅ Course updated:', updatedCourse.title);
+        res.status(200).json({ 
+            success: true, 
+            message: "✅ SkillsMind: Course Updated!", 
+            course: updatedCourse 
+        });
+        
     } catch (err) {
+        console.error('Update error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// 4. TOGGLE HIDE/UNHIDE
+// ==========================================
+// 🔥 TOGGLE HIDE/UNHIDE
+// ==========================================
 router.patch('/toggle-hide/:id', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
-        if (!course) return res.status(404).json({ success: false, message: "Course not found" });
+        if (!course) {
+            return res.status(404).json({ success: false, message: "Course not found" });
+        }
 
         course.isHide = !course.isHide;
         await course.save();
@@ -242,7 +312,9 @@ router.patch('/toggle-hide/:id', async (req, res) => {
     }
 });
 
-// 5. DELETE COURSE
+// ==========================================
+// 🔥 DELETE COURSE
+// ==========================================
 router.delete('/:id', async (req, res) => {
     try {
         await Course.findByIdAndDelete(req.params.id);
@@ -252,8 +324,9 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// --- NEW ROUTE FOR DYNAMIC PAYMENT PAGE DATA ---
-// 6. GET SINGLE COURSE BY ID (Yeh sabse last mein aayega taake /for-notebook waghera pehle catch ho)
+// ==========================================
+// 🔥 GET SINGLE COURSE BY ID (Last mein)
+// ==========================================
 router.get('/:id', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
@@ -267,7 +340,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// GET /api/courses/:id/students - Enrolled students list (Public for now)
+// GET /api/courses/:id/students
 router.get('/:id/students', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id)
