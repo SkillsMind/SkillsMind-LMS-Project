@@ -14,6 +14,12 @@ import {
 } from 'lucide-react';
 import './WhyChooseUs.css';
 
+// IMPORT IMAGES FROM ASSETS FOLDER
+import mentorImg from '../../assets/images/Mentor.PNG';
+import courseImg from '../../assets/images/Course.png';
+import imageImg from '../../assets/images/image.png';
+import certificateImg from '../../assets/images/Certificate.png';
+
 const WhyChooseUs = () => {
   const sectionRef = useRef(null);
   const [activeCard, setActiveCard] = useState(0);
@@ -23,22 +29,22 @@ const WhyChooseUs = () => {
 
   const cardImages = [
     {
-      src: "Public/Mentor.PNG",
+      src: mentorImg,
       label: "Expert Teaching",
       icon: <Star size={14} fill="rgb(209, 10, 23)" color="rgb(209, 10, 23)" />
     },
     {
-      src: "public/Course.png",
+      src: courseImg,
       label: "Weekly Tasks",
       icon: <Clock size={14} color="#000B29" />
     },
     {
-      src: "public/image.png",
+      src: imageImg,
       label: "Credit Transfer",
       icon: <Users size={14} color="#000B29" />
     },
     {
-      src: "public/Certificate.png",
+      src: certificateImg,
       label: "Certification",
       icon: <Award size={14} color="rgb(209, 10, 23)" />
     }
