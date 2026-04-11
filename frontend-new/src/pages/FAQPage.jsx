@@ -102,7 +102,7 @@ const FAQPage = () => {
     {
       name: 'Email',
       icon: <Mail size={24} />,
-      link: 'mailto:skillsmind786@gmail.com',
+      link: 'https://mail.google.com/mail/?view=cm&fs=1&to=skillsmind786@gmail.com',
       color: '#e30613',
       username: 'skillsmind786@gmail.com'
     }

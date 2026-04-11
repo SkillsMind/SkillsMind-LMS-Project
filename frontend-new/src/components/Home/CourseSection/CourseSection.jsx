@@ -28,7 +28,7 @@ import {
   Puzzle,
   Coffee
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './CourseSection.css';
 
@@ -164,6 +164,47 @@ const CourseSection = () => {
   const mobileContainerRef = useRef(null);
 
   const backendURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  // ============================================
+  // LOGIN CHECK FUNCTION
+  // ============================================
+  const isLoggedIn = () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    return token && userId;
+  };
+
+  // ============================================
+  // HANDLE COURSE CLICK / ENROLLMENT - FIXED SPELLING
+  // ============================================
+  const handleCourseNavigation = (courseId) => {
+    if (isLoggedIn()) {
+      navigate(`/get-enrolment?course=${courseId}&enroll=true`);
+    } else {
+      localStorage.setItem('redirectAfterLogin', `/get-enrolment?course=${courseId}&enroll=true`);
+      navigate('/login');
+    }
+  };
+
+  // Handle View All Courses Click - FIXED SPELLING
+  const handleViewAllCourses = () => {
+    if (isLoggedIn()) {
+      navigate('/get-enrolment');
+    } else {
+      localStorage.setItem('redirectAfterLogin', '/get-enrolment');
+      navigate('/login');
+    }
+  };
+
+  // AI Recommendation Enroll button - FIXED SPELLING
+  const handleAIEnroll = (courseId) => {
+    if (isLoggedIn()) {
+      navigate(`/get-enrolment?course=${courseId}&enroll=true`);
+    } else {
+      localStorage.setItem('redirectAfterLogin', `/get-enrolment?course=${courseId}&enroll=true`);
+      navigate('/login');
+    }
+  };
 
   const getImageUrl = (path) => {
     if (!path) return null;
@@ -417,11 +458,6 @@ const CourseSection = () => {
     setRecommendedCourse(null);
   };
 
-  // FIXED: Button ki jagah Link use karna taake page refresh na ho
-  const handleEnroll = (courseId) => {
-    navigate(`/get-enrollment?course=${courseId}&enroll=true`);
-  };
-
   const currentQuestion = aiQuestions[currentStep];
   const CurrentSectionIcon = currentQuestion?.sectionIcon || School;
   const CurrentQuestionIcon = currentQuestion?.icon || GraduationCap;
@@ -562,14 +598,13 @@ const CourseSection = () => {
                               <span>Rs. {category.price}</span>
                               <span>{category.duration}</span>
                             </div>
-                            {/* FIXED: Button ko Link se replace kiya */}
-                            <Link 
-                              to={`/get-enrollment?course=${category._id}`}
+                            <button 
+                              onClick={() => handleCourseNavigation(category._id)}
                               className="read-more-link"
                             >
                               Read More
                               <ArrowRight size={16} />
-                            </Link>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -624,14 +659,13 @@ const CourseSection = () => {
                           <span>•</span>
                           <span>{category.category}</span>
                         </div>
-                        {/* FIXED: Button ko Link se replace kiya */}
-                        <Link 
-                          to={`/get-enrollment?course=${category._id}`}
+                        <button 
+                          onClick={() => handleCourseNavigation(category._id)}
                           className="mobile-read-more"
                         >
                           Read More
                           <ArrowRight size={16} />
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   );
@@ -663,10 +697,10 @@ const CourseSection = () => {
         )}
 
         <div className="dual-buttons-wrapper">
-          <Link to="/get-enrollment" className="view-all-link">
+          <button onClick={handleViewAllCourses} className="view-all-link">
             View All Courses
             <ChevronRight size={18} />
-          </Link>
+          </button>
           {!showAIAssistant ? (
             <button onClick={openAIAssistant} className="ai-suggestion-link">
               <Sparkles size={18} />
@@ -783,7 +817,7 @@ const CourseSection = () => {
                           
                           <div className="ai-rec-actions-premium">
                             <button 
-                              onClick={() => handleEnroll(recommendedCourse._id)}
+                              onClick={() => handleAIEnroll(recommendedCourse._id)}
                               className="ai-enroll-btn-premium"
                             >
                               <span>Start Learning Now</span>

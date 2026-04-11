@@ -10,11 +10,12 @@ import Mentor from '../components/Home/Mentor/Mentor';
 import Account from '../components/Home/RegisterProcess/Account';
 import AboutUs from '../components/Home/AboutUs/AboutUs';
 
-import AIStudyAssistant from '../components/Home/AIStudyAssistant/AIStudyAssistant';
+// import AIStudyAssistant from '../components/Home/AIStudyAssistant/AIStudyAssistant'; ← HATA DO
+
 import Testimonials from '../components/Home/Testimonials/Testimonials';
-import MobileApp from '../components/Home/MobileApp/MobileApp';
+//import MobileApp from '../components/Home/MobileApp/MobileApp';
 import FAQ from '../components/Home/FAQ/FAQ';
-import Newsletter from '../components/Home/Newsletter/Newsletter';
+//import Newsletter from '../components/Home/Newsletter/Newsletter';
 import Footer from '../components/Home/Footer/Footer';
 
 const Home = () => {
@@ -31,11 +32,13 @@ const Home = () => {
       <Account />
       
       <AboutUs/>
-      <AIStudyAssistant />
+      {/* <AIStudyAssistant /> ← HATA DO */}
       <Testimonials />
-      <MobileApp />
+      
+      {/* <MobileApp /> ← HATA DO */}
       <FAQ />
-      <Newsletter />
+      
+      {/* Newsletter/> ← HATA DO */}
       <Footer />
     </main>
   );

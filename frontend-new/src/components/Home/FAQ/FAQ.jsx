@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { useScrollAnimation } from '../../../hooks/useScrollAnimation';
-import { ChevronDown, MessageCircle } from 'lucide-react';
+import { ChevronDown, MessageCircle, Headphones, Clock, Award } from 'lucide-react';
 import './FAQ.css';
 
 const FAQ = () => {
-  const sectionRef = useScrollAnimation();
   const [openIndex, setOpenIndex] = useState(0);
 
   const faqs = [
     {
       question: 'Are the certificates recognized by employers?',
-      answer: 'Yes! Our certificates are industry-recognized and trusted by top companies in Pakistan including Jazz, Careem, Telenor, and many multinational corporations. Each certificate includes a unique verification link.'
+      answer: 'Yes! Our certificates are industry-recognized and trusted by top companies in Pakistan including Jazz, Careem, Telenor, and many multinational corporations. Each certificate includes a unique verification link that employers can use to verify your credentials instantly.'
     },
     {
       question: 'Can I switch between live and recorded classes?',
@@ -22,7 +20,7 @@ const FAQ = () => {
     },
     {
       question: 'Do you provide job placement assistance?',
-      answer: 'Yes, our Premium plan includes comprehensive job placement assistance. This includes resume building, LinkedIn optimization, mock interviews, and direct referrals to our 150+ hiring partners.'
+      answer: 'Yes, our Premium plan includes comprehensive job placement assistance. This includes resume building, LinkedIn optimization, mock interviews with industry experts, and direct referrals to our 150+ hiring partners.'
     },
     {
       question: 'How does the AI Study Assistant work?',
@@ -34,30 +32,37 @@ const FAQ = () => {
     }
   ];
 
+  const handleContactClick = () => {
+    window.location.href = '/contact';
+  };
+
   return (
-    <section ref={sectionRef} className="faq-section" id="faqs">
+    <section className="faq-section" id="faqs">
       <div className="faq-container">
-        <div className="section-header reveal">
-          <div className="section-label">FAQ</div>
-          <h2 className="section-title">Frequently Asked Questions</h2>
-          <p className="section-subtitle">
+        {/* Header */}
+        <div className="faq-header">
+          <span className="faq-badge">FAQ</span>
+          <h2 className="faq-title">Frequently Asked <span>Questions</span></h2>
+          <p className="faq-description">
             Everything you need to know about SkillsMind
           </p>
         </div>
 
-        <div className="faq-content">
-          <div className="faq-list reveal">
+        {/* Main Content */}
+        <div className="faq-wrapper">
+          {/* Left Side - FAQ List */}
+          <div className="faq-left">
             {faqs.map((faq, index) => (
               <div 
                 key={index} 
-                className={`faq-item ${openIndex === index ? 'open' : ''}`}
+                className={`faq-card ${openIndex === index ? 'active' : ''}`}
               >
                 <button 
                   className="faq-question"
                   onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
                 >
                   <span>{faq.question}</span>
-                  <ChevronDown size={20} className="faq-icon" />
+                  <ChevronDown size={18} className="faq-arrow" />
                 </button>
                 <div className="faq-answer">
                   <p>{faq.answer}</p>
@@ -66,19 +71,27 @@ const FAQ = () => {
             ))}
           </div>
 
-          <div className="faq-cta reveal-right">
-            <div className="cta-card">
-              <div className="cta-icon">
-                <MessageCircle size={32} />
+          {/* Right Side - CTA Card */}
+          <div className="faq-right">
+            <div className="support-card">
+              <div className="support-icon">
+                <Headphones size={28} />
               </div>
               <h3>Still have questions?</h3>
-              <p>Can not find the answer you are looking for? Our support team is here to help!</p>
-              <button className="contact-support-btn">
-                Contact Support
+              <p>Can't find the answer you're looking for? Our support team is here to help!</p>
+              <button onClick={handleContactClick} className="support-btn">
+                <MessageCircle size={16} />
+                <span>Contact Support</span>
               </button>
-              <div className="response-time">
-                <span className="dot"></span>
-                Average response time: 2 hours
+              <div className="support-footer">
+                <div className="support-stat">
+                  <Clock size={12} />
+                  <span>Response within 2 hours</span>
+                </div>
+                <div className="support-stat">
+                  <Award size={12} />
+                  <span>98% satisfaction rate</span>
+                </div>
               </div>
             </div>
           </div>

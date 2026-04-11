@@ -1742,4 +1742,62 @@
   .read-more-link {
     font-size: 14px;
   }
+}/* Make buttons look like links but clickable */
+.read-more-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #E30613;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.read-more-link:hover {
+  gap: 10px;
+  color: #c00510;
+}
+
+.mobile-read-more {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #E30613;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  margin-top: 12px;
+  padding: 0;
+}
+
+.mobile-read-more:hover {
+  gap: 10px;
+  color: #c00510;
+}
+
+.view-all-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #000B29;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.view-all-link:hover {
+  gap: 10px;
+  color: #E30613;
 }

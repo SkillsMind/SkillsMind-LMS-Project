@@ -1,333 +1,239 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  X, Target, Eye, Lightbulb, Users, ChevronDown, ChevronUp,
-  Award, BookOpen, TrendingUp, CheckCircle, Star, Zap
-} from 'lucide-react';
+// AboutUs.js
+import React, { useState, useEffect } from 'react';
+import { useScrollAnimation } from '../../../hooks/useScrollAnimation';
+import { Target, Users, Award, Heart, TrendingUp, ChevronLeft, ChevronRight, ArrowRight, 
+  Code, Monitor, Database, Cloud, Shield, Zap, Globe, BookOpen, Video, Headphones, 
+  FileCode, Layout, Smartphone, Laptop, Cpu, Network, Terminal, GitBranch, 
+  Figma, ShoppingBag, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './AboutUs.css';
 
+// IMPORT IMAGES
+import founderImg from '../../../assets/images/founder.jpg';
+
 const AboutUs = () => {
-  const [activeCard, setActiveCard] = useState(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const expandRef = useRef(null);
-  const sectionRef = useRef(null);
+  const sectionRef = useScrollAnimation();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-    );
+  const isLoggedIn = () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    return token && userId;
+  };
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+  // Handle Explore Courses button click
+  const handleExploreCourses = () => {
+    if (isLoggedIn()) {
+      navigate('/get-enrolment');
+    } else {
+      localStorage.setItem('redirectAfterLogin', '/get-enrolment');
+      navigate('/login');
     }
+  };
 
-    return () => observer.disconnect();
-  }, []);
+  // Handle Tech Card Click
+  const handleTechCardClick = (courseTitle) => {
+    if (isLoggedIn()) {
+      localStorage.setItem('selectedCourse', courseTitle);
+      navigate('/get-enrolment');
+    } else {
+      localStorage.setItem('redirectAfterLogin', '/get-enrolment');
+      localStorage.setItem('selectedCourse', courseTitle);
+      navigate('/login');
+    }
+  };
 
-  const cards = [
-    {
-      id: 'vision',
-      icon: <Eye size={28} />,
-      title: 'Vision & Mission',
-      shortDesc: 'Meet our founder & our roadmap',
-      type: 'mentor',
-      content: {
-        image: '/mentor-ahmed.jpg',
-        name: 'Anas Iftikhar',
-        role: 'CO Founder Of SkillsMind',
-        vision: 'To make Pakistan a global hub for digital talent by 2030, where every student has access to world-class education regardless of their background.',
-        mission: 'Bridging the gap between academic learning and industry demands through practical, hands-on training that transforms beginners into professionals.'
-      }
+  const stats = [
+    { icon: Users, value: '250+', label: 'Students Trained' },
+    { icon: Award, value: '13+', label: 'Hiring Partners' },
+    { icon: TrendingUp, value: '92%', label: 'Placement Rate' },
+    { icon: Heart, value: '4.9', label: 'Student Rating' }
+  ];
+
+  // Tech Categories - With click handlers
+  const techCategories = [
+    { 
+      title: 'Web Development', 
+      icon: Code, 
+      color: '#E30613',
+      skills: ['HTML/CSS', 'JavaScript', 'React.js', 'Node.js', 'Next.js'],
+      courseId: 'web-development'
     },
-    {
-      id: 'whatis',
-      icon: <Lightbulb size={28} />,
-      title: 'What is SkillsMind?',
-      shortDesc: 'Discover our story & purpose',
-      type: 'info',
-      content: {
-        title: 'The SkillsMind Story',
-        subtitle: 'Born from Necessity',
-        points: [
-          { icon: <Zap size={20} />, text: 'Founded in 2024 by industry professionals who saw the gap between education and employment' },
-          { icon: <BookOpen size={20} />, text: 'Not just courses—complete career transformation programs' },
-          { icon: <Users size={20} />, text: 'Community-driven learning with peer collaboration' },
-          { icon: <Award size={20} />, text: 'Certificates recognized by top tech companies in Pakistan' }
-        ],
-        stats: [
-          { value: '50+', label: 'Industry Partners' },
-          { value: '100%', label: 'Practical Training' },
-          { value: '24/7', label: 'Mentor Support' }
-        ]
-      }
+    { 
+      title: 'Digital Marketing', 
+      icon: Megaphone, 
+      color: '#000B29',
+      skills: ['Google Ads', 'SEO', 'Meta Ads', 'Email Marketing'],
+      courseId: 'digital-marketing'
     },
-    {
-      id: 'whyus',
-      icon: <Target size={28} />,
-      title: 'Why SkillsMind?',
-      shortDesc: 'What makes us different',
-      type: 'features',
-      content: {
-        title: 'The SkillsMind Advantage',
-        features: [
-          { 
-            icon: <CheckCircle size={24} />, 
-            title: 'Learn by Doing',
-            desc: 'Real projects, not just theory. Build your portfolio while learning.'
-          },
-          { 
-            icon: <Star size={24} />, 
-            title: 'Expert Mentors',
-            desc: 'Learn from professionals working at top tech companies.'
-          },
-          { 
-            icon: <TrendingUp size={24} />, 
-            title: 'Job Guarantee',
-            desc: '90% of our graduates land jobs within 3 months of completion.'
-          },
-          { 
-            icon: <Zap size={24} />, 
-            title: 'Lifetime Access',
-            desc: 'Get lifetime access to course materials and community.'
-          }
-        ]
-      }
+    { 
+      title: 'UI/UX Design', 
+      icon: Figma, 
+      color: '#E30613',
+      skills: ['Figma', 'Adobe XD', 'User Research', 'Prototyping', 'Wireframing'],
+      courseId: 'ui-ux-design'
     },
-    {
-      id: 'join',
-      icon: <Users size={28} />,
-      title: 'Who Should Join?',
-      shortDesc: 'Is this program for you?',
-      type: 'audience',
-      content: {
-        title: 'Perfect For',
-        audiences: [
-          { icon: '🎓', title: 'Fresh Graduates', desc: 'Looking to start a career in tech' },
-          { icon: '🔄', title: 'Career Switchers', desc: 'Want to transition into digital roles' },
-          { icon: '💼', title: 'Freelancers', desc: 'Aiming to upskill and get better clients' },
-          { icon: '🚀', title: 'Entrepreneurs', desc: 'Building their own digital products' }
-        ],
-        note: 'No prior experience needed. Just bring your dedication and we will handle the rest.'
-      }
+    { 
+      title: 'Shopify', 
+      icon: ShoppingBag, 
+      color: '#000B29',
+      skills: ['Store Setup', 'Theme Customization', 'App Integration', 'Dropshipping'],
+      courseId: 'shopify'
     }
   ];
 
-  const handleCardClick = (id) => {
-    if (activeCard === id) {
-      setActiveCard(null);
-    } else {
-      setActiveCard(id);
-      setTimeout(() => {
-        if (expandRef.current) {
-          const yOffset = -100;
-          const element = expandRef.current;
-          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        }
-      }, 150);
-    }
-  };
-
-  const closeExpand = (e) => {
-    e.stopPropagation();
-    setActiveCard(null);
-  };
-
-  const renderExpandContent = (card) => {
-    switch (card.type) {
-      case 'mentor':
-        return (
-          <div className="detail-card mentor-layout animate-in">
-            <div className="detail-left">
-              <div className="image-frame">
-                <img 
-                  src={card.content.image} 
-                  alt={card.content.name}
-                  onError={(e) => {
-                    e.target.src = 'public/Mentor pic.jpeg';
-                  }}
-                />
-                <div className="image-overlay"></div>
-                <div className="person-info">
-                  <h4>{card.content.name}</h4>
-                  <span>{card.content.role}</span>
-                </div>
-              </div>
-            </div>
-            <div className="detail-right">
-              <div className="vision-block">
-                <div className="block-header">
-                  <Eye size={24} />
-                  <h3>Our Vision</h3>
-                </div>
-                <p>{card.content.vision}</p>
-              </div>
-              <div className="mission-block">
-                <div className="block-header">
-                  <Target size={24} />
-                  <h3>Our Mission</h3>
-                </div>
-                <p>{card.content.mission}</p>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'info':
-        return (
-          <div className="detail-card info-layout animate-in">
-            <div className="info-header">
-              <h3>{card.content.title}</h3>
-              <span className="subtitle">{card.content.subtitle}</span>
-            </div>
-            <div className="info-points">
-              {card.content.points.map((point, idx) => (
-                <div key={idx} className="info-point">
-                  <div className="point-icon">{point.icon}</div>
-                  <p>{point.text}</p>
-                </div>
-              ))}
-            </div>
-            <div className="info-stats">
-              {card.content.stats.map((stat, idx) => (
-                <div key={idx} className="info-stat">
-                  <span className="stat-value">{stat.value}</span>
-                  <span className="stat-label">{stat.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'features':
-        return (
-          <div className="detail-card features-layout animate-in">
-            <h3 className="features-title">{card.content.title}</h3>
-            <div className="features-grid">
-              {card.content.features.map((feature, idx) => (
-                <div key={idx} className="feature-item">
-                  <div className="feature-icon">{feature.icon}</div>
-                  <h4>{feature.title}</h4>
-                  <p>{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'audience':
-        return (
-          <div className="detail-card audience-layout animate-in">
-            <h3 className="audience-title">{card.content.title}</h3>
-            <div className="audience-grid">
-              {card.content.audiences.map((audience, idx) => (
-                <div key={idx} className="audience-item">
-                  <span className="audience-icon">{audience.icon}</span>
-                  <h4>{audience.title}</h4>
-                  <p>{audience.desc}</p>
-                </div>
-              ))}
-            </div>
-            <div className="audience-note">
-              <Zap size={20} />
-              <p>{card.content.note}</p>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const learningFeatures = [
+    { icon: Video, title: 'Live Interactive Classes', desc: 'Real-time learning with industry experts' },
+    { icon: FileCode, title: 'Hands-on Projects', desc: 'Build real-world applications' },
+    { icon: Headphones, title: '24/7 Mentorship', desc: 'Get help whenever you need' },
+    { icon: Award, title: 'Industry Certification', desc: 'Recognized by top companies' },
+    { icon: Zap, title: 'Fast-Track Learning', desc: 'Complete courses at your pace' },
+    { icon: Globe, title: 'Global Community', desc: 'Connect with learners worldwide' }
+  ];
 
   return (
-    <section className="about-section" id="about" ref={sectionRef}>
-      {/* Simple Animated Background */}
-      <div className="animated-bg">
-        <div className="bg-shape shape-1"></div>
-        <div className="bg-shape shape-2"></div>
-        <div className="bg-dots"></div>
-      </div>
-
+    <section ref={sectionRef} className="about-section" id="about">
       <div className="about-container">
-        {/* Left Side - Text Content */}
-        <div className={`about-left ${isVisible ? 'slide-in-left' : ''}`}>
-          <span className="section-tag">About Us</span>
-          <h2 className="about-title">
-            Welcome to <span className="highlight">SkillsMind</span>
-          </h2>
-          <p className="about-description">
-            We are just getting started, but our vision is crystal clear. SkillsMind is 
-            Pakistan's freshest platform for digital skills, built by mentors who actually 
-            work in the industry. No fluff, no outdated courses—just real skills that get 
-            you hired.
+        
+        {/* Hero Section */}
+        <div className="about-hero reveal">
+          <div className="hero-badge">About SkillsMind</div>
+          <h1 className="hero-title">
+            Pakistan's Premier 
+            <span> Online Learning Platform</span>
+          </h1>
+          <p className="hero-description">
+            Empowering youth with industry-ready skills since 2022
           </p>
-          <p className="about-subtext">
-            Whether you want to code, design, or market—we are here to guide you from 
-            absolute beginner to job-ready professional. Join our first batch and be 
-            part of something big from day one.
-          </p>
-          <div className="stats-row">
-            <div className="stat-item">
-              <span className="stat-number">10+</span>
-              <span className="stat-label">Expert Mentors</span>
+        </div>
+
+        {/* Vision & Mission */}
+        <div className="vision-mission-wrapper">
+          <div className="vision-text reveal-left">
+            <div className="section-label">Our Vision & Mission</div>
+            <h3 className="vm-title">Bridging the gap between <span>education and industry</span></h3>
+            <p className="vm-paragraph">
+              To become Pakistan's leading ed-tech platform that bridges the gap between 
+              academic education and industry requirements, creating skilled professionals 
+              who drive the nation's digital economy.
+            </p>
+            <p className="vm-paragraph second">
+              To provide accessible, high-quality, and job-oriented technical education 
+              to every aspiring student in Pakistan, empowering them with skills that 
+              guarantee career success and financial independence.
+            </p>
+            <div className="vm-stats">
+              {stats.map((stat, idx) => (
+                <div key={idx} className="vm-stat">
+                  <span className="vm-stat-value">{stat.value}</span>
+                  <span className="vm-stat-label">{stat.label}</span>
+                </div>
+              ))}
             </div>
-            <div className="stat-item">
-              <span className="stat-number">500+</span>
-              <span className="stat-label">Students Enrolled</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">95%</span>
-              <span className="stat-label">Success Rate</span>
+          </div>
+          
+          {/* Single Image Section - No Card, No Border, No Radius */}
+          <div className="vision-image reveal-right">
+            <img 
+              src={founderImg} 
+              alt="Mentor & Co-founder of SkillsMind" 
+              className="full-width-image"
+            />
+            <div className="image-caption">
+              <h4>Mentor & Co-founder of SkillsMind</h4>
+              <p>Leading the vision for Pakistan's digital future</p>
             </div>
           </div>
         </div>
 
-        {/* Right Side - Cards Grid */}
-        <div className={`about-right ${isVisible ? 'slide-in-right' : ''}`}>
-          <div className="cards-grid">
-            {cards.map((card, index) => (
-              <div
-                key={card.id}
-                className={`info-card ${activeCard === card.id ? 'active' : ''}`}
-                onClick={() => handleCardClick(card.id)}
-                style={{ animationDelay: `${index * 0.1}s` }}
+        {/* Tech Stack & Courses Section - CLICKABLE CARDS */}
+        <div className="tech-section">
+          <div className="section-header reveal">
+            <span className="section-badge">What You'll Learn</span>
+            <h2 className="section-title">Master <span>In-Demand Skills</span></h2>
+            <p className="section-subtitle">Click on any course to start your learning journey</p>
+          </div>
+
+          {/* Tech Categories Grid - CLICKABLE */}
+          <div className="tech-grid">
+            {techCategories.map((tech, index) => (
+              <div 
+                key={index} 
+                className={`tech-card clickable reveal-card delay-${index}`}
+                onClick={() => handleTechCardClick(tech.title)}
               >
-                <div className="card-icon">{card.icon}</div>
-                <h3 className="card-title">{card.title}</h3>
-                <p className="card-short">{card.shortDesc}</p>
-                <div className="card-hint">
-                  {activeCard === card.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                <div className="tech-icon" style={{ backgroundColor: tech.color }}>
+                  <tech.icon size={32} />
+                </div>
+                <h3>{tech.title}</h3>
+                <div className="tech-skills">
+                  {tech.skills.map((skill, i) => (
+                    <span key={i} className="skill-tag">{skill}</span>
+                  ))}
+                </div>
+                <div className="card-hover-effect">
+                  <span>Enroll Now →</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* Expandable Section */}
-      <div 
-        className={`expand-section ${activeCard ? 'expanded' : ''}`} 
-        ref={expandRef}
-      >
-        {activeCard && (
-          <div className="expand-content">
-            <button className="close-btn" onClick={closeExpand}>
-              <X size={24} />
-            </button>
-            {cards.map((card) => (
-              card.id === activeCard && (
-                <div key={card.id}>
-                  {renderExpandContent(card)}
+          {/* Learning Features Grid */}
+          <div className="features-graphics">
+            <div className="features-header">
+              <span className="features-badge">✨ The SkillsMind Experience</span>
+              <h3>Learn the Way You Want</h3>
+            </div>
+            <div className="features-grid-graphic">
+              {learningFeatures.map((feature, index) => (
+                <div key={index} className={`feature-graphic-card stagger-${index + 1}`}>
+                  <div className="feature-graphic-icon">
+                    <feature.icon size={24} />
+                  </div>
+                  <div className="feature-graphic-content">
+                    <h4>{feature.title}</h4>
+                    <p>{feature.desc}</p>
+                  </div>
                 </div>
-              )
-            ))}
+              ))}
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Journey Section */}
+        <div className="journey-section reveal">
+          <div className="journey-content">
+            <h3>Our Journey So Far</h3>
+            <div className="journey-stats">
+              <div className="journey-stat">
+                <span className="journey-number">2024</span>
+                <span className="journey-label">Founded</span>
+              </div>
+              <div className="journey-stat">
+                <span className="journey-number">8+</span>
+                <span className="journey-label">Courses</span>
+              </div>
+              <div className="journey-stat">
+                <span className="journey-number">4</span>
+                <span className="journey-label">Batches</span>
+              </div>
+              <div className="journey-stat">
+                <span className="journey-number">250+</span>
+                <span className="journey-label">Students</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="about-cta reveal">
+          <h3>Ready to Start Your Journey?</h3>
+          <p className="cta-subtitle">Join thousands of successful students who transformed their careers</p>
+          <button className="cta-button" onClick={handleExploreCourses}>
+            Explore Courses <ArrowRight size={18} />
+          </button>
+        </div>
+
       </div>
     </section>
   );
