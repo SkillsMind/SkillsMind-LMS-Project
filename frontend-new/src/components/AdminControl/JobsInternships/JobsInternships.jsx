@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
 import './JobsInternships.css';
 
 const JobsInternships = () => {
   const [jobs, setJobs] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -24,20 +26,102 @@ const JobsInternships = () => {
     deadline: ''
   });
 
-  const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+  const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+
+  const getToken = () => {
+    return localStorage.getItem('token') || 
+           localStorage.getItem('authToken') || 
+           localStorage.getItem('adminToken') ||
+           localStorage.getItem('accessToken');
+  };
+
+  const getAuthHeaders = () => ({
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+
+  // 🔥🔥🔥 CRITICAL FIX: Fetch courses directly with proper error handling
+  const fetchCoursesDirectly = async () => {
+    setCoursesLoading(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error('No token found');
+        setCoursesLoading(false);
+        return;
+      }
+      
+      // Try multiple endpoints to ensure courses load
+      let coursesData = [];
+      
+      // First try: /api/courses/all
+      try {
+        const res = await axios.get(`${API_URL}/courses/all`, getAuthHeaders());
+        if (Array.isArray(res.data)) {
+          coursesData = res.data;
+        } else if (res.data.success && Array.isArray(res.data.courses)) {
+          coursesData = res.data.courses;
+        } else if (res.data.courses) {
+          coursesData = res.data.courses;
+        }
+      } catch (err) {
+        console.log('First endpoint failed, trying second...');
+      }
+      
+      // Second try: /api/courses/for-assignments
+      if (coursesData.length === 0) {
+        try {
+          const res = await axios.get(`${API_URL}/courses/for-assignments`, getAuthHeaders());
+          if (res.data.courses && Array.isArray(res.data.courses)) {
+            coursesData = res.data.courses;
+          } else if (Array.isArray(res.data)) {
+            coursesData = res.data;
+          } else if (res.data.data && Array.isArray(res.data.data)) {
+            coursesData = res.data.data;
+          }
+        } catch (err) {
+          console.log('Second endpoint failed');
+        }
+      }
+      
+      // Third try: /api/courses (simple list)
+      if (coursesData.length === 0) {
+        try {
+          const res = await axios.get(`${API_URL}/courses`, getAuthHeaders());
+          if (Array.isArray(res.data)) {
+            coursesData = res.data;
+          } else if (res.data.courses && Array.isArray(res.data.courses)) {
+            coursesData = res.data.courses;
+          }
+        } catch (err) {
+          console.log('Third endpoint failed');
+        }
+      }
+      
+      // Format courses for dropdown
+      const formattedCourses = coursesData.map(c => ({
+        _id: c._id,
+        title: c.title || c.name || 'Untitled Course',
+        category: c.category
+      }));
+      
+      setCourses(formattedCourses);
+      console.log('✅ JobsInternships - Courses fetched:', formattedCourses.length);
+    } catch (err) {
+      console.error('Failed to fetch courses:', err);
+      setCourses([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchJobs();
-    fetchCourses();
+    fetchCoursesDirectly();
     
-    // 🔥 Real-time refresh every 10 seconds for admin
+    // Real-time refresh every 10 seconds for admin
     const interval = setInterval(fetchJobs, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const getAuthHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
 
   const fetchJobs = async () => {
     try {
@@ -47,31 +131,9 @@ const JobsInternships = () => {
       setJobs(res.data.data || []);
     } catch (error) {
       console.error('Error fetching jobs:', error);
-      alert('Error loading jobs: ' + (error.response?.data?.message || error.message));
       setJobs([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/courses/for-assignments`, getAuthHeaders());
-      console.log('Fetched courses:', res.data);
-      
-      let coursesData = [];
-      if (res.data.courses) {
-        coursesData = res.data.courses;
-      } else if (Array.isArray(res.data)) {
-        coursesData = res.data;
-      } else if (res.data.data) {
-        coursesData = res.data.data;
-      }
-      
-      setCourses(coursesData);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      setCourses([]);
     }
   };
 
@@ -284,30 +346,37 @@ const JobsInternships = () => {
           
           <div className="ji-form-group">
             <label>Relevant Courses *</label>
-            <select
-              multiple
-              value={formData.relevantCourses}
-              onChange={(e) => {
-                const values = Array.from(e.target.selectedOptions, o => o.value);
-                setFormData({...formData, relevantCourses: values});
-              }}
-              size="4"
-              required
-            >
-              {courses.length === 0 ? (
-                <option disabled>Loading courses...</option>
-              ) : (
-                courses.map(course => (
+            {coursesLoading ? (
+              <div className="ji-loading-courses">
+                <FaSpinner className="spin" /> Loading courses...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="ji-error-courses">
+                <FaExclamationTriangle /> No courses available. Please add courses first.
+              </div>
+            ) : (
+              <select
+                multiple
+                value={formData.relevantCourses}
+                onChange={(e) => {
+                  const values = Array.from(e.target.selectedOptions, o => o.value);
+                  setFormData({...formData, relevantCourses: values});
+                }}
+                size="4"
+                required
+                className="ji-course-select"
+              >
+                {courses.map(course => (
                   <option key={course._id} value={course._id}>
-                    {course.title || course.name || 'Untitled Course'}
+                    {course.title || 'Untitled Course'}
                   </option>
-                ))
-              )}
-            </select>
-            <small>
+                ))}
+              </select>
+            )}
+            <small className="ji-course-hint">
               {formData.relevantCourses.length > 0 
-                ? `${formData.relevantCourses.length} course(s) selected` 
-                : 'Select courses for which this opportunity is relevant'}
+                ? `✅ ${formData.relevantCourses.length} course(s) selected` 
+                : '⚠️ Select courses for which this opportunity is relevant'}
             </small>
           </div>
           
@@ -356,7 +425,7 @@ const JobsInternships = () => {
             <button 
               type="submit" 
               className="ji-btn ji-btn-primary"
-              disabled={submitting}
+              disabled={submitting || coursesLoading || courses.length === 0}
             >
               {submitting ? '⏳ Saving...' : (editingJob ? '💾 Update Opportunity' : '🚀 Post Opportunity')}
             </button>
@@ -499,6 +568,54 @@ const JobsInternships = () => {
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        .ji-loading-courses {
+          padding: 12px;
+          background: #f8fafc;
+          border-radius: 8px;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .ji-error-courses {
+          padding: 12px;
+          background: #fef2f2;
+          border-radius: 8px;
+          color: #dc2626;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+        }
+        
+        .ji-course-select {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 14px;
+          background: white;
+        }
+        
+        .ji-course-hint {
+          display: block;
+          margin-top: 6px;
+          font-size: 12px;
+          color: #64748b;
+        }
+      `}</style>
     </div>
   );
 };

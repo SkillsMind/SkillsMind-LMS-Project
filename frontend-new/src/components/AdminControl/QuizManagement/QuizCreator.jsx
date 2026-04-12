@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 // 🔥 FIXED: Import path sahi kiya hai
 import { adminAPI } from '../../../services/api';
 import toast from 'react-hot-toast';
 import { 
   FaPlus, FaTrash, FaSave, FaArrowLeft, FaSpinner,
   FaCheckCircle, FaTimesCircle, FaClock, FaStar,
-  FaQuestionCircle
+  FaQuestionCircle, FaExclamationTriangle
 } from 'react-icons/fa';
 import './QuizManager.css';
 
-const QuizCreator = ({ quiz, courses, onCancel, onSuccess }) => {
+const QuizCreator = ({ quiz, courses: propCourses, onCancel, onSuccess }) => {
   const isEdit = !!quiz;
+  
+  // 🔥 FIX: Local state for courses if prop is empty
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -40,6 +45,67 @@ const QuizCreator = ({ quiz, courses, onCancel, onSuccess }) => {
     background: '#ffffff',
     borderRadius: '8px'
   };
+
+  const getToken = () => {
+    return localStorage.getItem('token') || 
+           localStorage.getItem('authToken') || 
+           localStorage.getItem('adminToken') ||
+           localStorage.getItem('accessToken');
+  };
+
+  const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+
+  // 🔥🔥🔥 CRITICAL FIX: Fetch courses directly if prop is empty
+  const fetchCoursesDirectly = async () => {
+    setCoursesLoading(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error('No token found');
+        setCoursesLoading(false);
+        return;
+      }
+      
+      const res = await axios.get(`${API_BASE}/courses/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      let coursesData = [];
+      if (Array.isArray(res.data)) {
+        coursesData = res.data;
+      } else if (res.data.success && Array.isArray(res.data.courses)) {
+        coursesData = res.data.courses;
+      } else if (res.data.courses) {
+        coursesData = res.data.courses;
+      }
+      
+      // Format courses for dropdown
+      const formattedCourses = coursesData.map(c => ({
+        _id: c._id,
+        title: c.title,
+        category: c.category
+      }));
+      
+      setAvailableCourses(formattedCourses);
+      console.log('✅ QuizCreator - Courses fetched directly:', formattedCourses.length);
+    } catch (err) {
+      console.error('Failed to fetch courses:', err);
+      toast.error('Failed to load courses', { style: toastStyle });
+      setAvailableCourses([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
+
+  // Use prop courses if provided, otherwise fetch directly
+  useEffect(() => {
+    if (propCourses && propCourses.length > 0) {
+      setAvailableCourses(propCourses);
+      console.log('✅ QuizCreator - Using prop courses:', propCourses.length);
+    } else {
+      fetchCoursesDirectly();
+    }
+  }, [propCourses]);
 
   useEffect(() => {
     if (isEdit && quiz) {
@@ -177,6 +243,8 @@ const QuizCreator = ({ quiz, courses, onCancel, onSuccess }) => {
     return String.fromCharCode(65 + index);
   };
 
+  const selectedCourse = availableCourses.find(c => c._id === formData.courseId);
+
   return (
     <div className="form-container">
       <div className="form-header">
@@ -205,18 +273,27 @@ const QuizCreator = ({ quiz, courses, onCancel, onSuccess }) => {
 
           <div className="form-group">
             <label>Course *</label>
-            <select
-              value={formData.courseId}
-              onChange={(e) => setFormData({...formData, courseId: e.target.value})}
-              required
-            >
-              <option value="">-- Select Course --</option>
-              {courses.map(c => (
-                <option key={c._id} value={c._id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
+            {coursesLoading ? (
+              <div className="loading-field"><FaSpinner className="spin" /> Loading courses...</div>
+            ) : availableCourses.length === 0 ? (
+              <div className="error-field"><FaExclamationTriangle /> No courses available. Please add a course first.</div>
+            ) : (
+              <select
+                value={formData.courseId}
+                onChange={(e) => setFormData({...formData, courseId: e.target.value})}
+                required
+              >
+                <option value="">-- Select Course --</option>
+                {availableCourses.map(c => (
+                  <option key={c._id} value={c._id}>
+                    {c.title} {c.category ? `(${c.category})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+            {selectedCourse && (
+              <small className="course-hint">📚 {selectedCourse.title}</small>
+            )}
           </div>
 
           <div className="form-group">
@@ -398,6 +475,43 @@ const QuizCreator = ({ quiz, courses, onCancel, onSuccess }) => {
       <style jsx>{`
         .quiz-form {
           max-width: 900px;
+        }
+        
+        .loading-field {
+          padding: 12px;
+          background: #f8fafc;
+          border-radius: 8px;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .error-field {
+          padding: 12px;
+          background: #fef2f2;
+          border-radius: 8px;
+          color: #dc2626;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+        }
+        
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        .course-hint {
+          display: block;
+          margin-top: 4px;
+          font-size: 11px;
+          color: #10b981;
         }
         
         .questions-section {
