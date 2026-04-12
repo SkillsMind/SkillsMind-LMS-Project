@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Send, Instagram, MessageCircle, Headphones } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Mail, Send, Instagram, MessageCircle, Headphones, ChevronLeft, Home } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import './ContactUs.css';
 import visitImage from '../assets/visit-image.png';
 
 const ContactUs = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,6 +15,16 @@ const ContactUs = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle Back Button Click
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  // Handle Home Button Click
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,15 +59,27 @@ const ContactUs = () => {
   const socialLinks = [
     { name: 'WhatsApp', icon: <MessageCircle size={22} />, link: 'https://wa.me/923116735509', color: '#25D366' },
     { name: 'Instagram', icon: <Instagram size={22} />, link: 'https://instagram.com/skillsmind786', color: '#E4405F' },
-    { name: 'Email', icon: <Mail size={22} />,link: 'https://mail.google.com/mail/?view=cm&fs=1&to=skillsmind786@gmail.com',  color: '#e30613' }
+    { name: 'Email', icon: <Mail size={22} />,link: 'mailto:skillsmind786@gmail.com',  color: '#e30613' }
   ];
 
   return (
     <div className="contact-page">
       <Toaster position="top-center" />
       
-      {/* Hero Section */}
+      {/* Hero Section with Back & Home Buttons on LEFT SIDE */}
       <section className="contact-hero">
+        {/* 🔥 BUTTONS INSIDE HERO - TOP LEFT CORNER */}
+        <div className="hero-nav-buttons-left">
+          <button onClick={handleGoBack} className="hero-nav-btn back-btn" title="Go Back">
+            <ChevronLeft size={18} />
+            <span>Back</span>
+          </button>
+          <button onClick={handleGoHome} className="hero-nav-btn home-btn" title="Go to Home">
+            <Home size={18} />
+            <span>Home</span>
+          </button>
+        </div>
+
         <div className="contact-hero-overlay"></div>
         <div className="contact-hero-content">
           <motion.h1

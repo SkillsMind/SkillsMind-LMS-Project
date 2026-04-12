@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   FaUserGraduate, 
   FaChalkboardTeacher, 
@@ -10,11 +10,25 @@ import {
   FaStar, 
   FaPlayCircle, 
   FaRegClock, 
-  FaTrophy 
+  FaTrophy,
+  FaChevronLeft,
+  FaHome
 } from 'react-icons/fa';
 import './HowItWorks.css';
 
 const HowItWorks = () => {
+  const navigate = useNavigate();
+
+  // Handle Back Button Click
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  // Handle Home Button Click
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
   // Steps data
   const steps = [
     {
@@ -65,8 +79,21 @@ const HowItWorks = () => {
 
   return (
     <div className="howitworks-container">
-      {/* Hero Section */}
+      
+      {/* Hero Section with Back & Home Buttons on LEFT SIDE */}
       <section className="hiw-hero">
+        {/* 🔥 BUTTONS INSIDE HERO - TOP LEFT CORNER */}
+        <div className="hero-nav-buttons-left">
+          <button onClick={handleGoBack} className="hero-nav-btn back-btn" title="Go Back">
+            <FaChevronLeft size={16} />
+            <span>Back</span>
+          </button>
+          <button onClick={handleGoHome} className="hero-nav-btn home-btn" title="Go to Home">
+            <FaHome size={16} />
+            <span>Home</span>
+          </button>
+        </div>
+
         <div className="hiw-hero-overlay"></div>
         <div className="hiw-hero-content">
           <motion.h1 

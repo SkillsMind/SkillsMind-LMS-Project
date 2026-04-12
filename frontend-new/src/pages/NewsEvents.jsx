@@ -5,7 +5,7 @@ import {
   Trophy, CheckCircle, ArrowRight, TrendingUp, Briefcase, Code, 
   Zap, Target, BookOpen, Video, Headphones, Bell, Laptop, 
   Monitor, Smartphone, PenTool, ShoppingCart, Globe, Palette,
-  Newspaper, Sparkles
+  Newspaper, Sparkles, ChevronLeft, Home
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import './NewsEvents.css';
@@ -16,6 +16,16 @@ const NewsEvents = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Handle Back Button Click
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  // Handle Home Button Click
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   // Completed Batches Data
   const completedBatches = [
@@ -76,8 +86,21 @@ const NewsEvents = () => {
 
   return (
     <div className="news-events-page">
-      {/* Hero Section - Unique Design */}
+      
+      {/* Hero Section with Buttons Inside */}
       <section className="news-hero-unique">
+        {/* 🔥 BUTTONS INSIDE HERO - TOP RIGHT CORNER */}
+        <div className="hero-nav-buttons">
+          <button onClick={handleGoBack} className="hero-nav-btn back-btn" title="Go Back">
+            <ChevronLeft size={18} />
+            <span>Back</span>
+          </button>
+          <button onClick={handleGoHome} className="hero-nav-btn home-btn" title="Go to Home">
+            <Home size={18} />
+            <span>Home</span>
+          </button>
+        </div>
+
         <div className="hero-pattern"></div>
         <div className="hero-content-unique">
           <motion.div 

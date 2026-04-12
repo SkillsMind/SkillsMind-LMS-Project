@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDown, MessageCircle, Headphones, Mail, Clock, Award, 
   Users, BookOpen, Search, Phone, MessageSquare, Globe, 
-  Facebook, Twitter, Linkedin, Instagram 
+  Facebook, Twitter, Linkedin, Instagram, ChevronLeft, Home
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './FAQPage.css';
 
 const FAQPage = () => {
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -16,6 +17,16 @@ const FAQPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Handle Back Button Click
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  // Handle Home Button Click
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   const faqs = [
     {
@@ -102,7 +113,7 @@ const FAQPage = () => {
     {
       name: 'Email',
       icon: <Mail size={24} />,
-      link: 'https://mail.google.com/mail/?view=cm&fs=1&to=skillsmind786@gmail.com',
+      link: 'mailto:skillsmind786@gmail.com',
       color: '#e30613',
       username: 'skillsmind786@gmail.com'
     }
@@ -110,8 +121,21 @@ const FAQPage = () => {
 
   return (
     <div className="faq-page">
-      {/* Hero Section */}
+      
+      {/* Hero Section with Back & Home Buttons on LEFT SIDE */}
       <section className="faq-hero">
+        {/* 🔥 BUTTONS INSIDE HERO - TOP LEFT CORNER */}
+        <div className="hero-nav-buttons-left">
+          <button onClick={handleGoBack} className="hero-nav-btn back-btn" title="Go Back">
+            <ChevronLeft size={18} />
+            <span>Back</span>
+          </button>
+          <button onClick={handleGoHome} className="hero-nav-btn home-btn" title="Go to Home">
+            <Home size={18} />
+            <span>Home</span>
+          </button>
+        </div>
+
         <div className="faq-hero-overlay"></div>
         <div className="faq-hero-content">
           <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
