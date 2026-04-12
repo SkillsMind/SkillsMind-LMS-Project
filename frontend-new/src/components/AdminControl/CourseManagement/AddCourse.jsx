@@ -38,6 +38,53 @@ const AddCourse = () => {
         fontWeight: '500',
     };
 
+    // ==========================================
+    // 🔥 IMAGE COMPRESSION FUNCTION (FAST)
+    // ==========================================
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            // Skip if not image or already small (< 200KB)
+            if (!file.type.startsWith('image/') || file.size < 200 * 1024) {
+                resolve(file);
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    let width = img.width;
+                    let height = img.height;
+                    const maxWidth = 800;
+                    
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        const compressedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        console.log(`✅ Compressed: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
+                        toast.success(`Image compressed: ${(blob.size / 1024).toFixed(0)}KB`, { style: toastStyle });
+                        resolve(compressedFile);
+                    }, 'image/jpeg', 0.7);
+                };
+            };
+        });
+    };
+
     const fetchCourses = async () => {
         try {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/courses`);
@@ -68,9 +115,7 @@ const AddCourse = () => {
     const handleDelete = (id) => {
         toast((t) => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <span style={{ fontWeight: '600', color: '#1e293b' }}>
-                    SkillsMind: Are you sure you want to delete this course?
-                </span>
+                <span style={{ fontWeight: '600', color: '#1e293b' }}>SkillsMind: Are you sure you want to delete this course?</span>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                     <button onClick={() => toast.dismiss(t.id)} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>Cancel</button>
                     <button onClick={async () => {
@@ -115,15 +160,29 @@ const AddCourse = () => {
         setActiveStep(1);
     };
 
-    const handleFileChange = (e, field) => {
+    // ==========================================
+    // 🔥 FILE CHANGE WITH COMPRESSION
+    // ==========================================
+    const handleFileChange = async (e, field) => {
         if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
+            let file = e.target.files[0];
+            
+            // Compress images only (skip videos)
+            if (field === 'thumbnail' && file.type.startsWith('image/')) {
+                toast.loading("Compressing image...", { style: toastStyle });
+                file = await compressImage(file);
+            }
+            if (field === 'profilePic' && file.type.startsWith('image/')) {
+                toast.loading("Compressing image...", { style: toastStyle });
+                file = await compressImage(file);
+            }
+            
             if (field === 'thumbnail') setCourseData({ ...courseData, thumbnail: file });
             else if (field === 'profilePic') setCourseData({ ...courseData, instructor: { ...courseData.instructor, profilePic: file } });
             else if (field === 'videoFile') setCourseData({ ...courseData, videoFile: file });
             else if (field === 'instructorVideo') setCourseData({ ...courseData, instructor: { ...courseData.instructor, introVideoFile: file } });
             
-            toast.success(`${field} selected: ${file.name}`, { style: toastStyle });
+            toast.success(`${field} selected: ${file.name} (${(file.size / 1024).toFixed(0)}KB)`, { style: toastStyle });
         }
     };
 
@@ -147,7 +206,7 @@ const AddCourse = () => {
     };
 
     // ==========================================
-    // 🔥 FINAL SUBMIT - COMPLETELY FIXED
+    // 🔥 FINAL SUBMIT - OPTIMIZED
     // ==========================================
     const handleFinalSubmit = async (e) => {
         if (e) e.preventDefault();
@@ -173,25 +232,21 @@ const AddCourse = () => {
             formData.append('badge', courseData.badge || 'Premium');
             formData.append('videoUrl', courseData.videoUrl || '');
 
-            // Append files (MUST be File objects)
+            // Append files
             if (courseData.thumbnail && courseData.thumbnail instanceof File) {
                 formData.append('thumbnail', courseData.thumbnail);
-                console.log('📷 Thumbnail attached:', courseData.thumbnail.name, courseData.thumbnail.size);
             }
             
             if (courseData.videoFile && courseData.videoFile instanceof File) {
                 formData.append('courseVideo', courseData.videoFile);
-                console.log('🎥 Course video attached:', courseData.videoFile.name, courseData.videoFile.size);
             }
             
             if (courseData.instructor.profilePic && courseData.instructor.profilePic instanceof File) {
                 formData.append('profilePic', courseData.instructor.profilePic);
-                console.log('👤 Profile pic attached:', courseData.instructor.profilePic.name);
             }
             
             if (courseData.instructor.introVideoFile && courseData.instructor.introVideoFile instanceof File) {
                 formData.append('instructorIntroVideo', courseData.instructor.introVideoFile);
-                console.log('📹 Instructor video attached:', courseData.instructor.introVideoFile.name);
             }
 
             // Prepare instructor object
@@ -208,34 +263,16 @@ const AddCourse = () => {
             formData.append('instructor', JSON.stringify(instructorObj));
             formData.append('syllabus', JSON.stringify(courseData.syllabus));
 
-            // Debug log
-            console.log('📤 Submitting form data...');
-            for (let pair of formData.entries()) {
-                if (pair[1] instanceof File) {
-                    console.log(`   ${pair[0]}: [FILE] ${pair[1].name} (${pair[1].size} bytes)`);
-                } else {
-                    console.log(`   ${pair[0]}: ${pair[1]}`);
-                }
-            }
-
-            let response;
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
             
+            let response;
             if (isEditing) {
                 response = await axios.put(`${apiUrl}/api/courses/${isEditing}`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                    onUploadProgress: (progressEvent) => {
-                        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setUploadProgress({ ...uploadProgress, overall: percent });
-                    }
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
             } else {
                 response = await axios.post(`${apiUrl}/api/courses/add`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                    onUploadProgress: (progressEvent) => {
-                        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setUploadProgress({ ...uploadProgress, overall: percent });
-                    }
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
             }
             
@@ -346,15 +383,15 @@ const AddCourse = () => {
                                     </div>
                                     <div className="sm-file-upload-box">
                                         <label htmlFor="video-upload">
-                                            <FaVideo /> {courseData.videoFile ? `✓ ${courseData.videoFile.name}` : "Upload Intro Video"}
+                                            <FaVideo /> {courseData.videoFile ? `✓ ${courseData.videoFile.name}` : "Upload Intro Video (Optional)"}
                                         </label>
                                         <input id="video-upload" type="file" accept="video/mp4,video/mpeg,video/quicktime" onChange={(e) => handleFileChange(e, 'videoFile')} style={{ display: 'none' }} />
                                     </div>
                                 </div>
-                                <input type="text" placeholder="Or Intro Video URL (YouTube/Vimeo)" value={courseData.videoUrl} onChange={(e) => setCourseData({...courseData, videoUrl: e.target.value})} />
-                                {uploadProgress.overall > 0 && uploadProgress.overall < 100 && (
-                                    <div className="upload-progress">Uploading: {uploadProgress.overall}%</div>
-                                )}
+                                <input type="text" placeholder="Or Intro Video URL (YouTube/Vimeo) - Faster Option" value={courseData.videoUrl} onChange={(e) => setCourseData({...courseData, videoUrl: e.target.value})} />
+                                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
+                                    💡 Tip: Use YouTube link for faster course creation
+                                </p>
                             </div>
                         )}
 
@@ -370,7 +407,7 @@ const AddCourse = () => {
                                     </div>
                                     <div className="sm-file-upload-box">
                                         <label htmlFor="instr-video-upload">
-                                            <FaVideo /> {courseData.instructor.introVideoFile ? `✓ ${courseData.instructor.introVideoFile.name}` : "Upload Instructor Intro Video"}
+                                            <FaVideo /> {courseData.instructor.introVideoFile ? `✓ ${courseData.instructor.introVideoFile.name}` : "Upload Instructor Intro Video (Optional)"}
                                         </label>
                                         <input id="instr-video-upload" type="file" accept="video/mp4,video/mpeg" onChange={(e) => handleFileChange(e, 'instructorVideo')} style={{ display: 'none' }} />
                                     </div>
@@ -380,7 +417,7 @@ const AddCourse = () => {
                                     <input type="number" placeholder="Students Taught" value={courseData.instructor.studentsTaught} onChange={(e) => setCourseData({...courseData, instructor: {...courseData.instructor, studentsTaught: e.target.value}})} />
                                 </div>
                                 <div className="sm-input-row">
-                                    <input type="text" placeholder="Expertise (comma separated e.g., React, Node, MongoDB)" value={courseData.instructor.expertise} onChange={(e) => setCourseData({...courseData, instructor: {...courseData.instructor, expertise: e.target.value}})} />
+                                    <input type="text" placeholder="Expertise (comma separated)" value={courseData.instructor.expertise} onChange={(e) => setCourseData({...courseData, instructor: {...courseData.instructor, expertise: e.target.value}})} />
                                     <input type="text" placeholder="Instructor Intro Video URL" value={courseData.instructor.introVideoUrl} onChange={(e) => setCourseData({...courseData, instructor: {...courseData.instructor, introVideoUrl: e.target.value}})} />
                                 </div>
                                 <textarea placeholder="Instructor Bio..." value={courseData.instructor.bio} onChange={(e) => setCourseData({...courseData, instructor: {...courseData.instructor, bio: e.target.value}})} rows="3"></textarea>
