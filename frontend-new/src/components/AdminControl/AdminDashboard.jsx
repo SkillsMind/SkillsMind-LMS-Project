@@ -5,7 +5,8 @@ import {
   FaFilePdf, FaSearch, FaUserShield, FaTrash, FaExclamationTriangle,
   FaPlusCircle, FaCreditCard, FaUserGraduate,
   FaTasks, FaCalendarCheck, FaQuestionCircle,
-  FaChartBar, FaCalendarAlt, FaChevronDown, FaLink, FaBullhorn, FaBriefcase
+  FaChartBar, FaCalendarAlt, FaChevronDown, FaLink, FaBullhorn, FaBriefcase,
+  FaBars, FaTimes
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx'; 
@@ -22,12 +23,11 @@ import QuizManager from './QuizManagement/QuizManager';
 import QuizReport from './QuizManagement/QuizReport';
 import ScheduleManager from './ScheduleManagement/ScheduleManager';
 
-// 🔥 NEW: Dynamic System Imports
+// Dynamic System Imports
 import ImportantLinks from './ImportantLinks/ImportantLinks';
 import NoticeBoard from './NoticeBoard/NoticeBoard';
 import JobsInternships from './JobsInternships/JobsInternships';
 
-import logo from '../../assets/Skills_Mind_Logo.png'; 
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -36,11 +36,14 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
+  // Mobile menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   // Tabs management
   const [activeTab, setActiveTab] = useState("students"); 
   const [selectedQuizId, setSelectedQuizId] = useState(null);
   
-  // 🔥 NEW: Dropdown states
+  // Dropdown states
   const [showDynamicDropdown, setShowDynamicDropdown] = useState(false);
   const [activeDynamicTab, setActiveDynamicTab] = useState('importantLinks');
   
@@ -58,6 +61,17 @@ const AdminDashboard = () => {
     
     return () => document.body.classList.remove('admin-view-active');
   }, [activeTab]);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (mobileMenuOpen && !e.target.closest('.sm-sidebar') && !e.target.closest('.mobile-menu-toggle')) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [mobileMenuOpen]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -100,17 +114,15 @@ const AdminDashboard = () => {
     setActiveTab('quizzes');
   };
 
-  // 🔥 NEW: Handle Dynamic System Tab Click
   const handleDynamicTabClick = (tabName) => {
     setActiveDynamicTab(tabName);
     setActiveTab('dynamic');
     setShowDynamicDropdown(false);
+    setMobileMenuOpen(false);
   };
 
-  // 🔥 NEW: Check if dynamic tab is active
   const isDynamicActive = activeTab === 'dynamic';
 
-  // --- DELETE LOGIC ---
   const openDeleteModal = (id) => {
     setDeleteId(id);
     setShowModal(true);
@@ -135,7 +147,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- EXPORT LOGIC ---
   const downloadExcel = () => {
     const dataToExport = activeTab === 'students' ? filteredUsers : filteredProfiles;
     if (dataToExport.length === 0) return toast.error("No data to export!");
@@ -201,7 +212,11 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- SEARCH FILTERS ---
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
   const filteredUsers = users.filter(user => 
     (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
     (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -213,7 +228,6 @@ const AdminDashboard = () => {
     (p.city || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 🔥 NEW: Render Dynamic Content
   const renderDynamicContent = () => {
     switch(activeDynamicTab) {
       case 'importantLinks':
@@ -230,6 +244,17 @@ const AdminDashboard = () => {
   return (
     <div className="sm-dashboard-root">
       
+      {/* Mobile Menu Toggle Button */}
+      <button 
+        className="mobile-menu-toggle"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      >
+        {mobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+      </button>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)}></div>}
+
       {/* PROFESSIONAL DELETE MODAL */}
       {showModal && (
         <div className="sm-modal-overlay">
@@ -247,45 +272,59 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Sidebar */}
-      <aside className="sm-sidebar">
+      {/* Sidebar - Responsive */}
+      <aside className={`sm-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sm-sidebar-top">
-          <img src={logo} alt="SkillsMind" className="sm-logo" />
+          {/* Circle Logo */}
+          <div className="sm-logo-container">
+            <img 
+              src="/Skillsmind logo with blue.jpeg" 
+              alt="SkillsMind" 
+              className="sm-logo-circle"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.querySelector('.logo-fallback').style.display = 'flex';
+              }}
+            />
+            <div className="logo-fallback" style={{ display: 'none' }}>
+              <span>SM</span>
+            </div>
+          </div>
+          
           <div className="sm-nav-list">
-            <button className={`sm-tab-btn ${activeTab === 'students' ? 'active' : ''}`} onClick={() => setActiveTab('students')}>
+            <button className={`sm-tab-btn ${activeTab === 'students' ? 'active' : ''}`} onClick={() => handleTabClick('students')}>
               <FaUsers /> Dashboard Users
             </button>
 
-            <button className={`sm-tab-btn ${activeTab === 'registration' ? 'active' : ''}`} onClick={() => setActiveTab('registration')}>
+            <button className={`sm-tab-btn ${activeTab === 'registration' ? 'active' : ''}`} onClick={() => handleTabClick('registration')}>
               <FaUserGraduate /> Student Register
             </button>
 
-            <button className={`sm-tab-btn ${activeTab === 'forms' ? 'active' : ''}`} onClick={() => setActiveTab('forms')}>
+            <button className={`sm-tab-btn ${activeTab === 'forms' ? 'active' : ''}`} onClick={() => handleTabClick('forms')}>
               <FaClipboardList /> Profile Submissions
             </button>
 
-            <button className={`sm-tab-btn ${activeTab === 'payments' ? 'active' : ''}`} onClick={() => setActiveTab('payments')}>
+            <button className={`sm-tab-btn ${activeTab === 'payments' ? 'active' : ''}`} onClick={() => handleTabClick('payments')}>
               <FaCreditCard /> Payment Approvals
             </button>
 
-            <button className={`sm-tab-btn ${activeTab === 'assignments' ? 'active' : ''}`} onClick={() => setActiveTab('assignments')}>
+            <button className={`sm-tab-btn ${activeTab === 'assignments' ? 'active' : ''}`} onClick={() => handleTabClick('assignments')}>
               <FaTasks /> Assignments
             </button>
 
-            {/* Quiz tab - active for both quizzes and quizReport */}
-            <button className={`sm-tab-btn ${(activeTab === 'quizzes' || activeTab === 'quizReport') ? 'active' : ''}`} onClick={() => setActiveTab('quizzes')}>
+            <button className={`sm-tab-btn ${(activeTab === 'quizzes' || activeTab === 'quizReport') ? 'active' : ''}`} onClick={() => handleTabClick('quizzes')}>
               <FaQuestionCircle /> Quizzes
             </button>
 
-            <button className={`sm-tab-btn ${activeTab === 'schedules' ? 'active' : ''}`} onClick={() => setActiveTab('schedules')}>
+            <button className={`sm-tab-btn ${activeTab === 'schedules' ? 'active' : ''}`} onClick={() => handleTabClick('schedules')}>
               <FaCalendarAlt /> Schedules
             </button>
 
-            <button className={`sm-tab-btn ${activeTab === 'attendance' ? 'active' : ''}`} onClick={() => setActiveTab('attendance')}>
+            <button className={`sm-tab-btn ${activeTab === 'attendance' ? 'active' : ''}`} onClick={() => handleTabClick('attendance')}>
               <FaCalendarCheck /> Attendance
             </button>
 
-            {/* 🔥 NEW: Dynamic System Dropdown */}
+            {/* Dynamic System Dropdown */}
             <div className="sm-dropdown-container">
               <button 
                 className={`sm-tab-btn sm-dropdown-toggle ${isDynamicActive ? 'active' : ''}`}
@@ -320,7 +359,7 @@ const AdminDashboard = () => {
               )}
             </div>
 
-            <button className={`sm-tab-btn ${activeTab === 'addCourse' ? 'active' : ''}`} onClick={() => setActiveTab('addCourse')}>
+            <button className={`sm-tab-btn ${activeTab === 'addCourse' ? 'active' : ''}`} onClick={() => handleTabClick('addCourse')}>
               <FaPlusCircle /> Add New Course
             </button>
           </div>
@@ -348,7 +387,6 @@ const AdminDashboard = () => {
         </header>
 
         <section className="sm-page-content">
-          {/* CONDITIONALLY RENDER COMPONENTS */}
           {activeTab === 'addCourse' ? (
             <AddCourse />
           ) : activeTab === 'registration' ? (
@@ -369,7 +407,6 @@ const AdminDashboard = () => {
           ) : activeTab === 'attendance' ? (
             <AttendanceManager />
           ) : activeTab === 'dynamic' ? (
-            // 🔥 NEW: Render Dynamic System Component
             renderDynamicContent()
           ) : (
             <>

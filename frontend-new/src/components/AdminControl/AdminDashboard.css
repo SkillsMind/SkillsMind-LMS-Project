@@ -12,18 +12,58 @@ body.admin-view-active #ContactSidebar {
 
 .sm-dashboard-root {
   display: flex;
-  height: 100vh;
-  width: 100vw;
-  position: fixed;
-  top: 0; left: 0;
+  min-height: 100vh;
+  width: 100%;
   background: #f8fafc;
+  position: relative;
   z-index: 99999;
 }
 
-/* SIDEBAR FIX - SCROLLABLE */
+/* ============================================
+   MOBILE MENU TOGGLE
+   ============================================ */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1001;
+  background: #E30613;
+  color: white;
+  border: none;
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(227, 6, 19, 0.3);
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  transform: scale(1.05);
+  background: #c00510;
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  backdrop-filter: blur(2px);
+}
+
+/* ============================================
+   SIDEBAR - SCROLLABLE WITH CIRCLE LOGO
+   ============================================ */
 .sm-sidebar {
   width: 280px;
-  background: #ffffff;
+  background: linear-gradient(180deg, #000B29 0%, #001845 100%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -31,6 +71,10 @@ body.admin-view-active #ContactSidebar {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  position: sticky;
+  top: 0;
+  transition: transform 0.3s ease;
+  z-index: 1000;
 }
 
 /* Scrollbar styling for sidebar */
@@ -39,23 +83,60 @@ body.admin-view-active #ContactSidebar {
 }
 
 .sm-sidebar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 .sm-sidebar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #E30613;
   border-radius: 3px;
 }
 
 .sm-sidebar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #ff1a2e;
 }
 
-.sm-logo { 
-  width: 50px; 
-  margin-bottom: 30px; 
-  display: block; 
-  flex-shrink: 0;
+/* Circle Logo Container */
+.sm-logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+.sm-logo-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #E30613;
+  box-shadow: 0 4px 15px rgba(227, 6, 19, 0.3);
+  background: white;
+  padding: 4px;
+  transition: transform 0.3s ease;
+}
+
+.sm-logo-circle:hover {
+  transform: scale(1.05);
+}
+
+.logo-fallback {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #E30613;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Hide old logo class if exists */
+.sm-logo {
+  display: none;
 }
 
 .sm-nav-list {
@@ -63,14 +144,12 @@ body.admin-view-active #ContactSidebar {
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  overflow-y: visible;
 }
 
-/* These Buttons MUST show now */
 .sm-tab-btn {
   background: transparent !important;
   border: none !important;
-  color: #64748b !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   padding: 12px 16px !important;
   border-radius: 10px !important;
   display: flex !important;
@@ -82,39 +161,121 @@ body.admin-view-active #ContactSidebar {
   width: 100% !important;
   text-align: left !important;
   transition: all 0.3s ease !important;
-  flex-shrink: 0;
 }
 
-.sm-tab-btn:hover, .sm-tab-btn.active {
-  background: #e30613 !important; /* SkillsMind Red */
+.sm-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
   color: white !important;
+  transform: translateX(5px);
 }
 
+.sm-tab-btn.active {
+  background: #E30613 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3);
+}
+
+/* Dropdown Container */
+.sm-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.sm-dropdown-toggle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.sm-dropdown-arrow {
+  font-size: 12px !important;
+  transition: transform 0.3s ease !important;
+  margin-left: auto !important;
+}
+
+.sm-dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.sm-dropdown-menu {
+  margin-left: 30px;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.sm-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.sm-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateX(5px);
+}
+
+.sm-dropdown-item.active {
+  background: #E30613;
+  color: white;
+}
+
+.sm-dropdown-item svg {
+  font-size: 13px;
+  width: 18px;
+}
+
+/* Logout Button */
 .sm-logout {
   background: transparent;
-  border: 1px solid #e30613;
-  color: #e30613;
+  border: 1px solid #E30613;
+  color: #E30613;
   padding: 12px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
   margin-top: 20px;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .sm-logout:hover {
-  background: #e30613;
+  background: #E30613;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3);
 }
 
-/* MAIN CONTENT */
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
 .sm-main { 
   flex: 1; 
   display: flex; 
   flex-direction: column; 
   overflow-y: auto; 
   overflow-x: hidden;
+  background: #f8fafc;
 }
 
 .sm-top-bar {
@@ -125,17 +286,28 @@ body.admin-view-active #ContactSidebar {
   align-items: center;
   border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 99;
 }
 
 .sm-search-box {
   background: #f1f5f9;
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 400px;
+  width: 350px;
+  transition: all 0.3s ease;
 }
+
+.sm-search-box:focus-within {
+  background: white;
+  box-shadow: 0 0 0 2px rgba(227, 6, 19, 0.1);
+  border: 1px solid #E30613;
+}
+
 .sm-search-box input { 
   border: none; 
   background: none; 
@@ -145,19 +317,29 @@ body.admin-view-active #ContactSidebar {
   color: #475569;
 }
 
+.sm-search-box input::placeholder {
+  color: #94a3b8;
+}
+
 .sm-admin-tag {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  background: #f1f5f9;
+  padding: 8px 16px;
+  border-radius: 30px;
+  color: #000B29;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
+}
+
+.sm-admin-tag svg {
+  color: #E30613;
 }
 
 .sm-page-content { 
-  padding: 40px; 
+  padding: 30px 40px; 
   flex: 1;
-  overflow-y: auto;
 }
 
 .sm-content-header { 
@@ -165,16 +347,23 @@ body.admin-view-active #ContactSidebar {
   justify-content: space-between; 
   align-items: center; 
   margin-bottom: 30px; 
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .sm-content-header h2 {
   color: #1e293b;
   font-size: 24px;
   font-weight: 700;
+  margin: 0;
 }
 
 /* EXCEL & PDF BUTTONS */
-.sm-export-btns { display: flex; gap: 15px; }
+.sm-export-btns { 
+  display: flex; 
+  gap: 12px; 
+}
+
 .btn-excel { 
   background: #10b981; 
   border: none; 
@@ -187,14 +376,17 @@ body.admin-view-active #ContactSidebar {
   gap: 8px; 
   font-weight: 600; 
   transition: all 0.3s ease;
+  font-size: 13px;
 }
+
 .btn-excel:hover {
   background: #059669;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-pdf { 
-  background: #6366f1; 
+  background: #dc2626; 
   border: none; 
   padding: 10px 20px; 
   color: white; 
@@ -205,48 +397,64 @@ body.admin-view-active #ContactSidebar {
   gap: 8px; 
   font-weight: 600; 
   transition: all 0.3s ease;
+  font-size: 13px;
 }
+
 .btn-pdf:hover {
-  background: #4f46e5;
+  background: #b91c1c;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 /* TABLE CARD */
 .sm-data-card { 
   background: white; 
-  border-radius: 15px; 
+  border-radius: 16px; 
   box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-  overflow: hidden; 
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
 }
+
 .sm-table { 
   width: 100%; 
   border-collapse: collapse; 
+  min-width: 600px;
 }
+
 .sm-table th { 
   background: #f8fafc; 
   padding: 15px 20px; 
   text-align: left; 
   color: #64748b; 
-  font-size: 13px; 
+  font-size: 12px; 
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
 }
+
 .sm-table td { 
   padding: 15px 20px; 
   border-bottom: 1px solid #f1f5f9; 
   color: #475569;
+  font-size: 14px;
+}
+
+.sm-table tr:last-child td {
+  border-bottom: none;
 }
 
 .info-cell { 
   display: flex; 
   flex-direction: column; 
 }
+
 .info-cell strong { 
   color: #1e293b; 
   font-weight: 600;
   margin-bottom: 4px;
 }
+
 .info-cell span { 
   font-size: 12px; 
   color: #64748b; 
@@ -256,54 +464,41 @@ body.admin-view-active #ContactSidebar {
   background: #e0f2fe; 
   color: #0369a1; 
   padding: 4px 12px; 
-  border-radius: 5px; 
+  border-radius: 20px; 
   font-size: 11px; 
-  font-weight: 700; 
+  font-weight: 600; 
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
 }
 
 .badge-course {
   background: #fef3c7;
   color: #92400e;
   padding: 4px 12px;
-  border-radius: 5px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
 }
 
-.action-btns { 
-  display: flex; 
-  gap: 8px; 
-}
-.btn-approve { 
-  background: #f0fdf4; 
-  color: #16a34a; 
-  border: none; 
-  padding: 8px 12px; 
-  border-radius: 6px; 
-  cursor: pointer; 
+.btn-reject {
+  background: #fef2f2;
+  color: #dc2626;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
   transition: all 0.3s ease;
-}
-.btn-approve:hover {
-  background: #16a34a;
-  color: white;
+  font-size: 14px;
 }
 
-.btn-reject { 
-  background: #fef2f2; 
-  color: #dc2626; 
-  border: none; 
-  padding: 8px 12px; 
-  border-radius: 6px; 
-  cursor: pointer; 
-  transition: all 0.3s ease;
-}
 .btn-reject:hover {
   background: #dc2626;
   color: white;
+  transform: scale(1.05);
 }
 
 .status-msg { 
@@ -313,7 +508,9 @@ body.admin-view-active #ContactSidebar {
   font-size: 16px;
 }
 
-/* Custom Professional Modal */
+/* ============================================
+   MODAL STYLES
+   ============================================ */
 .sm-modal-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -325,221 +522,83 @@ body.admin-view-active #ContactSidebar {
   z-index: 10000;
   backdrop-filter: blur(4px);
 }
+
 .sm-modal-content {
   background: #fff;
   padding: 40px;
-  border-radius: 20px;
+  border-radius: 24px;
   text-align: center;
   width: 90%; 
   max-width: 450px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.3);
   animation: smPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
 .sm-modal-icon { 
-  margin-bottom: 15px; 
+  margin-bottom: 20px; 
 }
+
 .sm-modal-content h3 { 
   font-size: 24px; 
-  color: #1a1a1a; 
+  color: #1e293b; 
   margin-bottom: 12px; 
   font-weight: 700;
 }
+
 .sm-modal-content p { 
-  color: #555; 
-  font-size: 16px; 
+  color: #64748b; 
+  font-size: 14px; 
   margin-bottom: 30px; 
 }
+
 .sm-modal-actions { 
   display: flex; 
   gap: 15px; 
   justify-content: center; 
 }
+
 .sm-btn-cancel { 
-  background: #f0f0f0; 
-  color: #333; 
+  background: #f1f5f9; 
+  color: #475569; 
   border: none; 
-  padding: 12px 25px; 
-  border-radius: 8px; 
+  padding: 12px 28px; 
+  border-radius: 10px; 
   cursor: pointer; 
   font-weight: 600; 
   transition: 0.2s; 
 }
+
+.sm-btn-cancel:hover { 
+  background: #e2e8f0; 
+}
+
 .sm-btn-confirm { 
-  background: #e30613; 
+  background: #E30613; 
   color: white; 
   border: none; 
-  padding: 12px 25px; 
-  border-radius: 8px; 
+  padding: 12px 28px; 
+  border-radius: 10px; 
   cursor: pointer; 
   font-weight: 600; 
   transition: 0.2s; 
 }
+
 .sm-btn-confirm:hover { 
-  background: #c2181d; 
+  background: #c00510; 
   transform: translateY(-2px); 
-}
-.sm-btn-cancel:hover { 
-  background: #e5e5e5; 
+  box-shadow: 0 4px 12px rgba(227, 6, 19, 0.3);
 }
 
 @keyframes smPopIn {
-  from { opacity: 0; transform: scale(0.8); }
+  from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
 }
 
 /* ============================================
-   🔥 NEW: DROPDOWN MENU STYLES - HOVER BASED
+   RESPONSIVE DESIGN - MOBILE FIRST
    ============================================ */
 
-.sm-dropdown-container {
-  position: relative;
-  width: 100%;
-}
-
-.sm-dropdown-toggle {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  position: relative;
-}
-
-.sm-dropdown-arrow {
-  font-size: 12px !important;
-  transition: transform 0.3s ease !important;
-  margin-left: auto !important;
-  color: currentColor !important;
-}
-
-.sm-dropdown-container:hover .sm-dropdown-arrow {
-  transform: rotate(180deg) !important;
-}
-
-/* 🔥 HOVER BASED DROPDOWN */
-.sm-dropdown-menu {
-  display: none;
-  background: #f8fafc;
-  border-radius: 10px;
-  margin-top: 8px;
-  margin-bottom: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-  animation: slideDown 0.3s ease;
-  padding: 6px 0;
-}
-
-/* Show dropdown on hover */
-.sm-dropdown-container:hover .sm-dropdown-menu {
-  display: block;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.sm-dropdown-item {
-  width: 100%;
-  padding: 10px 16px 10px 44px;
-  background: transparent;
-  border: none;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.2s ease;
-  text-align: left;
-  border-left: 3px solid transparent;
-  position: relative;
-}
-
-.sm-dropdown-item::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #cbd5e1;
-  transition: all 0.2s ease;
-}
-
-.sm-dropdown-item:hover {
-  background: white;
-  color: #e30613;
-  border-left-color: #e30613;
-  padding-left: 48px;
-}
-
-.sm-dropdown-item:hover::before {
-  background: #e30613;
-  transform: scale(1.2);
-}
-
-.sm-dropdown-item.active {
-  background: white;
-  color: #e30613;
-  border-left-color: #e30613;
-  font-weight: 600;
-}
-
-.sm-dropdown-item.active::before {
-  background: #e30613;
-}
-
-.sm-dropdown-item svg {
-  font-size: 14px;
-  width: 18px;
-  text-align: center;
-}
-
-/* Active state for parent when dropdown item is active */
-.sm-dropdown-container:has(.sm-dropdown-item.active) .sm-tab-btn {
-  background: #e30613 !important;
-  color: white !important;
-}
-
-/* Hover effect for dropdown toggle */
-.sm-dropdown-toggle:hover {
-  background: #e30613 !important;
-  color: white !important;
-}
-
-/* ============================================
-   SCROLLBAR STYLING
-   ============================================ */
-
-.sm-main::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sm-main::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-.sm-main::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.sm-main::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-
+/* Tablet (768px - 1024px) */
 @media (max-width: 1024px) {
   .sm-sidebar {
     width: 260px;
@@ -547,87 +606,224 @@ body.admin-view-active #ContactSidebar {
   }
   
   .sm-page-content {
-    padding: 30px 20px;
+    padding: 25px 20px;
   }
   
   .sm-search-box {
-    width: 300px;
-  }
-}
-
-@media (max-width: 768px) {
-  .sm-dashboard-root {
-    flex-direction: column;
-  }
-  
-  .sm-sidebar {
-    width: 100%;
-    height: auto;
-    max-height: 60vh;
-    padding: 20px;
-    position: relative;
-  }
-  
-  .sm-nav-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  
-  .sm-tab-btn {
-    flex: 1;
-    min-width: 140px;
-    justify-content: center;
+    width: 280px;
   }
   
   .sm-top-bar {
-    padding: 15px 20px;
+    padding: 12px 25px;
+  }
+}
+
+/* Mobile (up to 768px) */
+@media (max-width: 768px) {
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: flex;
+  }
+  
+  /* Sidebar hidden by default, shown when open */
+  .sm-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    box-shadow: none;
+  }
+  
+  .sm-sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Show overlay when sidebar is open */
+  .mobile-overlay {
+    display: block;
+  }
+  
+  .sm-main {
+    width: 100%;
+  }
+  
+  .sm-top-bar {
+    padding: 12px 16px;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
+    align-items: stretch;
   }
   
   .sm-search-box {
     width: 100%;
+  }
+  
+  .sm-admin-tag {
+    width: fit-content;
+    margin: 0 auto;
+  }
+  
+  .sm-page-content {
+    padding: 20px 16px;
   }
   
   .sm-content-header {
     flex-direction: column;
-    gap: 20px;
     align-items: flex-start;
+  }
+  
+  .sm-content-header h2 {
+    font-size: 20px;
   }
   
   .sm-export-btns {
     width: 100%;
+    gap: 10px;
   }
   
   .btn-excel, .btn-pdf {
     flex: 1;
     justify-content: center;
-  }
-  
-  .sm-table {
+    padding: 8px 16px;
     font-size: 12px;
   }
   
   .sm-table th,
   .sm-table td {
     padding: 10px 12px;
+    font-size: 12px;
   }
   
-  /* Mobile dropdown */
+  .badge, .badge-course {
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+  
+  .btn-reject {
+    padding: 6px 10px;
+  }
+  
+  .sm-modal-content {
+    padding: 25px;
+    margin: 20px;
+  }
+  
+  .sm-modal-content h3 {
+    font-size: 20px;
+  }
+  
+  .sm-btn-cancel, .sm-btn-confirm {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+  
+  /* Make nav list scrollable on mobile */
+  .sm-nav-list {
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+  }
+  
+  .sm-logo-circle {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .logo-fallback {
+    width: 65px;
+    height: 65px;
+    font-size: 1.5rem;
+  }
+}
+
+/* Small Mobile (up to 480px) */
+@media (max-width: 480px) {
+  .sm-sidebar {
+    width: 260px;
+  }
+  
+  .sm-tab-btn {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+  
   .sm-dropdown-menu {
-    position: absolute;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: white;
+    margin-left: 20px;
+  }
+  
+  .sm-dropdown-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .sm-page-content {
+    padding: 15px 12px;
+  }
+  
+  .sm-content-header h2 {
+    font-size: 18px;
+  }
+  
+  .btn-excel, .btn-pdf {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  
+  .sm-table th,
+  .sm-table td {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  
+  .info-cell strong {
+    font-size: 12px;
+  }
+  
+  .info-cell span {
+    font-size: 10px;
+  }
+  
+  .badge, .badge-course {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+  
+  .sm-logo-circle {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .logo-fallback {
+    width: 55px;
+    height: 55px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Landscape Mode on Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .sm-sidebar {
+    width: 250px;
+  }
+  
+  .sm-nav-list {
+    max-height: calc(100vh - 140px);
+  }
+  
+  .sm-logo-circle {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 15px;
   }
 }
 
 /* ============================================
    LOADING STATES
    ============================================ */
-
 .sm-loading {
   display: flex;
   align-items: center;
@@ -642,7 +838,7 @@ body.admin-view-active #ContactSidebar {
   width: 20px;
   height: 20px;
   border: 2px solid #e2e8f0;
-  border-top-color: #e30613;
+  border-top-color: #E30613;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-left: 10px;
@@ -655,7 +851,6 @@ body.admin-view-active #ContactSidebar {
 /* ============================================
    UTILITY CLASSES
    ============================================ */
-
 .sm-hidden {
   display: none !important;
 }
