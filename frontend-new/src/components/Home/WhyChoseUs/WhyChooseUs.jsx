@@ -12,9 +12,11 @@ import {
   BookOpen,
   TrendingUp
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './WhyChooseUs.css';
 
 const WhyChooseUs = () => {
+  const navigate = useNavigate();
   const sectionRef = useRef(null);
   const [activeCard, setActiveCard] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -67,6 +69,23 @@ const WhyChooseUs = () => {
       description: "Industry-recognized certificates upon completion."
     }
   ];
+
+  // 🔥 LOGIN CHECK FUNCTION
+  const isLoggedIn = () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    return token && userId;
+  };
+
+  // 🔥 HANDLE EXPLORE COURSES CLICK
+  const handleExploreCourses = () => {
+    if (isLoggedIn()) {
+      navigate('/get-enrolment');
+    } else {
+      localStorage.setItem('redirectAfterLogin', '/get-enrolment');
+      navigate('/login');
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -175,7 +194,8 @@ const WhyChooseUs = () => {
             </div>
 
             <div className="clear-cta">
-              <button className="cta-btn">
+              {/* 🔥 FIXED: Explore Courses button with login check */}
+              <button className="cta-btn" onClick={handleExploreCourses}>
                 <span>Explore Courses</span>
                 <ArrowRight size={18} />
               </button>
