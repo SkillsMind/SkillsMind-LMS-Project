@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import { adminAPI } from '../../../services/api';
 import toast from 'react-hot-toast';
 import { 
@@ -17,9 +18,13 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 const DURATION_OPTIONS = [15, 30, 40, 45, 60, 75, 90, 105, 120, 150, 180];
 const COLORS = ['#000B29', '#E30613', '#16a34a', '#3b82f6', '#ca8a04', '#9333ea', '#0891b2', '#be123c'];
 
-const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
+const ScheduleCreator = ({ schedule, courses: propCourses, onCancel, onSuccess }) => {
   const isEdit = !!schedule;
   const isWeekEdit = schedule?.isWeekEdit === true;
+  
+  // 🔥 FIX: Local state for courses if prop is empty
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   
   const [batchMode, setBatchMode] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -28,10 +33,9 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
   const [existingSchedules, setExistingSchedules] = useState([]);
   const [conflicts, setConflicts] = useState([]);
   const [timeErrors, setTimeErrors] = useState({});
-  const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
+  const [autoSaveStatus, setAutoSaveStatus] = useState('saved');
   const [lastSaved, setLastSaved] = useState(null);
   
-  // Refs for auto-save
   const autoSaveTimeoutRef = useRef(null);
   const isDirtyRef = useRef(false);
 
@@ -58,7 +62,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     durationWeeks: 4,
     instructor: 'Anas Jutt',
     color: '#000B29',
-    autoCalculateDates: true // 🔥 NEW: Auto-calculate dates
+    autoCalculateDates: true
   });
 
   const [weeksData, setWeeksData] = useState([
@@ -71,7 +75,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     }
   ]);
 
-  // 🔥 NEW: Custom time input state
   const [customTimeMode, setCustomTimeMode] = useState({});
 
   const toastStyle = {
@@ -81,6 +84,67 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     background: '#ffffff',
     borderRadius: '8px'
   };
+
+  const getToken = () => {
+    return localStorage.getItem('token') || 
+           localStorage.getItem('authToken') || 
+           localStorage.getItem('adminToken') ||
+           localStorage.getItem('accessToken');
+  };
+
+  const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+
+  // 🔥🔥🔥 CRITICAL FIX: Fetch courses directly if prop is empty
+  const fetchCoursesDirectly = async () => {
+    setCoursesLoading(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error('No token found');
+        setCoursesLoading(false);
+        return;
+      }
+      
+      const res = await axios.get(`${API_BASE}/courses/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      let coursesData = [];
+      if (Array.isArray(res.data)) {
+        coursesData = res.data;
+      } else if (res.data.success && Array.isArray(res.data.courses)) {
+        coursesData = res.data.courses;
+      } else if (res.data.courses) {
+        coursesData = res.data.courses;
+      }
+      
+      // Format courses for dropdown
+      const formattedCourses = coursesData.map(c => ({
+        _id: c._id,
+        title: c.title,
+        category: c.category
+      }));
+      
+      setAvailableCourses(formattedCourses);
+      console.log('✅ Courses fetched directly:', formattedCourses.length);
+    } catch (err) {
+      console.error('Failed to fetch courses:', err);
+      toast.error('Failed to load courses', { style: toastStyle });
+      setAvailableCourses([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
+
+  // Use prop courses if provided, otherwise fetch directly
+  useEffect(() => {
+    if (propCourses && propCourses.length > 0) {
+      setAvailableCourses(propCourses);
+      console.log('✅ Using prop courses:', propCourses.length);
+    } else {
+      fetchCoursesDirectly();
+    }
+  }, [propCourses]);
 
   // 🔥 AUTO-SAVE: Save draft to localStorage
   const saveDraft = useCallback(() => {
@@ -97,7 +161,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     setAutoSaveStatus('saved');
   }, [formData, batchData, weeksData, isWeekEdit, batchMode, isEdit]);
 
-  // 🔥 AUTO-SAVE: Trigger auto-save
   const triggerAutoSave = useCallback(() => {
     isDirtyRef.current = true;
     setAutoSaveStatus('saving');
@@ -108,10 +171,9 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     
     autoSaveTimeoutRef.current = setTimeout(() => {
       saveDraft();
-    }, 3000); // Save after 3 seconds of inactivity
+    }, 3000);
   }, [saveDraft]);
 
-  // 🔥 LOAD DRAFT on mount
   useEffect(() => {
     const savedDraft = localStorage.getItem('schedule_draft');
     if (savedDraft && !isEdit && !isWeekEdit) {
@@ -119,7 +181,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
         const draft = JSON.parse(savedDraft);
         const hoursSinceSave = (new Date() - new Date(draft.timestamp)) / (1000 * 60 * 60);
         
-        if (hoursSinceSave < 24) { // Only restore if less than 24 hours old
+        if (hoursSinceSave < 24) {
           toast.success('Previous draft restored! Continue where you left off.', {
             style: toastStyle,
             duration: 5000
@@ -136,26 +198,22 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     }
   }, [isEdit, isWeekEdit]);
 
-  // 🔥 CLEAR DRAFT on successful save
   const clearDraft = () => {
     localStorage.removeItem('schedule_draft');
     isDirtyRef.current = false;
   };
 
-  // 🔥 AUTO-CALCULATE DATES: Calculate date for any day in any week
   const calculateDateForDay = useCallback((startDateStr, weekNumber, dayName) => {
     if (!startDateStr) return '';
     
     const startDate = new Date(startDateStr);
     const dayIndex = DAYS_OF_WEEK.indexOf(dayName);
     
-    // Get to the correct week
     const weekStart = new Date(startDate);
     weekStart.setDate(startDate.getDate() + (weekNumber - 1) * 7);
     
-    // Adjust to the correct day of week
-    const currentDayIndex = weekStart.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const targetDayIndex = dayIndex === 6 ? 0 : dayIndex + 1; // Convert to 0-6 format
+    const currentDayIndex = weekStart.getDay();
+    const targetDayIndex = dayIndex === 6 ? 0 : dayIndex + 1;
     
     let diff = targetDayIndex - currentDayIndex;
     if (diff < 0) diff += 7;
@@ -166,7 +224,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     return finalDate.toISOString().split('T')[0];
   }, []);
 
-  // 🔥 AUTO-CALCULATE ALL DATES for all weeks
   const autoCalculateAllDates = useCallback(() => {
     if (!batchData.startDate || !batchData.autoCalculateDates) return;
     
@@ -181,14 +238,12 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     toast.success('All dates auto-calculated! ✨', { style: toastStyle, duration: 2000 });
   }, [batchData.startDate, batchData.autoCalculateDates, calculateDateForDay]);
 
-  // Watch for start date changes to auto-calculate
   useEffect(() => {
     if (batchMode && batchData.startDate && batchData.autoCalculateDates) {
       autoCalculateAllDates();
     }
   }, [batchData.startDate, batchData.durationWeeks, batchMode, batchData.autoCalculateDates, autoCalculateAllDates]);
 
-  // Initialize for Edit Mode
   useEffect(() => {
     if (isWeekEdit && schedule?.weekClasses) {
       initializeWeekEdit();
@@ -213,7 +268,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     }
   }, [isEdit, isWeekEdit, schedule]);
 
-  // Initialize week edit mode
   const initializeWeekEdit = () => {
     const weekClasses = schedule.weekClasses || [];
     const weekNumber = schedule.weekNumber || 1;
@@ -260,7 +314,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     }
   };
 
-  // Generate weeks when duration changes
   useEffect(() => {
     if (isWeekEdit || isEdit) return;
     
@@ -275,7 +328,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           const prevWeek = newWeeks[i - 2];
           newWeeks.push({
             weekNumber: i,
-            isOpen: i === 1, // Only first week open by default
+            isOpen: i === 1,
             days: prevWeek ? 
               prevWeek.days.map((d, idx) => ({ 
                 ...d, 
@@ -291,7 +344,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     });
   }, [batchData.durationWeeks, isWeekEdit, isEdit, batchData.startDate, batchData.autoCalculateDates, calculateDateForDay]);
 
-  // Check for time conflicts
   const checkConflicts = async (courseId, sessionDate, time, duration, excludeId = null) => {
     if (!courseId || !sessionDate || !time) return [];
     
@@ -328,12 +380,10 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     triggerAutoSave();
   };
 
-  // 🔥 FIXED: Add day to week - NOW PROPERLY WORKS
   const addDayToWeek = (weekIndex) => {
     const newWeeks = [...weeksData];
     const week = newWeeks[weekIndex];
     
-    // Find next available day or default to Monday
     const usedDays = week.days.filter(d => d.enabled).map(d => d.day);
     const availableDay = DAYS_OF_WEEK.find(d => !usedDays.includes(d)) || 'Monday';
     
@@ -362,12 +412,10 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     });
   };
 
-  // 🔥 FIXED: Remove day from week - NOW PROPERLY WORKS
   const removeDayFromWeek = (weekIndex, dayId) => {
     const newWeeks = [...weeksData];
     const week = newWeeks[weekIndex];
     
-    // Don't allow removing the last enabled day
     const enabledDays = week.days.filter(d => d.enabled);
     if (enabledDays.length <= 1 && week.days.find(d => d.id === dayId)?.enabled) {
       toast.error('Each week must have at least one active day', { style: toastStyle });
@@ -376,7 +424,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
 
     const dayToRemove = week.days.find(d => d.id === dayId);
     
-    // If it's an existing schedule, confirm deletion
     if (dayToRemove?._isExisting) {
       if (!window.confirm(`This will delete "${dayToRemove.topic || 'this class'}" permanently. Continue?`)) {
         return;
@@ -396,12 +443,10 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     if (day) {
       day[field] = value;
       
-      // Auto-update date if day changes and auto-calculate is on
       if (field === 'day' && batchData.autoCalculateDates && batchData.startDate && day.enabled) {
         day.date = calculateDateForDay(batchData.startDate, newWeeks[weekIndex].weekNumber, value);
       }
       
-      // Check conflicts when time or date changes
       if ((field === 'time' || field === 'date') && day.enabled && formData.courseId) {
         if (validateTime(day.time) && day.date) {
           const conflicts = await checkConflicts(
@@ -435,7 +480,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     const newWeeks = [...weeksData];
     const day = newWeeks[weekIndex].days.find(d => d.id === dayId);
     if (day) {
-      // Don't disable if it's the last enabled day
       const enabledDays = newWeeks[weekIndex].days.filter(d => d.enabled);
       if (enabledDays.length <= 1 && day.enabled) {
         toast.error('At least one day must be active', { style: toastStyle });
@@ -444,7 +488,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
       
       day.enabled = !day.enabled;
       
-      // Auto-calculate date if enabling
       if (day.enabled && batchData.autoCalculateDates && batchData.startDate) {
         day.date = calculateDateForDay(batchData.startDate, newWeeks[weekIndex].weekNumber, day.day);
       }
@@ -533,7 +576,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     setPreviewMode(true);
   };
 
-  // 🔥 FIXED: Handle Edit Week Submit with proper add/delete
   const handleEditWeekSubmit = async () => {
     if (!formData.courseId) {
       toast.error('Course not found', { style: toastStyle });
@@ -548,7 +590,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
       return;
     }
 
-    // Check for time errors
     const hasErrors = validDays.some(d => timeErrors[d.id]);
     if (hasErrors) {
       toast.error('Please resolve time conflicts before saving', { style: toastStyle });
@@ -562,7 +603,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
       const results = [];
       const errors = [];
 
-      // Process each day (create new or update existing)
       for (let i = 0; i < validDays.length; i++) {
         const dayData = validDays[i];
         
@@ -587,11 +627,9 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
         try {
           let res;
           if (dayData._isExisting && dayData._originalId) {
-            // Update existing
             res = await adminAPI.updateSchedule(dayData._originalId, scheduleData);
             results.push({ type: 'updated', data: res.data, id: dayData._originalId });
           } else {
-            // Create new
             res = await adminAPI.createSchedule(scheduleData);
             results.push({ type: 'created', data: res.data });
           }
@@ -604,7 +642,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
         }
       }
 
-      // Delete removed days (existing schedules that are no longer in the list)
       const currentOriginalIds = validDays
         .filter(d => d._isExisting && d._originalId)
         .map(d => d._originalId);
@@ -822,18 +859,15 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
     await handleSingleSubmit(e);
   };
 
-  // 🔥 NEW: Handle custom time input
   const handleTimeChange = (weekIndex, dayId, value, isCustom = false) => {
     if (isCustom) {
-      // Direct input
       updateDayField(weekIndex, dayId, 'time', value);
     } else {
-      // Dropdown selection
       updateDayField(weekIndex, dayId, 'time', value);
     }
   };
 
-  const selectedCourse = courses.find(c => c._id === formData.courseId);
+  const selectedCourse = availableCourses.find(c => c._id === formData.courseId);
 
   // Preview Mode
   if (previewMode) {
@@ -936,7 +970,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
 
   return (
     <div className="form-container">
-      {/* 🔥 NEW: Auto-save Status Bar */}
       <div className="autosave-bar">
         <div className="autosave-status">
           {autoSaveStatus === 'saving' && <><FaSpinner className="spin" /> Saving draft...</>}
@@ -983,25 +1016,34 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
       )}
 
       <form onSubmit={handleSubmit} className="schedule-form">
-        {/* Course & Duration Section */}
         <div className="form-section">
           <h3><FaCalendarAlt /> {batchMode || isWeekEdit ? 'Course Information' : 'Basic Information'}</h3>
           
           <div className="form-grid">
             <div className="form-group">
               <label>Select Course *</label>
-              <select
-                value={formData.courseId}
-                onChange={(e) => {
-                  setFormData({...formData, courseId: e.target.value});
-                  triggerAutoSave();
-                }}
-                required
-                disabled={isWeekEdit}
-              >
-                <option value="">-- Select Course --</option>
-                {courses.map(c => <option key={c._id} value={c._id}>{c.title}</option>)}
-              </select>
+              {coursesLoading ? (
+                <div className="loading-field"><FaSpinner className="spin" /> Loading courses...</div>
+              ) : availableCourses.length === 0 ? (
+                <div className="error-field"><FaExclamationTriangle /> No courses available. Please add a course first.</div>
+              ) : (
+                <select
+                  value={formData.courseId}
+                  onChange={(e) => {
+                    setFormData({...formData, courseId: e.target.value});
+                    triggerAutoSave();
+                  }}
+                  required
+                  disabled={isWeekEdit}
+                >
+                  <option value="">-- Select Course --</option>
+                  {availableCourses.map(c => (
+                    <option key={c._id} value={c._id}>
+                      {c.title} {c.category ? `(${c.category})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
               {selectedCourse && (
                 <small className="course-hint">📚 {selectedCourse.title}</small>
               )}
@@ -1108,6 +1150,7 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           </div>
         </div>
 
+        {/* Rest of your existing JSX remains the same... */}
         {/* Single Schedule Date & Time Section */}
         {!batchMode && !isWeekEdit && (
           <div className="form-section">
@@ -1207,7 +1250,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
             <div className="weeks-container">
               {weeksData.map((week, weekIndex) => (
                 <div key={week.weekNumber} className={`week-box ${week.isOpen ? 'open' : ''}`}>
-                  {/* Week Header */}
                   <div 
                     className="week-header-bar"
                     onClick={() => toggleWeek(week.weekNumber)}
@@ -1246,12 +1288,9 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                     </div>
                   </div>
 
-                  {/* Week Content */}
                   {week.isOpen && (
                     <div className="week-content">
-                      {/* Days Table */}
                       <div className="days-table">
-                        {/* Table Header */}
                         <div className="table-header">
                           <div className="th-status">Status</div>
                           <div className="th-day">Day</div>
@@ -1263,7 +1302,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                           <div className="th-delete"></div>
                         </div>
 
-                        {/* Table Body */}
                         <div className="table-body">
                           {week.days.map((dayData) => (
                             <div key={dayData.id} className={`table-row ${!dayData.enabled ? 'disabled' : ''} ${dayData._isExisting ? 'existing' : 'new'} ${timeErrors[dayData.id] ? 'has-error' : ''}`}>
@@ -1301,7 +1339,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                               </div>
                               
                               <div className="td-time">
-                                {/* 🔥 NEW: Custom time input with dropdown option */}
                                 <div className="custom-time-wrapper">
                                   <input
                                     type="time"
@@ -1372,7 +1409,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
                         </div>
                       </div>
 
-                      {/* Add Day Button */}
                       <button 
                         type="button" 
                         className="btn-add-day"
@@ -1388,7 +1424,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           </div>
         )}
 
-        {/* Settings Section */}
         <div className="form-section">
           <h3><FaPalette /> {batchMode || isWeekEdit ? 'Instructor & Settings' : 'Settings'}</h3>
           <div className="form-grid">
@@ -1443,7 +1478,6 @@ const ScheduleCreator = ({ schedule, courses, onCancel, onSuccess }) => {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="form-actions">
           <button type="button" className="btn-cancel" onClick={onCancel}>
             Cancel
