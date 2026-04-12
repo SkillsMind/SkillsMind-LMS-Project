@@ -6,7 +6,7 @@ import {
     FaEnvelope, FaUsers, FaInfinity, FaRegClock, FaSignal,
     FaCreditCard, FaCalendarAlt, FaLock, 
     FaHashtag, FaBook, FaIdCard, FaCcVisa, FaCcMastercard,
-    FaExclamationTriangle
+    FaExclamationTriangle, FaCreditCard as FaPaymentIcon
 } from 'react-icons/fa';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -21,7 +21,7 @@ const PaymentMethod = () => {
     const previousPaymentId = location.state?.previousPaymentId || null;
     
     const enrollmentData = location.state?.enrollmentData || {};
-    const enrollmentId = location.state?.enrollmentId || null; // 🔥 GET enrollmentId from navigation
+    const enrollmentId = location.state?.enrollmentId || null;
     const enrollmentMode = location.state?.mode || 'recorded';
     const modeTitle = enrollmentMode === 'live' ? 'Live Class' : 'Recorded Course';
     
@@ -97,8 +97,8 @@ const PaymentMethod = () => {
     const paymentMethods = [
         { id: 'jazzcash', name: 'JazzCash', logo: '/jazzcashlogo.png', color: '#d71820', sub: 'Mobile Account', account: '0311-6735509', title: 'Anas Iftikhar' },
         { id: 'easypaisa', name: 'EasyPaisa', logo: '/easypesalogo.png', color: '#37b34a', sub: 'Instant Transfer', account: '0314-8498822', title: 'Anas iftikhar' },
-        { id: 'card', name: 'Credit/Debit Card', logo: 'https://cdn-icons-png.flaticon.com/512/349/349221.png', color: '#6366f1', sub: 'International Secure Pay' },
-        { id: 'bank', name: 'Bank Transfer', logo: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png', color: '#1e293b', sub: 'All Local Banks', account: '1234 5678 9012 01', title: 'SkillsMind Private Ltd', bankName: 'HBL Bank' }
+        { id: 'card', name: 'Credit/Debit Card', logo: '/card.png', color: '#6366f1', sub: 'International Secure Pay' },
+        { id: 'bank', name: 'Bank Transfer', logo: '/banke.png', color: '#772583', sub: 'All Local Banks', account: '05060102501701', title: 'NASIR ALI', bankName: 'Meezan Bank' }
     ];
 
     const handleInputChange = (e) => {
@@ -110,9 +110,43 @@ const PaymentMethod = () => {
         setFormData(prev => ({ ...prev, receipt: e.target.files[0] }));
     };
 
-    const handleFinalSubmit = async (e) => {
-        e.preventDefault();
-        
+    // 🔥 CONFIRMATION POPUP BEFORE SUBMIT
+    const showConfirmationPopup = () => {
+        Swal.fire({
+            title: '<span style="color: #000B29;">Confirm Payment</span>',
+            html: `
+                <div style="text-align: center; padding: 10px;">
+                    <div style="background: #f0fdf4; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                        <p style="color: #166534; font-weight: 600; margin: 0;">Are you sure you want to proceed?</p>
+                    </div>
+                    <div style="text-align: left; background: #f8fafc; padding: 15px; border-radius: 12px;">
+                        <p style="margin: 5px 0;"><strong>Course:</strong> ${course?.title}</p>
+                        <p style="margin: 5px 0;"><strong>Amount:</strong> Rs. ${course?.price}</p>
+                        <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${selectedMethod?.name}</p>
+                    </div>
+                    <p style="color: #64748b; font-size: 13px; margin-top: 15px;">
+                        Please verify your payment details before submitting. Once submitted, our team will verify your payment within 2-4 hours.
+                    </p>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#000B29',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Submit Payment',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                popup: 'payment-confirm-popup'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                handleFinalSubmit();
+            }
+        });
+    };
+
+    const handleFinalSubmit = async () => {
         if(selectedMethod.id !== 'card' && (!formData.receipt || !formData.trxId || !formData.studentCnic)) {
             Swal.fire({
                 title: 'Incomplete Information',
@@ -136,7 +170,6 @@ const PaymentMethod = () => {
         data.append('paymentMethod', selectedMethod.name);
         data.append('enrollmentMode', enrollmentMode);
         
-        // 🔥 CRITICAL FIX: Send enrollmentId to backend
         if (enrollmentId) {
             data.append('enrollmentId', enrollmentId);
         }
@@ -275,7 +308,13 @@ const PaymentMethod = () => {
 
                     {!selectedMethod ? (
                         <motion.div key="selection" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="sm-selection-container">
-                            <h3 className="section-title">Select Secure Payment Method</h3>
+                            {/* 🔥 ADDED: Payment Method Heading */}
+                            <div className="payment-method-header">
+    <FaPaymentIcon size={28} color="#000B29" />
+    <h3>Select Payment Method</h3>
+</div>
+<p className="payment-method-subtitle">Choose your preferred payment option below</p>
+                            
                             <div className="sm-grid-methods">
                                 {paymentMethods.map((m) => (
                                     <div key={m.id} className="premium-method-card" onClick={() => setSelectedMethod(m)}>
@@ -327,7 +366,7 @@ const PaymentMethod = () => {
                                         )}
                                     </div>
 
-                                    <form className="sm-verification-form" onSubmit={handleFinalSubmit}>
+                                    <form className="sm-verification-form" onSubmit={(e) => { e.preventDefault(); showConfirmationPopup(); }}>
                                         <div className="sm-input-group">
                                             <div className="sm-field">
                                                 <label><FaUser /> Full Name</label>
