@@ -35,7 +35,6 @@ const SkillsMindBot = () => {
         setIsTyping(true);
 
         try {
-            // 🔥 FIXED: Correct API URL
             const res = await axios.post(`${backendURL}/api/ai/chat`, {
                 message: userMsg,
                 studentName: studentName
@@ -60,7 +59,16 @@ const SkillsMindBot = () => {
         <div className={`sm-bot-wrapper ${isOpen ? 'active' : ''}`}>
             {!isOpen && (
                 <button className="sm-bot-toggle" onClick={() => setIsOpen(true)}>
-                    <FaRobot size={25} />
+                    <img 
+                        src="/Skillsmind logo with blue.jpeg" 
+                        alt="SkillsMind AI" 
+                        className="sm-bot-logo"
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                        }}
+                    />
+                    <FaRobot className="sm-bot-icon-fallback" size={25} style={{ display: 'none' }} />
                     <span className="sm-pulse"></span>
                 </button>
             )}
@@ -69,7 +77,17 @@ const SkillsMindBot = () => {
                 <div className={`sm-chat-container ${isMinimized ? 'minimized' : ''}`}>
                     <div className="sm-chat-header">
                         <div className="sm-header-info">
-                            <div className="sm-bot-avatar">SM</div>
+                            <div className="sm-bot-avatar">
+                                <img 
+                                    src="/Skillsmind logo with blue.jpeg" 
+                                    alt="SkillsMind" 
+                                    className="sm-avatar-logo"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.innerHTML = 'SM';
+                                    }}
+                                />
+                            </div>
                             <div>
                                 <h3>SkillsMind AI</h3>
                                 <p>Online | Virtual Assistant</p>
