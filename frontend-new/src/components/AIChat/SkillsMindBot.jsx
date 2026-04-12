@@ -13,6 +13,8 @@ const SkillsMindBot = () => {
     const [isTyping, setIsTyping] = useState(false);
     const chatEndRef = useRef(null);
 
+    const backendURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -25,7 +27,7 @@ const SkillsMindBot = () => {
         e.preventDefault();
         if (!message.trim()) return;
 
-        const studentName = localStorage.getItem('studentName') || 'Student';
+        const studentName = localStorage.getItem('userName') || localStorage.getItem('studentName') || 'Student';
         const userMsg = message;
         
         setChat(prev => [...prev, { role: 'user', text: userMsg }]);
@@ -33,17 +35,22 @@ const SkillsMindBot = () => {
         setIsTyping(true);
 
         try {
-            const res = await axios.post('${import.meta.env.VITE_API_URL}/api/ai/chat', {
+            // 🔥 FIXED: Correct API URL
+            const res = await axios.post(`${backendURL}/api/ai/chat`, {
                 message: userMsg,
                 studentName: studentName
             });
 
             if (res.data && res.data.answer) {
                 setChat(prev => [...prev, { role: 'ai', text: res.data.answer }]);
+            } else if (res.data && res.data.reply) {
+                setChat(prev => [...prev, { role: 'ai', text: res.data.reply }]);
+            } else {
+                setChat(prev => [...prev, { role: 'ai', text: "Mujhe samajh nahi aaya. Kya aap dobara pooch sakte hain?" }]);
             }
         } catch (error) {
             console.error("Chat Error:", error);
-            setChat(prev => [...prev, { role: 'ai', text: "Server se rabta nahi ho pa raha. Please check karein ke backend chal raha hai." }]);
+            setChat(prev => [...prev, { role: 'ai', text: "Maafi chahiye! SkillsMind server busy hai. Kuch der baad try karein." }]);
         } finally {
             setIsTyping(false);
         }
