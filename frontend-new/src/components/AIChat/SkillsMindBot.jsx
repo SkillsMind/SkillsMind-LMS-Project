@@ -134,4 +134,4 @@ const SkillsMindBot = () => {
     );
 };
 
-export default SkillsMindBot;
+export default SkillsMindBot; 
