@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    FaClock, FaCheckCircle, FaPlayCircle, FaFileDownload, 
-    FaLock, FaExclamationTriangle, FaHeadset, FaVideo,
+    FaClock, FaCheckCircle, FaPlayCircle, 
+    FaExclamationTriangle, FaHeadset, 
     FaGraduationCap, FaBookOpen, FaArrowRight, FaCalendarAlt,
     FaChalkboardTeacher, FaSpinner, FaHourglassHalf, FaTimesCircle,
     FaUserGraduate
@@ -23,6 +23,9 @@ const MyLearning = () => {
     const token = localStorage.getItem('token');
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+    // Logo path - correct one
+    const LOGO_PATH = "/Skillsmind logo with blue.jpeg";
+
     useEffect(() => {
         const fetchAllStatus = async () => {
             if (!studentEmail || !userId) {
@@ -34,12 +37,9 @@ const MyLearning = () => {
             try {
                 setLoading(true);
                 
-                // 1. Fetch ACTIVE courses
                 const activeRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
-                console.log('📥 Active Courses Response:', activeRes.data);
                 
                 if (activeRes.data.success && activeRes.data.enrolledCourses) {
                     const uniqueCourses = [];
@@ -49,29 +49,22 @@ const MyLearning = () => {
                         const courseId = course.courseId?.toString();
                         if (courseId && !seenCourseIds.has(courseId)) {
                             seenCourseIds.add(courseId);
-                            
                             const courseTitle = course.courseTitle || course.courseName || course.title || 'Untitled Course';
-                            
                             uniqueCourses.push({
                                 id: course.courseId,
                                 title: courseTitle,
                                 mode: course.mode || 'Live',
                                 enrollmentDate: course.enrollmentDate,
-                                status: 'active',
-                                progress: course.progress || 0
+                                status: 'active'
                             });
                         }
                     });
-                    
                     setActiveCourses(uniqueCourses);
                 }
                 
-                // 2. Fetch ALL payments
                 const paymentsRes = await axios.get(`${API_URL}/api/payments/my-all-payments/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
-                console.log('📥 All Payments Response:', paymentsRes.data);
                 
                 if (paymentsRes.data.success && paymentsRes.data.payments) {
                     const pending = [];
@@ -148,13 +141,9 @@ const MyLearning = () => {
                         <div className="header-left">
                             <div className="header-icon">
                                 <img 
-                                    src="/Skillsmind logo with blue.jpeg"
+                                    src={LOGO_PATH}
                                     alt="SkillsMind" 
-                                    style={{ width: '40px', height: '40px', objectFit: 'contain' }}
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.parentElement.innerHTML = '<span style="font-size:24px;">📚</span>';
-                                    }}
+                                    className="header-logo-img"
                                 />
                             </div>
                             <div>
@@ -230,16 +219,11 @@ const MyLearning = () => {
                             <div className="courses-grid">
                                 {activeCourses.map((course, index) => (
                                     <div key={course.id || index} className="course-card">
-                                        {/* Logo Section - Top Left */}
                                         <div className="card-logo">
                                             <img 
-                                                src="/Skills_Mind_Logo.png" 
+                                                src={LOGO_PATH}
                                                 alt="SkillsMind" 
                                                 className="skillsmind-logo"
-                                                onError={(e) => {
-                                                    e.target.style.display = 'none';
-                                                    e.target.parentElement.innerHTML = '<span style="font-weight:bold;">SM</span>';
-                                                }}
                                             />
                                         </div>
                                         <div className="card-badge active">
@@ -253,7 +237,7 @@ const MyLearning = () => {
                                             <div className="course-meta">
                                                 <div className="meta-item">
                                                     <FaChalkboardTeacher />
-                                                    <span>{course.mode === 'live' ? 'Live Classes' : 'Recorded Course'}</span>
+                                                    <span>Live Classes</span>
                                                 </div>
                                                 <div className="meta-item">
                                                     <FaCalendarAlt />
@@ -284,16 +268,11 @@ const MyLearning = () => {
                     <div className="payments-section">
                         {pendingPayments.map((payment, index) => (
                             <div key={index} className="payment-card pending">
-                                {/* Logo Section */}
                                 <div className="card-logo">
                                     <img 
-                                        src="/Skills_Mind_Logo.png" 
+                                        src={LOGO_PATH}
                                         alt="SkillsMind" 
                                         className="skillsmind-logo"
-                                        onError={(e) => {
-                                            e.target.style.display = 'none';
-                                            e.target.parentElement.innerHTML = '<span style="font-weight:bold;">SM</span>';
-                                        }}
                                     />
                                 </div>
                                 <div className="card-badge pending">
@@ -339,16 +318,11 @@ const MyLearning = () => {
                     <div className="payments-section">
                         {rejectedPayments.map((payment, index) => (
                             <div key={index} className="payment-card rejected">
-                                {/* Logo Section */}
                                 <div className="card-logo">
                                     <img 
-                                        src="/Skills_Mind_Logo.png" 
+                                        src={LOGO_PATH}
                                         alt="SkillsMind" 
                                         className="skillsmind-logo"
-                                        onError={(e) => {
-                                            e.target.style.display = 'none';
-                                            e.target.parentElement.innerHTML = '<span style="font-weight:bold;">SM</span>';
-                                        }}
                                     />
                                 </div>
                                 <div className="card-badge rejected">
@@ -439,7 +413,6 @@ const MyLearning = () => {
                     margin: 0 auto;
                 }
                 
-                /* Header */
                 .mylearning-header {
                     background: white;
                     border-radius: 20px;
@@ -471,7 +444,14 @@ const MyLearning = () => {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: white;
+                    padding: 8px;
+                }
+                
+                .header-logo-img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                    border-radius: 10px;
                 }
                 
                 .mylearning-header h1 {
@@ -518,7 +498,6 @@ const MyLearning = () => {
                     color: #dc2626;
                 }
                 
-                /* Tabs */
                 .mylearning-tabs {
                     display: flex;
                     gap: 12px;
@@ -559,7 +538,6 @@ const MyLearning = () => {
                     background: rgba(255,255,255,0.2);
                 }
                 
-                /* Courses Grid */
                 .courses-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -580,7 +558,6 @@ const MyLearning = () => {
                     box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
                 }
                 
-                /* Logo Styles - Top Left */
                 .card-logo {
                     position: absolute;
                     top: 16px;
@@ -601,6 +578,7 @@ const MyLearning = () => {
                     width: 100%;
                     height: 100%;
                     object-fit: contain;
+                    border-radius: 8px;
                 }
                 
                 .card-badge {
@@ -692,7 +670,6 @@ const MyLearning = () => {
                     transform: translateY(-2px);
                 }
                 
-                /* Payment Cards */
                 .payments-section {
                     max-width: 650px;
                     margin: 0 auto;
@@ -854,7 +831,6 @@ const MyLearning = () => {
                     animation: spin 2s linear infinite;
                 }
                 
-                /* Empty State */
                 .empty-state {
                     text-align: center;
                     padding: 60px 20px;
@@ -900,7 +876,6 @@ const MyLearning = () => {
                     background: #e30613;
                 }
                 
-                /* Responsive */
                 @media (max-width: 768px) {
                     .mylearning-container {
                         padding: 20px 16px;
