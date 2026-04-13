@@ -113,7 +113,6 @@ const Navbar = () => {
           </li>
           <li><Link to="/news" onClick={() => setIsMobileMenu(false)}>News & Events</Link></li>
           <li><Link to="/how-it-works" onClick={() => setIsMobileMenu(false)}>How It Works</Link></li>
-          <li><Link to="/blog" onClick={() => setIsMobileMenu(false)}>Blog</Link></li>
           <li><Link to="/faqs" onClick={() => setIsMobileMenu(false)}>FAQs</Link></li>
           <li><Link to="/contact" onClick={() => setIsMobileMenu(false)}>Contact Us</Link></li>
           <hr className="divider" />
