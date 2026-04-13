@@ -62,10 +62,10 @@ const AdminDashboard = () => {
     return () => document.body.classList.remove('admin-view-active');
   }, [activeTab]);
 
-  // Close mobile menu when clicking outside
+  // Close mobile menu when clicking outside - UPDATED with correct class name
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (mobileMenuOpen && !e.target.closest('.sm-sidebar') && !e.target.closest('.mobile-menu-toggle')) {
+      if (mobileMenuOpen && !e.target.closest('.sm-sidebar') && !e.target.closest('.admin-mobile-menu-toggle')) {
         setMobileMenuOpen(false);
       }
     };
@@ -244,16 +244,16 @@ const AdminDashboard = () => {
   return (
     <div className="sm-dashboard-root">
       
-      {/* Mobile Menu Toggle Button */}
+      {/* ADMIN MOBILE MENU TOGGLE BUTTON - UNIQUE CLASS NAME (FIXED) */}
       <button 
-        className="mobile-menu-toggle"
+        className="admin-mobile-menu-toggle"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
         {mobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
       </button>
 
-      {/* Mobile Overlay */}
-      {mobileMenuOpen && <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)}></div>}
+      {/* ADMIN MOBILE OVERLAY - UNIQUE CLASS NAME (FIXED) */}
+      {mobileMenuOpen && <div className="admin-mobile-overlay" onClick={() => setMobileMenuOpen(false)}></div>}
 
       {/* PROFESSIONAL DELETE MODAL */}
       {showModal && (

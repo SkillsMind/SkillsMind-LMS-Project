@@ -20,9 +20,9 @@ body.admin-view-active #ContactSidebar {
 }
 
 /* ============================================
-   MOBILE MENU TOGGLE
+   ADMIN MOBILE MENU TOGGLE - RENAMED TO AVOID CONFLICT
    ============================================ */
-.mobile-menu-toggle {
+.admin-mobile-menu-toggle {
   display: none;
   position: fixed;
   top: 15px;
@@ -41,12 +41,12 @@ body.admin-view-active #ContactSidebar {
   transition: all 0.3s ease;
 }
 
-.mobile-menu-toggle:hover {
+.admin-mobile-menu-toggle:hover {
   transform: scale(1.05);
   background: #c00510;
 }
 
-.mobile-overlay {
+.admin-mobile-overlay {
   display: none;
   position: fixed;
   top: 0;
@@ -620,8 +620,8 @@ body.admin-view-active #ContactSidebar {
 
 /* Mobile (up to 768px) */
 @media (max-width: 768px) {
-  /* Show mobile menu toggle */
-  .mobile-menu-toggle {
+  /* Show admin mobile menu toggle - USING UNIQUE CLASS NAME */
+  .admin-mobile-menu-toggle {
     display: flex;
   }
   
@@ -644,7 +644,7 @@ body.admin-view-active #ContactSidebar {
   }
   
   /* Show overlay when sidebar is open */
-  .mobile-overlay {
+  .admin-mobile-overlay {
     display: block;
   }
   
