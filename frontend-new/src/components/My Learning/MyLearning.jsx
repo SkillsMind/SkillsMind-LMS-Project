@@ -34,7 +34,7 @@ const MyLearning = () => {
             try {
                 setLoading(true);
                 
-                // 1. Fetch ACTIVE courses (only admin approved - backend is now strict)
+                // 1. Fetch ACTIVE courses
                 const activeRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -42,7 +42,6 @@ const MyLearning = () => {
                 console.log('📥 Active Courses Response:', activeRes.data);
                 
                 if (activeRes.data.success && activeRes.data.enrolledCourses) {
-                    // Backend now ensures only truly active enrollments are returned
                     const uniqueCourses = [];
                     const seenCourseIds = new Set();
                     
@@ -58,16 +57,16 @@ const MyLearning = () => {
                                 title: courseTitle,
                                 mode: course.mode || 'Live',
                                 enrollmentDate: course.enrollmentDate,
-                                status: 'active'
+                                status: 'active',
+                                progress: course.progress || 0
                             });
                         }
                     });
                     
-                    console.log('✅ Processed Active Courses:', uniqueCourses);
                     setActiveCourses(uniqueCourses);
                 }
                 
-                // 2. Fetch ALL payments to categorize them properly
+                // 2. Fetch ALL payments
                 const paymentsRes = await axios.get(`${API_URL}/api/payments/my-all-payments/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -85,14 +84,15 @@ const MyLearning = () => {
                                 courseName: p.courseName,
                                 amount: p.amount,
                                 submittedAt: p.createdAt,
-                                paymentId: p.paymentId
+                                paymentId: p.paymentId,
+                                paymentMethod: p.paymentMethod || 'Bank Transfer'
                             });
                         } else if (p.status === 'rejected') {
                             rejected.push({
                                 courseId: p.courseId,
                                 courseName: p.courseName,
                                 amount: p.amount,
-                                rejectionReason: p.rejectionReason || 'Payment could not be verified',
+                                rejectionReason: p.rejectionReason || 'Payment could not be verified. Please check your payment details and resubmit.',
                                 rejectedAt: p.createdAt,
                                 paymentId: p.paymentId
                             });
@@ -123,17 +123,9 @@ const MyLearning = () => {
         });
     };
 
-    // 🔥 Safety check before navigating to dashboard
     const handleContinueLearning = (course) => {
         if (course.status === 'active') {
             navigate('/student-dashboard');
-        } else {
-            Swal.fire({
-                title: 'Access Denied',
-                text: 'Your enrollment is not yet active. Please complete payment or wait for approval.',
-                icon: 'warning',
-                confirmButtonColor: '#000B29'
-            });
         }
     };
 
@@ -155,7 +147,15 @@ const MyLearning = () => {
                     <div className="header-content">
                         <div className="header-left">
                             <div className="header-icon">
-                                <FaGraduationCap size={32} />
+                                <img 
+                                    src="/Skillsmind logo with blue.jpeg"
+                                    alt="SkillsMind" 
+                                    style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.innerHTML = '<span style="font-size:24px;">📚</span>';
+                                    }}
+                                />
                             </div>
                             <div>
                                 <h1>My Learning</h1>
@@ -230,11 +230,23 @@ const MyLearning = () => {
                             <div className="courses-grid">
                                 {activeCourses.map((course, index) => (
                                     <div key={course.id || index} className="course-card">
+                                        {/* Logo Section - Top Left */}
+                                        <div className="card-logo">
+                                            <img 
+                                                src="/Skills_Mind_Logo.png" 
+                                                alt="SkillsMind" 
+                                                className="skillsmind-logo"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.parentElement.innerHTML = '<span style="font-weight:bold;">SM</span>';
+                                                }}
+                                            />
+                                        </div>
                                         <div className="card-badge active">
                                             <FaCheckCircle /> ACTIVE
                                         </div>
                                         <div className="card-icon">
-                                            <FaVideo size={36} />
+                                            <FaGraduationCap size={42} />
                                         </div>
                                         <div className="card-content">
                                             <h3 className="course-title">{course.title}</h3>
@@ -272,11 +284,23 @@ const MyLearning = () => {
                     <div className="payments-section">
                         {pendingPayments.map((payment, index) => (
                             <div key={index} className="payment-card pending">
-                                <div className="card-badge pending">
-                                    <FaHourglassHalf /> PENDING
+                                {/* Logo Section */}
+                                <div className="card-logo">
+                                    <img 
+                                        src="/Skills_Mind_Logo.png" 
+                                        alt="SkillsMind" 
+                                        className="skillsmind-logo"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            e.target.parentElement.innerHTML = '<span style="font-weight:bold;">SM</span>';
+                                        }}
+                                    />
                                 </div>
-                                <div className="payment-icon">
-                                    <FaSpinner size={36} className="spin" />
+                                <div className="card-badge pending">
+                                    <FaHourglassHalf /> PENDING VERIFICATION
+                                </div>
+                                <div className="payment-icon pending-icon">
+                                    <FaSpinner size={42} className="spin" />
                                 </div>
                                 <div className="payment-content">
                                     <h3 className="course-title">{payment.courseName}</h3>
@@ -289,13 +313,20 @@ const MyLearning = () => {
                                             <span>Submitted:</span>
                                             <strong>{formatDate(payment.submittedAt)}</strong>
                                         </div>
+                                        <div className="detail-item">
+                                            <span>Payment Method:</span>
+                                            <strong>{payment.paymentMethod}</strong>
+                                        </div>
                                     </div>
                                     <div className="pending-message">
                                         <FaClock />
-                                        <span>Your payment is being verified. You will get access within 2-4 hours after approval.</span>
+                                        <div>
+                                            <strong>SkillsMind team will verify within 2-4 hours</strong>
+                                            <p style={{ margin: '5px 0 0 0', fontSize: '12px' }}>You will get course access immediately after approval.</p>
+                                        </div>
                                     </div>
                                     <button className="track-btn" onClick={() => navigate('/contact')}>
-                                        Contact Support
+                                        <FaHeadset /> Contact Support
                                     </button>
                                 </div>
                             </div>
@@ -308,22 +339,38 @@ const MyLearning = () => {
                     <div className="payments-section">
                         {rejectedPayments.map((payment, index) => (
                             <div key={index} className="payment-card rejected">
+                                {/* Logo Section */}
+                                <div className="card-logo">
+                                    <img 
+                                        src="/Skills_Mind_Logo.png" 
+                                        alt="SkillsMind" 
+                                        className="skillsmind-logo"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            e.target.parentElement.innerHTML = '<span style="font-weight:bold;">SM</span>';
+                                        }}
+                                    />
+                                </div>
                                 <div className="card-badge rejected">
-                                    <FaTimesCircle /> REJECTED
+                                    <FaTimesCircle /> PAYMENT REJECTED
                                 </div>
                                 <div className="payment-icon rejected-icon">
-                                    <FaExclamationTriangle size={36} />
+                                    <FaExclamationTriangle size={42} />
                                 </div>
                                 <div className="payment-content">
                                     <h3 className="course-title">{payment.courseName}</h3>
                                     <div className="rejection-box">
                                         <strong>Reason for rejection:</strong>
-                                        <p>{payment.rejectionReason || 'Unable to verify payment details. Please resubmit with correct information.'}</p>
+                                        <p>{payment.rejectionReason}</p>
                                     </div>
                                     <div className="payment-details">
                                         <div className="detail-item">
                                             <span>Rejected on:</span>
                                             <strong>{formatDate(payment.rejectedAt)}</strong>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span>Amount:</span>
+                                            <strong>Rs. {payment.amount}</strong>
                                         </div>
                                     </div>
                                     <div className="action-buttons">
@@ -343,7 +390,7 @@ const MyLearning = () => {
                                             Resubmit Payment
                                         </button>
                                         <button className="contact-btn" onClick={() => navigate('/contact')}>
-                                            Contact Support
+                                            <FaHeadset /> Contact Support
                                         </button>
                                     </div>
                                 </div>
@@ -533,6 +580,29 @@ const MyLearning = () => {
                     box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
                 }
                 
+                /* Logo Styles - Top Left */
+                .card-logo {
+                    position: absolute;
+                    top: 16px;
+                    left: 16px;
+                    width: 48px;
+                    height: 48px;
+                    background: white;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    z-index: 2;
+                    padding: 8px;
+                }
+                
+                .skillsmind-logo {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
+                
                 .card-badge {
                     position: absolute;
                     top: 16px;
@@ -646,14 +716,18 @@ const MyLearning = () => {
                 }
                 
                 .payment-icon {
-                    background: #fef3c7;
+                    background: linear-gradient(135deg, #fef3c7, #fffbeb);
                     padding: 32px;
                     text-align: center;
                     color: #d97706;
                 }
                 
+                .payment-icon.pending-icon {
+                    background: linear-gradient(135deg, #fef3c7, #fffbeb);
+                }
+                
                 .payment-icon.rejected-icon {
-                    background: #fee2e2;
+                    background: linear-gradient(135deg, #fee2e2, #fef2f2);
                     color: #dc2626;
                 }
                 
@@ -692,14 +766,19 @@ const MyLearning = () => {
                 
                 .pending-message {
                     background: #fef3c7;
-                    padding: 12px 16px;
+                    padding: 16px;
                     border-radius: 12px;
                     display: flex;
-                    align-items: center;
-                    gap: 10px;
+                    align-items: flex-start;
+                    gap: 12px;
                     font-size: 13px;
                     color: #92400e;
                     margin: 16px 0;
+                }
+                
+                .pending-message svg {
+                    flex-shrink: 0;
+                    margin-top: 2px;
                 }
                 
                 .rejection-box {
@@ -719,6 +798,7 @@ const MyLearning = () => {
                     color: #7f1a1a;
                     margin: 0;
                     font-size: 14px;
+                    line-height: 1.5;
                 }
                 
                 .action-buttons {
@@ -738,6 +818,10 @@ const MyLearning = () => {
                     font-weight: 600;
                     cursor: pointer;
                     transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
                 }
                 
                 .resubmit-btn:hover {
@@ -755,10 +839,15 @@ const MyLearning = () => {
                     font-weight: 600;
                     cursor: pointer;
                     transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
                 }
                 
                 .contact-btn:hover, .track-btn:hover {
                     background: #e2e8f0;
+                    transform: translateY(-2px);
                 }
                 
                 .spin {
@@ -849,6 +938,13 @@ const MyLearning = () => {
                     
                     .action-buttons {
                         flex-direction: column;
+                    }
+                    
+                    .card-logo {
+                        width: 40px;
+                        height: 40px;
+                        top: 12px;
+                        left: 12px;
                     }
                 }
             `}</style>
