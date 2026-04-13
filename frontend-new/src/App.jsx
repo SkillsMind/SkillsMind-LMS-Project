@@ -43,7 +43,7 @@ import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import FAQPage from './pages/FAQPage';
 import ContactUs from './pages/ContactUs';
-import NewsEvents from './pages/NewsEvents'; // ✅ NEW IMPORT FOR NEWS & EVENTS PAGE
+import NewsEvents from './pages/NewsEvents';
 
 // ============================================
 // 🆕 NEW: Student Dashboard Pages Import (10 Files)
@@ -101,16 +101,16 @@ function App() {
           <Route path="/login" element={<LoginSignup />} />
           <Route path="/signup" element={<LoginSignup />} />
           
-          {/* ✅ NEW: How It Works Route */}
+          {/* How It Works Route */}
           <Route path="/how-it-works" element={<HowItWorks />} />
           
-          {/* ✅ NEW: FAQ Page Route */}
+          {/* FAQ Page Route */}
           <Route path="/faqs" element={<FAQPage />} />
 
-          {/* ✅ NEW: Contact Us Page Route */}
+          {/* Contact Us Page Route */}
           <Route path="/contact" element={<ContactUs />} />
 
-          {/* ✅ NEW: News & Events Page Route */}
+          {/* News & Events Page Route */}
           <Route path="/news" element={<NewsEvents />} />
 
           {/* Profile & Enrollment Routes (Protected) */}
@@ -159,13 +159,13 @@ function App() {
             element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
           />
 
-          {/* --- STEP 1: My Learning (Status Check Page) --- */}
+          {/* My Learning (Status Check Page) */}
           <Route 
             path="/my-learning" 
             element={<ProtectedRoute><MyLearning /></ProtectedRoute>} 
           />
 
-          {/* --- STEP 2: Student Dashboard (Nested Routes with ProfileProvider) --- */}
+          {/* Student Dashboard (Nested Routes with ProfileProvider) */}
           <Route 
             path="/student-dashboard/*" 
             element={
@@ -178,7 +178,7 @@ function App() {
           />
 
           {/* ============================================
-              🆕 NEW: 10 Student Dashboard Pages Routes (with ProfileProvider)
+              🆕 NEW: 10 Student Dashboard Pages Routes
               ============================================ */}
           <Route 
             path="/student/assignments" 
@@ -305,5 +305,4 @@ function App() {
   );
 }
 
-export default App;/ /   c a c h e   c l e a r  
- 
+export default App;
