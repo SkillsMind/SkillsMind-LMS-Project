@@ -1,3 +1,4 @@
+/* Hero.css - Complete Mobile Responsive Fix */
 .hero-bright {
   background-color: #ffffff;
   min-height: 85vh;
@@ -83,6 +84,31 @@
   margin-bottom: 35px;
 }
 
+.deadline-note {
+  display: block;
+  margin-top: 12px;
+  font-size: 16px;
+  color: #E30613;
+  background: #FFF5F5;
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-weight: 600;
+}
+
+/* Batch Badge */
+.batch-badge {
+  display: inline-block;
+  background: #E30613;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 18px;
+  border-radius: 40px;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(227,6,19,0.2);
+}
+
 /* --- Buttons --- */
 .hero-action-btns { 
   display: flex; 
@@ -122,52 +148,6 @@
   transform: translateY(-3px);
 }
 
-/* --- Mobile Responsive Fix --- */
-@media (max-width: 768px) {
-  .hero-bright {
-    height: auto;
-    padding: 40px 5%;
-  }
-
-  .hero-container {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: 20px;
-  }
-
-  .hero-visual {
-    order: 1;
-    height: 300px;
-  }
-
-  .hero-main-img-clean {
-    max-height: 300px;
-  }
-
-  .shape-blob-red, .shape-polygon-blue {
-    width: 250px;
-    height: 250px;
-  }
-
-  .hero-text-content {
-    order: 2;
-  }
-
-  .hero-text-content h1 {
-    font-size: 28px;
-  }
-
-  .hero-action-btns {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .btn-browse-sharp, .btn-join-sharp {
-    width: 100%;
-    max-width: 300px;
-  }
-}
-
 /* --- Animations --- */
 @keyframes slideInL { 
   from { opacity: 0; transform: translateX(-100px); } 
@@ -191,7 +171,116 @@
   background-image: radial-gradient(#E30613 2px, transparent 2px);
   background-size: 15px 15px;
   z-index: 0;
-}/* Hero Modal Styles - Clean version */
+}
+
+/* ========== NOTICE BOARD TICKER STYLES ========== */
+.notice-ticker-wrapper {
+  background: #f8f9fc;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  position: relative;
+  z-index: 20;
+}
+
+.notice-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.notice-label {
+  background: #E30613;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 6px 16px;
+  border-radius: 40px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(227, 6, 19, 0.2);
+}
+
+.ticker-area {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  background: transparent;
+  border-radius: 40px;
+}
+
+.ticker-slide {
+  display: inline-block;
+  animation: scrollTicker 28s linear infinite;
+  padding-left: 100%;
+  font-weight: 500;
+  color: #1e2a3e;
+}
+
+.ticker-slide span {
+  display: inline-block;
+  margin-right: 56px;
+  font-size: 0.92rem;
+  letter-spacing: 0.3px;
+}
+
+.ticker-slide strong {
+  color: #E30613;
+}
+
+.deadline-date {
+  background: #E30613;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+@keyframes scrollTicker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.ticker-area:hover .ticker-slide {
+  animation-play-state: paused;
+}
+
+.deadline-pill {
+  background: #000B29;
+  color: white;
+  padding: 6px 18px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.deadline-pill .date-highlight {
+  background: #E30613;
+  padding: 3px 12px;
+  border-radius: 30px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.days-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 3px 10px;
+  border-radius: 30px;
+  font-size: 0.75rem;
+}
+
+/* ========== MODAL STYLES ========== */
 .hero-modal-overlay {
   position: fixed;
   top: 0;
@@ -211,17 +300,21 @@
 .hero-modal-container {
   position: relative;
   animation: slideUp 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+  background: white;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
 }
 
-/* Close button - clean */
 .hero-modal-close {
   position: absolute;
-  top: -40px;
-  right: -40px;
+  top: 16px;
+  right: 16px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.05);
   border: none;
   font-size: 20px;
   cursor: pointer;
@@ -231,27 +324,13 @@
   transition: all 0.2s ease;
   z-index: 10;
   color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-weight: bold;
 }
 
 .hero-modal-close:hover {
   background: #e30613;
   color: white;
   transform: scale(1.05);
-}
-
-@media (max-width: 600px) {
-  .hero-modal-close {
-    top: -35px;
-    right: 5px;
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
-  }
-  
-  .hero-modal-overlay {
-    padding: 16px;
-  }
 }
 
 @keyframes fadeIn {
@@ -267,5 +346,225 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================ */
+/* ========== MOBILE RESPONSIVE FIX ========== */
+/* ============================================ */
+
+/* Tablet & Mobile (up to 1024px) */
+@media (max-width: 1024px) {
+  .hero-container {
+    gap: 30px;
+  }
+  
+  .hero-text-content h1 {
+    font-size: 38px;
+  }
+  
+  .hero-text-content p {
+    font-size: 17px;
+  }
+}
+
+/* Mobile (up to 768px) */
+@media (max-width: 768px) {
+  .hero-bright {
+    height: auto;
+    padding: 40px 5%;
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .hero-visual {
+    order: 1;
+    height: 280px;
+  }
+
+  .hero-main-img-clean {
+    max-height: 280px;
+  }
+
+  .shape-blob-red, .shape-polygon-blue {
+    width: 200px;
+    height: 200px;
+  }
+
+  .hero-text-content {
+    order: 2;
+  }
+
+  .hero-text-content h1 {
+    font-size: 28px;
+  }
+
+  .hero-text-content p {
+    font-size: 16px;
+    margin-bottom: 25px;
+  }
+
+  .hero-action-btns {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-browse-sharp, .btn-join-sharp {
+    width: 100%;
+    max-width: 280px;
+    padding: 12px 24px;
+  }
+
+  .batch-badge {
+    margin: 0 auto 20px auto;
+  }
+  
+  .deadline-note {
+    display: inline-block;
+    margin-top: 12px;
+  }
+}
+
+/* ========== NOTICE BOARD MOBILE FIX - HORIZONTAL SCROLL ========== */
+@media (max-width: 780px) {
+  .notice-container {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding: 10px 16px;
+    overflow-x: auto;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  .notice-container::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .notice-container::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 10px;
+  }
+  
+  .notice-container::-webkit-scrollbar-thumb {
+    background: #E30613;
+    border-radius: 10px;
+  }
+  
+  .notice-label {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+  
+  .ticker-area {
+    flex-shrink: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .ticker-area::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .ticker-slide {
+    animation: none;
+    padding-left: 0;
+    white-space: nowrap;
+    display: inline-flex;
+  }
+  
+  .ticker-slide span {
+    display: inline-block;
+    margin-right: 30px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  .deadline-pill {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  
+  .deadline-pill .date-highlight {
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+  
+  .days-badge {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+}
+
+/* Small Mobile (up to 480px) */
+@media (max-width: 480px) {
+  .hero-bright {
+    padding: 30px 4%;
+  }
+
+  .hero-visual {
+    height: 220px;
+  }
+
+  .hero-main-img-clean {
+    max-height: 220px;
+  }
+
+  .hero-text-content h1 {
+    font-size: 24px;
+  }
+
+  .hero-text-content p {
+    font-size: 14px;
+  }
+  
+  .batch-badge {
+    font-size: 11px;
+    padding: 4px 14px;
+  }
+  
+  .btn-browse-sharp, .btn-join-sharp {
+    padding: 10px 20px;
+    font-size: 14px;
+    max-width: 250px;
+  }
+  
+  /* Notice board small mobile */
+  .notice-container {
+    padding: 8px 12px;
+  }
+  
+  .notice-label {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  
+  .ticker-slide span {
+    font-size: 10px;
+    margin-right: 20px;
+  }
+  
+  .deadline-pill {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+  
+  .deadline-pill .date-highlight {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  
+  .days-badge {
+    font-size: 9px;
+    padding: 2px 6px;
   }
 }
