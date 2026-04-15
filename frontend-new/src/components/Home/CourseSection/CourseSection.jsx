@@ -175,9 +175,9 @@ const CourseSection = () => {
   };
 
   // ============================================
-  // HANDLE COURSE CLICK / ENROLLMENT - FIXED SPELLING
+  // HANDLE CARD CLICK - NEW FUNCTION FOR FULL CARD CLICK
   // ============================================
-  const handleCourseNavigation = (courseId) => {
+  const handleCardClick = (courseId) => {
     if (isLoggedIn()) {
       navigate(`/get-enrolment?course=${courseId}&enroll=true`);
     } else {
@@ -186,7 +186,20 @@ const CourseSection = () => {
     }
   };
 
-  // Handle View All Courses Click - FIXED SPELLING
+  // ============================================
+  // HANDLE COURSE CLICK / ENROLLMENT - FOR READ MORE BUTTON
+  // ============================================
+  const handleCourseNavigation = (courseId, e) => {
+    e.stopPropagation(); // Prevent event bubbling to card click
+    if (isLoggedIn()) {
+      navigate(`/get-enrolment?course=${courseId}&enroll=true`);
+    } else {
+      localStorage.setItem('redirectAfterLogin', `/get-enrolment?course=${courseId}&enroll=true`);
+      navigate('/login');
+    }
+  };
+
+  // Handle View All Courses Click
   const handleViewAllCourses = () => {
     if (isLoggedIn()) {
       navigate('/get-enrolment');
@@ -196,7 +209,7 @@ const CourseSection = () => {
     }
   };
 
-  // AI Recommendation Enroll button - FIXED SPELLING
+  // AI Recommendation Enroll button
   const handleAIEnroll = (courseId) => {
     if (isLoggedIn()) {
       navigate(`/get-enrolment?course=${courseId}&enroll=true`);
@@ -581,6 +594,15 @@ const CourseSection = () => {
                         key={category.id || index} 
                         className="category-card-simple"
                         style={{ '--delay': `${index * 0.1}s` }}
+                        onClick={() => handleCardClick(category._id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleCardClick(category._id);
+                          }
+                        }}
                       >
                         <div 
                           className="card-bg-image" 
@@ -599,7 +621,7 @@ const CourseSection = () => {
                               <span>{category.duration}</span>
                             </div>
                             <button 
-                              onClick={() => handleCourseNavigation(category._id)}
+                              onClick={(e) => handleCourseNavigation(category._id, e)}
                               className="read-more-link"
                             >
                               Read More
@@ -640,6 +662,15 @@ const CourseSection = () => {
                       key={category.id || index} 
                       className="mobile-card"
                       style={{ '--delay': `${index * 0.1}s` }}
+                      onClick={() => handleCardClick(category._id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleCardClick(category._id);
+                        }
+                      }}
                     >
                       <div 
                         className="mobile-card-bg" 
@@ -660,7 +691,7 @@ const CourseSection = () => {
                           <span>{category.category}</span>
                         </div>
                         <button 
-                          onClick={() => handleCourseNavigation(category._id)}
+                          onClick={(e) => handleCourseNavigation(category._id, e)}
                           className="mobile-read-more"
                         >
                           Read More
