@@ -10,11 +10,17 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
+// ==========================================
+// DEBUG: Log Cloudinary status on startup
+// ==========================================
+console.log('🔧 Payment Routes Loaded');
+console.log('   Cloudinary Utils:', typeof uploadToCloudinary === 'function' ? '✅ Available' : '❌ Missing');
+
 // Use memory storage for Cloudinary (no disk write)
 const storage = multer.memoryStorage();
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // Nodemailer Setup
@@ -32,20 +38,24 @@ const transporter = nodemailer.createTransport({
 
 // A. Fetch All Payments
 router.get('/all-payments', async (req, res) => {
+    console.log('📋 GET /all-payments - Fetching all payments');
     try {
         const payments = await Payment.find()
             .populate('studentId', 'name email')
             .sort({ createdAt: -1 });
+        console.log(`✅ Found ${payments.length} payments`);
         res.status(200).json(payments);
     } catch (err) {
-        console.error("Fetch payments error:", err);
-        res.status(500).json({ message: "SkillsMind DB Error", error: err });
+        console.error("❌ Fetch payments error:", err);
+        res.status(500).json({ message: "SkillsMind DB Error", error: err.message });
     }
 });
 
 // B. Update Status (Approve/Reject)
 router.put('/update-status/:id', async (req, res) => {
     const { status, rejectionReason } = req.body;
+    console.log(`🔄 PUT /update-status/${req.params.id} - Status: ${status}`);
+    
     try {
         if (!['approved', 'rejected', 'pending'].includes(status.toLowerCase())) {
             return res.status(400).json({ success: false, message: "Invalid status value" });
@@ -115,7 +125,7 @@ router.put('/update-status/:id', async (req, res) => {
                     console.log(`✅ PAYMENT APPROVED: ${student.email} for ${updated.courseName}`);
                 }
             } catch (err) {
-                console.error("Approval error:", err);
+                console.error("❌ Approval error:", err);
             }
         } 
         // REJECTED: Remove Access
@@ -160,7 +170,7 @@ router.put('/update-status/:id', async (req, res) => {
                     console.log(`❌ PAYMENT REJECTED: ${student.email} for ${updated.courseName}`);
                 }
             } catch (err) {
-                console.error("Rejection error:", err);
+                console.error("❌ Rejection error:", err);
             }
         }
 
@@ -192,7 +202,7 @@ router.put('/update-status/:id', async (req, res) => {
             `
         };
 
-        transporter.sendMail(statusMailOptions).catch(err => console.error("Email Error:", err));
+        transporter.sendMail(statusMailOptions).catch(err => console.error("❌ Email Error:", err));
         
         res.status(200).json({ 
             success: true, 
@@ -200,21 +210,21 @@ router.put('/update-status/:id', async (req, res) => {
             data: updated 
         });
     } catch (err) {
-        console.error("Status update error:", err);
+        console.error("❌ Status update error:", err);
         res.status(500).json({ success: false, message: "Server Error", error: err.message });
     }
 });
 
 // C. DELETE Payment Record (with Cloudinary cleanup)
 router.delete('/delete/:id', async (req, res) => {
+    console.log(`🗑️ DELETE /delete/${req.params.id}`);
     try {
         const payment = await Payment.findById(req.params.id);
         if (!payment) return res.status(404).json({ message: "Record not found" });
 
-        // 🔥 Delete from Cloudinary if it's a Cloudinary URL
+        // Delete from Cloudinary if it's a Cloudinary URL
         if (payment.transactionReceipt && payment.transactionReceipt.includes('cloudinary')) {
             try {
-                // Extract public ID from Cloudinary URL
                 const url = payment.transactionReceipt;
                 const parts = url.split('/');
                 const filenameWithExt = parts[parts.length - 1];
@@ -224,20 +234,21 @@ router.delete('/delete/:id', async (req, res) => {
                 await deleteFromCloudinary(publicId);
                 console.log(`✅ Deleted from Cloudinary: ${publicId}`);
             } catch (cloudinaryError) {
-                console.error("Cloudinary delete error:", cloudinaryError);
+                console.error("❌ Cloudinary delete error:", cloudinaryError);
             }
         }
 
         await Payment.findByIdAndDelete(req.params.id);
         res.status(200).json({ success: true, message: "Record deleted successfully" });
     } catch (err) {
-        console.error("Delete error:", err);
+        console.error("❌ Delete error:", err);
         res.status(500).json({ success: false, message: "Delete failed", error: err.message });
     }
 });
 
 // D. GET Rejection Reason
 router.get('/rejection-reason/:id', async (req, res) => {
+    console.log(`📝 GET /rejection-reason/${req.params.id}`);
     try {
         const payment = await Payment.findById(req.params.id);
         if (!payment) {
@@ -254,7 +265,7 @@ router.get('/rejection-reason/:id', async (req, res) => {
             enrollmentMode: payment.enrollmentMode
         });
     } catch (error) {
-        console.error("Error fetching rejection reason:", error);
+        console.error("❌ Error fetching rejection reason:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -265,6 +276,7 @@ router.get('/rejection-reason/:id', async (req, res) => {
 
 // Get all payments for a user
 router.get('/my-all-payments/:userId', async (req, res) => {
+    console.log(`📋 GET /my-all-payments/${req.params.userId}`);
     try {
         const { userId } = req.params;
         
@@ -276,6 +288,8 @@ router.get('/my-all-payments/:userId', async (req, res) => {
         const payments = await Payment.find({ 
             studentEmail: user.email 
         }).sort({ createdAt: -1 });
+        
+        console.log(`✅ Found ${payments.length} payments for user ${user.email}`);
         
         res.json({
             success: true,
@@ -291,13 +305,14 @@ router.get('/my-all-payments/:userId', async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error("Error fetching user payments:", error);
+        console.error("❌ Error fetching user payments:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
 // Get single payment status by email
 router.get('/my-status/:email', async (req, res) => {
+    console.log(`📋 GET /my-status/${req.params.email}`);
     try {
         const studentEmail = req.params.email;
         const payment = await Payment.findOne({ studentEmail: studentEmail })
@@ -310,15 +325,19 @@ router.get('/my-status/:email', async (req, res) => {
         
         res.status(200).json(payment);
     } catch (err) {
-        console.error("SkillsMind Dashboard Status Error:", err.message);
+        console.error("❌ SkillsMind Dashboard Status Error:", err.message);
         res.status(500).json({ message: "Server Error", error: err.message });
     }
 });
 
 // ==========================================
-// 🔥 CRITICAL: Submit Payment with Cloudinary
+// 🔥 FIXED: Submit Payment with Cloudinary
 // ==========================================
 router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
+    console.log('💰 POST /submit-payment - New payment submission');
+    console.log('   Body:', JSON.stringify(req.body, null, 2).substring(0, 500));
+    console.log('   File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'No file');
+    
     try {
         const { 
             studentName, studentEmail, studentCnic, courseName, 
@@ -326,11 +345,23 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
             enrollmentMode, previousPaymentId, enrollmentId 
         } = req.body;
         
+        // Validation
+        if (!studentEmail) {
+            console.error('❌ Missing studentEmail');
+            return res.status(400).json({ success: false, message: "Student email is required" });
+        }
+        
+        if (!courseId) {
+            console.error('❌ Missing courseId');
+            return res.status(400).json({ success: false, message: "Course ID is required" });
+        }
+        
         let receiptUrl = null;
         
-        // 🔥 Upload to Cloudinary if file exists
+        // Upload to Cloudinary if file exists
         if (req.file) {
             try {
+                console.log('☁️ Uploading to Cloudinary...');
                 const uploadResult = await uploadToCloudinary(
                     req.file.buffer, 
                     'payments/receipts',
@@ -339,32 +370,33 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
                 receiptUrl = uploadResult.secure_url;
                 console.log(`✅ Receipt uploaded to Cloudinary: ${receiptUrl}`);
             } catch (uploadError) {
-                console.error("Cloudinary upload error:", uploadError);
+                console.error("❌ Cloudinary upload error:", uploadError.message);
                 return res.status(500).json({ 
                     success: false, 
-                    message: "Failed to upload receipt. Please try again." 
+                    message: "Failed to upload receipt. Please try again.",
+                    error: uploadError.message
                 });
             }
         } else if (!previousPaymentId) {
-            // Only require receipt for new submissions
+            console.error('❌ No receipt file and not a resubmit');
             return res.status(400).json({
                 success: false,
                 message: "Payment receipt is required"
             });
         }
 
-        // Find or verify student
-        let student = await User.findById(studentId);
-        if (!student) {
-            student = await User.findOne({ email: studentEmail });
-        }
+        // 🔥 FIXED: Find student by email (not by undefined studentId)
+        console.log(`🔍 Looking for student with email: ${studentEmail}`);
+        let student = await User.findOne({ email: studentEmail });
         
         if (!student) {
+            console.error(`❌ Student not found: ${studentEmail}`);
             return res.status(404).json({ 
                 success: false, 
                 message: 'Student not found. Please register first or contact support.' 
             });
         }
+        console.log(`✅ Student found: ${student._id} - ${student.name || studentEmail}`);
         
         // Check for existing pending payment
         const existingPending = await Payment.findOne({
@@ -374,6 +406,7 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
         });
         
         if (existingPending && !previousPaymentId) {
+            console.log(`⚠️ Existing pending payment found: ${existingPending._id}`);
             return res.status(400).json({
                 success: false,
                 message: 'You already have a pending payment for this course. Please wait for admin approval.'
@@ -382,10 +415,12 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
         
         // Handle resubmit - mark old payment as replaced
         if (previousPaymentId) {
+            console.log(`🔄 Resubmit for previous payment: ${previousPaymentId}`);
             const previousPayment = await Payment.findById(previousPaymentId);
             if (previousPayment && previousPayment.status === 'rejected') {
                 previousPayment.isReplaced = true;
                 await previousPayment.save();
+                console.log(`✅ Marked previous payment as replaced`);
             }
         }
         
@@ -400,14 +435,17 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
             transactionId, 
             amount, 
             paymentMethod,
-            transactionReceipt: receiptUrl, // 🔥 Cloudinary URL stored here
+            transactionReceipt: receiptUrl,
             status: 'pending',
             enrollmentId: enrollmentId
         });
 
         await newPayment.save();
+        console.log(`✅ Payment saved to database with ID: ${newPayment._id}`);
 
         // Send confirmation email
+        const frontendUrl = process.env.FRONTEND_URL || 'https://skillsmind-lms-project-production.up.railway.app';
+        
         const mailOptions = {
             from: '"SkillsMind Support" <skillsmind786@gmail.com>',
             to: studentEmail,
@@ -430,14 +468,14 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
                         </div>
                         <p>You will receive an email once your payment is approved.</p>
                         <div style="text-align:center;margin-top:30px;">
-                            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/my-learning" style="background:#000B29;color:#fff;padding:12px 25px;text-decoration:none;border-radius:5px;">Track Status</a>
+                            <a href="${frontendUrl}/my-learning" style="background:#000B29;color:#fff;padding:12px 25px;text-decoration:none;border-radius:5px;">Track Status</a>
                         </div>
                     </div>
                 </div>
             `
         };
         
-        transporter.sendMail(mailOptions).catch(err => console.log("Email Error:", err));
+        transporter.sendMail(mailOptions).catch(err => console.error("❌ Email Error:", err.message));
         
         res.status(200).json({ 
             success: true, 
@@ -446,7 +484,8 @@ router.post('/submit-payment', upload.single('receipt'), async (req, res) => {
         });
         
     } catch (error) {
-        console.error("Payment submission error:", error);
+        console.error("❌ Payment submission error:", error);
+        console.error("   Stack:", error.stack);
         res.status(500).json({ 
             success: false,
             message: 'Error saving payment. Please try again.',
