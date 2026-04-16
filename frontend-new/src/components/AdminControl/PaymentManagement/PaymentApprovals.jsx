@@ -38,7 +38,7 @@ const PaymentApprovals = () => {
         }
     };
 
-    // 🔥 UPDATED: Handle rejection with reason
+    // 🔥 Handle rejection with reason
     const handleAction = async (e, id, status) => {
         if(e) { e.preventDefault(); e.stopPropagation(); }
         
@@ -63,11 +63,10 @@ const PaymentApprovals = () => {
                 }
             });
 
-            if (!reason) return; // Cancelled
+            if (!reason) return;
             return updateStatus(id, status, reason);
         }
         
-        // For approve or pending, proceed directly
         updateStatus(id, status);
     };
 
@@ -255,10 +254,21 @@ const PaymentApprovals = () => {
         }
     };
 
+    // 🔥🔥🔥 UPDATED viewReceipt FUNCTION - Cloudinary Support 🔥🔥🔥
     const viewReceipt = (e, path) => {
         if(e) { e.preventDefault(); e.stopPropagation(); }
         if (!path) return Swal.fire('No Proof', 'No transaction receipt was found for this student.', 'info');
-        const finalUrl = `${API_BASE_URL}/${path.replace(/\\/g, '/')}`;
+        
+        // Check if it's a Cloudinary URL or local path
+        let finalUrl;
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            // Already a full URL (Cloudinary or external)
+            finalUrl = path;
+        } else {
+            // Fallback to local server (for old records)
+            finalUrl = `${API_BASE_URL}/${path.replace(/\\/g, '/')}`;
+        }
+        
         setSelectedImage(finalUrl);
     };
 
@@ -349,7 +359,6 @@ const PaymentApprovals = () => {
                                         <span className={`sm-badge status-${pay.status?.toLowerCase()}`}>
                                             {pay.status?.toUpperCase()}
                                         </span>
-                                        {/* 🔥 SHOW REJECTION REASON */}
                                         {pay.rejectionReason && (
                                             <div style={{ 
                                                 fontSize: '11px', 
