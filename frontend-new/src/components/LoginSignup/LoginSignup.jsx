@@ -9,6 +9,19 @@ import toast, { Toaster } from 'react-hot-toast';
 import logo from '../../assets/Skills_Mind_Logo.png'; 
 import './LoginSignup.css';
 
+// ========== 🔥 VITE COMPATIBLE - DYNAMIC API URL 🔥 ==========
+const getApiBaseUrl = () => {
+  // Check if we're in production (Vite)
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_API_URL || 'https://skillsmind-lms-project-production.up.railway.app';
+  }
+  // Development (localhost)
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+// =========================================================================
+
 const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [view, setView] = useState('auth'); 
@@ -70,7 +83,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
       setLoading(true);
       const toastId = toast.loading("SkillsMind is sending your security code...");
       try {
-        const response = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/send-otp', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: cleanEmail })
@@ -99,7 +112,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
     setLoading(true);
     const toastId = toast.loading("Verifying your identity...");
     try {
-      const verifyRes = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/verify-otp', {
+      const verifyRes = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, otp: finalOtp })
@@ -107,7 +120,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
       const verifyData = await verifyRes.json();
 
       if (verifyData.success) {
-        const registerRes = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/register', {
+        const registerRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -140,7 +153,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
     const toastId = toast.loading("Authenticating with SkillsMind...");
 
     try {
-      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password: formData.password })
@@ -180,7 +193,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
       setLoading(true);
       const toastId = toast.loading("SkillsMind Google Syncing...");
       try {
-        const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/google-login', {
+        const res = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: tokenResponse.access_token })
@@ -204,8 +217,12 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
           setTimeout(() => {
             handleRedirectAfterLogin(data.user);
           }, 1500);
+        } else {
+          toast.error(data.message || "Google login failed!", { id: toastId });
         }
-      } catch (err) { toast.error("Google sync failed!"); }
+      } catch (err) { 
+        toast.error("Google sync failed!", { id: toastId }); 
+      }
       finally { setLoading(false); }
     },
     onError: () => toast.error("Google Auth Canceled"),
@@ -216,7 +233,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
     setLoading(true);
     const toastId = toast.loading("Searching for your account...");
     try {
-      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/forgot-password', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase() })
@@ -226,8 +243,12 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
         toast.success("Security OTP sent to your email!", { id: toastId });
         setOtp(['', '', '', '', '', '']); 
         setView('forgot-otp');
-      } else { toast.error(data.message, { id: toastId }); }
-    } catch (err) { toast.error("Server error!"); }
+      } else { 
+        toast.error(data.message, { id: toastId }); 
+      }
+    } catch (err) { 
+      toast.error("Server error!", { id: toastId }); 
+    }
     finally { setLoading(false); }
   };
 
@@ -236,7 +257,7 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
     setLoading(true);
     const toastId = toast.loading("Validating OTP...");
     try {
-      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/verify-reset-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/verify-reset-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase(), otp: finalOtp })
@@ -245,19 +266,25 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
       if (data.success) {
         toast.success("Identity Verified! Set new password.", { id: toastId });
         setView('reset-password');
-      } else { toast.error(data.message, { id: toastId }); }
-    } catch (err) { toast.error("OTP verification failed"); }
+      } else { 
+        toast.error(data.message, { id: toastId }); 
+      }
+    } catch (err) { 
+      toast.error("OTP verification failed", { id: toastId }); 
+    }
     finally { setLoading(false); }
   };
 
   const handleFinalReset = async (e) => {
     e.preventDefault();
-    if (formData.newPassword !== formData.confirmPassword) return toast.error("Passwords match nahi ho rahe!");
+    if (formData.newPassword !== formData.confirmPassword) {
+      return toast.error("Passwords do not match!");
+    }
     
     setLoading(true);
     const toastId = toast.loading("Updating SkillsMind credentials...");
     try {
-      const res = await fetch('https://skillsmind-lms-project-production.up.railway.app/api/auth/reset-password', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.forgotEmail.trim().toLowerCase(), password: formData.newPassword })
@@ -266,8 +293,12 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
       if (data.success) {
         toast.success("Password Updated! You can now Sign In.", { id: toastId });
         setTimeout(() => { setView('auth'); setIsLogin(true); }, 2000);
+      } else {
+        toast.error(data.message || "Reset failed", { id: toastId });
       }
-    } catch (err) { toast.error("Reset failed"); } 
+    } catch (err) { 
+      toast.error("Reset failed", { id: toastId }); 
+    } 
     finally { setLoading(false); }
   };
 
@@ -452,7 +483,6 @@ const LoginSignup = ({ onSuccess, isModalMode = false, onClose }) => {
         </div>
 
         <div className="auth-side-form">
-          {/* Same form content as above */}
           <AnimatePresence mode="wait">
             {view === 'auth' && (
               <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="form-container-clean">
