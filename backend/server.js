@@ -171,6 +171,38 @@ try {
     app.use('/api/ai-grading', (req, res) => res.json({ success: false }));
 }
 
+// ==========================================
+// 🔥 NEW: REFERRAL SYSTEM ROUTES 🔥
+// ==========================================
+try {
+    const referralRoutes = require('./routes/referralRoutes');
+    app.use('/api/referrals', referralRoutes);
+    console.log('✅ Referral Routes loaded');
+} catch (err) {
+    console.warn(`⚠️ Referral Routes disabled: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Referral system unavailable' });
+    });
+    app.use('/api/referrals', dummyRouter);
+}
+
+// ==========================================
+// 🔥🔥🔥 WEBINAR SYSTEM ROUTES 🔥🔥🔥
+// ==========================================
+try {
+    const webinarRoutes = require('./routes/webinarRoutes');
+    app.use('/api/webinar', webinarRoutes);
+    console.log('✅ Webinar Routes loaded');
+} catch (err) {
+    console.warn(`⚠️ Webinar Routes disabled: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Webinar system unavailable' });
+    });
+    app.use('/api/webinar', dummyRouter);
+}
+
 // Stats API
 app.get('/api/stats', async (req, res) => {
     try {

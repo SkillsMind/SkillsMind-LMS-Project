@@ -5,7 +5,7 @@
 /* Core Navbar Setup - STATIC (Fixed at top) */
 .skillsmind-nav {
   background-color: #000B29;
-  height: 85px;
+  height: 75px;
   width: 100%;
   position: fixed;
   top: 0;
@@ -19,22 +19,22 @@
 
 /* Add padding to body so content doesn't hide under navbar */
 body {
-  padding-top: 85px;
+  padding-top: 75px;
 }
 
 .nav-container {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .nav-logo img { 
-  height: 130px; 
-  width: 130px; 
+  height: 120px; 
+  width: 120px; 
   display: block;
 }
 
@@ -48,7 +48,7 @@ body {
 .desktop-links { 
   display: flex; 
   list-style: none; 
-  gap: 25px; 
+  gap: 8px;  /* ✅ Reduced gap from 25px to 8px */
   margin: 0; 
   padding: 0; 
 }
@@ -60,12 +60,13 @@ body {
 .desktop-links a {
   color: #fff;
   text-decoration: none;
-  font-size: 20px; 
+  font-size: 16px;  /* ✅ Reduced from 20px to 16px */
   font-weight: 500;
-  padding: 5px 0;
+  padding: 8px 14px;  /* ✅ Added horizontal padding */
   transition: 0.3s ease;
   position: relative;
   display: block;
+  border-radius: 8px;
 }
 
 /* Decent Underline Hover Effect */
@@ -75,19 +76,26 @@ body {
   width: 0;
   height: 2px;
   bottom: 0;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: #E30613;
   transition: width 0.3s ease;
 }
 
-.desktop-links a:hover { color: #E30613; }
-.desktop-links a:hover::after { width: 100%; }
+.desktop-links a:hover { 
+  color: #E30613; 
+  background: rgba(227, 6, 19, 0.1);
+}
+
+.desktop-links a:hover::after { 
+  width: 70%; 
+}
 
 /* Desktop Right Actions */
 .nav-actions { 
   display: flex; 
   align-items: center; 
-  gap: 20px; 
+  gap: 16px; 
 }
 
 /* ============================================
@@ -99,12 +107,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: 8px;
   color: white;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
@@ -115,23 +123,18 @@ body {
   transform: translateY(-2px);
 }
 
-/* Old search container hidden */
-.desktop-search-container {
-  display: none !important;
-}
-
 /* Mobile Search Icon - Hidden on desktop */
 .mobile-search-icon { 
   display: none;
   color: white; 
-  font-size: 24px; 
+  font-size: 20px; 
   cursor: pointer; 
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: 8px;
   transition: all 0.3s ease;
   flex-shrink: 0;
 }
@@ -143,18 +146,18 @@ body {
 .auth-group { 
   display: flex; 
   align-items: center; 
-  gap: 15px; 
+  gap: 12px; 
 }
 
-/* Sign In Button: White Border & Sharp Corners */
+/* Sign In Button */
 .signin-text { 
   color: white; 
   text-decoration: none; 
-  font-size: 15px; 
+  font-size: 14px; 
   font-weight: 600; 
-  padding: 8px 18px;
+  padding: 8px 20px;
   border: 1.5px solid #ffffff; 
-  border-radius: 0px; 
+  border-radius: 8px; 
   transition: 0.3s;
   display: inline-block;
   white-space: nowrap;
@@ -163,17 +166,18 @@ body {
 .signin-text:hover { 
   background-color: #ffffff;
   color: #000B29;
+  transform: translateY(-2px);
 }
 
-/* Sign Up Button: Sharp Corners */
+/* Sign Up Button */
 .signup-btn-red {
   background: #E30613; 
   color: white; 
-  padding: 10px 22px; 
-  border-radius: 0px; 
+  padding: 8px 22px; 
+  border-radius: 8px; 
   text-decoration: none; 
   font-weight: bold; 
-  font-size: 15px;
+  font-size: 14px;
   white-space: nowrap; 
   border: 1.5px solid #E30613;
   transition: 0.3s;
@@ -191,14 +195,14 @@ body {
 .mobile-menu-toggle {
   display: none;
   color: white; 
-  font-size: 24px; 
+  font-size: 20px; 
   cursor: pointer; 
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: 8px;
   transition: all 0.3s ease;
   flex-shrink: 0;
 }
@@ -208,13 +212,184 @@ body {
 }
 
 /* ============================================
+   WEBINAR DROPDOWN - CLEAN & PROFESSIONAL
+   ========================================== */
+
+.webinar-nav-item {
+  position: relative;
+}
+
+.webinar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s;
+  font-size: 10px;
+}
+
+.webinar-nav-item:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Clean Webinar Dropdown */
+.webinar-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.25s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Dropdown Header */
+.dropdown-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #000B29, #001a4d);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.dropdown-header span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dropdown-header span::before {
+  content: "🔴";
+  font-size: 8px;
+}
+
+/* Dropdown Items */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: #fef2f2;
+  padding-left: 20px;
+}
+
+.dropdown-item-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #fee2e2, #ffd4d4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #DC2626;
+  flex-shrink: 0;
+}
+
+.dropdown-item-content {
+  flex: 1;
+}
+
+.dropdown-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.dropdown-item-course {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+
+.dropdown-item-date {
+  font-size: 10px;
+  color: #DC2626;
+  font-weight: 500;
+  display: inline-block;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+/* Dropdown Footer */
+.dropdown-footer {
+  padding: 10px 16px;
+  background: #f8fafc;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dropdown-footer a {
+  font-size: 12px;
+  font-weight: 600;
+  color: #DC2626;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: gap 0.2s;
+}
+
+.dropdown-footer a:hover {
+  gap: 10px;
+  text-decoration: none;
+}
+
+/* Dropdown Arrow (triangle) */
+.webinar-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: white;
+  transform: translateX(-50%) rotate(45deg);
+  border-top: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+}
+
+/* ============================================
    MOBILE SEARCH OVERLAY
    ============================================ */
 
 .mobile-search-overlay {
   display: none;
   position: fixed;
-  top: 85px; 
+  top: 75px; 
   left: 0; 
   right: 0; 
   width: 100%; 
@@ -239,8 +414,9 @@ body {
   flex: 1; 
   padding: 12px; 
   border: 1px solid #ddd; 
+  border-radius: 8px;
   outline: none;
-  font-size: 16px;
+  font-size: 14px;
   color: #000B29;
 }
 
@@ -249,6 +425,7 @@ body {
   color: white; 
   border: none; 
   padding: 0 25px; 
+  border-radius: 8px;
   font-weight: bold; 
   cursor: pointer;
   transition: all 0.3s ease;
@@ -260,19 +437,19 @@ body {
 }
 
 /* ============================================
-   MOBILE SIDEBAR MENU - FIXED
+   MOBILE SIDEBAR MENU
    ============================================ */
 
 .mobile-sidebar-menu {
-  display: none; /* Hidden by default on desktop */
+  display: none;
   position: fixed; 
-  top: 85px; 
+  top: 75px; 
   left: -100%; 
   width: 280px; 
-  height: calc(100vh - 85px); 
+  height: calc(100vh - 75px); 
   background: #000B29; 
-  padding: 30px; 
-  transition: left 0.4s ease-in-out;
+  padding: 24px; 
+  transition: left 0.3s ease;
   z-index: 2500;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   overflow-y: auto;
@@ -301,18 +478,18 @@ body {
 .sidebar-list a { 
   color: white; 
   text-decoration: none; 
-  font-size: 18px; 
+  font-size: 16px; 
   display: block; 
   font-weight: 500;
-  padding: 15px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.3s ease;
 }
 
 .sidebar-list a:hover,
 .sidebar-list a:active {
   color: #E30613;
-  padding-left: 10px;
+  padding-left: 8px;
 }
 
 .sidebar-signup { 
@@ -322,18 +499,34 @@ body {
 
 .divider { 
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.2); 
-  margin: 20px 0; 
+  border-top: 1px solid rgba(255,255,255,0.15); 
+  margin: 16px 0; 
   padding: 0;
   height: 0;
 }
 
+/* Mobile Webinar Link */
+.mobile-webinar-link {
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+}
+
+.mobile-webinar-badge {
+  background: #DC2626;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: auto;
+}
+
 /* ============================================
-   RESPONSIVE LOGIC (1150px and below)
+   RESPONSIVE LOGIC
    ============================================ */
 
 @media screen and (max-width: 1150px) {
-  /* Hide desktop elements */
   .nav-links-wrapper { 
     display: none; 
   }
@@ -342,12 +535,10 @@ body {
     display: none; 
   }
   
-  /* Hide desktop search icon */
   .desktop-search-icon {
     display: none;
   }
   
-  /* Show mobile elements */
   .mobile-search-icon { 
     display: flex; 
   }
@@ -356,33 +547,57 @@ body {
     display: flex; 
   }
   
-  /* Show sidebar */
   .mobile-sidebar-menu {
     display: block;
   }
 }
 
-/* ============================================
-   MOBILE VIEW ADJUSTMENTS
-   ============================================ */
-
-@media screen and (max-width: 480px) {
+/* Tablet View */
+@media screen and (max-width: 768px) {
+  .nav-container {
+    padding: 0 16px;
+  }
+  
   .nav-logo img { 
-    height: 100px; 
-    width: 100px; 
+    height: 80px; 
+    width: 80px; 
   }
   
   .skillsmind-nav {
-    height: 75px;
+    height: 70px;
   }
   
   body {
-    padding-top: 75px;
+    padding-top: 70px;
   }
   
   .mobile-sidebar-menu {
-    top: 75px;
-    height: calc(100vh - 75px);
+    top: 70px;
+    height: calc(100vh - 70px);
+  }
+  
+  .mobile-search-overlay {
+    top: 70px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .nav-logo img { 
+    height: 65px; 
+    width: 65px; 
+  }
+  
+  .skillsmind-nav {
+    height: 65px;
+  }
+  
+  body {
+    padding-top: 65px;
+  }
+  
+  .mobile-sidebar-menu {
+    top: 65px;
+    height: calc(100vh - 65px);
     width: 100%;
     left: -100%;
   }
@@ -392,17 +607,17 @@ body {
   }
   
   .mobile-search-overlay {
-    top: 75px;
+    top: 65px;
   }
   
   .sidebar-list a {
-    font-size: 16px;
+    font-size: 15px;
     padding: 12px 0;
   }
 }
 
 /* ============================================
-   ACCESSIBILITY
+   ACCESSIBILITY & ANIMATIONS
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -413,12 +628,13 @@ body {
   }
 }
 
-/* Focus states */
+/* Focus states for accessibility */
 .signin-text:focus,
 .signup-btn-red:focus,
 .desktop-search-icon:focus,
 .mobile-search-icon:focus,
-.mobile-menu-toggle:focus {
+.mobile-menu-toggle:focus,
+.dropdown-item:focus {
   outline: 2px solid #E30613;
   outline-offset: 2px;
 }
