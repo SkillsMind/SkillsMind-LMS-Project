@@ -28,6 +28,9 @@ import ImportantLinks from './ImportantLinks/ImportantLinks';
 import NoticeBoard from './NoticeBoard/NoticeBoard';
 import JobsInternships from './JobsInternships/JobsInternships';
 
+// 🔥 WEBINAR MANAGEMENT IMPORT
+import WebinarManager from './WebinarManagement/WebinarManager';
+
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -62,7 +65,7 @@ const AdminDashboard = () => {
     return () => document.body.classList.remove('admin-view-active');
   }, [activeTab]);
 
-  // Close mobile menu when clicking outside - UPDATED with correct class name
+  // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (mobileMenuOpen && !e.target.closest('.sm-sidebar') && !e.target.closest('.admin-mobile-menu-toggle')) {
@@ -241,10 +244,96 @@ const AdminDashboard = () => {
     }
   };
 
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'addCourse':
+        return <AddCourse />;
+      case 'registration':
+        return <RegistrationData />;
+      case 'payments':
+        return <PaymentApprovals />;
+      case 'assignments':
+        return <AssignmentManager />;
+      case 'quizzes':
+        return <QuizManager onViewReport={viewQuizReport} />;
+      case 'quizReport':
+        return <QuizReport quizId={selectedQuizId} onBack={backToQuizzes} />;
+      case 'schedules':
+        return <ScheduleManager />;
+      case 'attendance':
+        return <AttendanceManager />;
+      case 'dynamic':
+        return renderDynamicContent();
+      case 'webinar':
+        return <WebinarManager />;
+      default:
+        return (
+          <>
+            <div className="sm-content-header">
+              <h2>{activeTab === 'students' ? "Registered Dashboard Users" : "Profile Submissions"}</h2>
+              <div className="sm-export-btns">
+                <button className="btn-excel" onClick={downloadExcel}><FaFileExcel /> Excel</button>
+                <button className="btn-pdf" onClick={downloadPDF}><FaFilePdf /> PDF</button>
+              </div>
+            </div>
+
+            <div className="sm-data-card">
+              <table className="sm-table">
+                <thead>
+                  {activeTab === 'students' ? (
+                    <tr>
+                      <th>User Details</th>
+                      <th>User Role</th>
+                      <th>Join Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th>Full Name</th>
+                      <th>Interest</th>
+                      <th>Gender & DOB</th>
+                      <th>Institute</th>
+                      <th>Contact</th>
+                      <th>Actions</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr><td colSpan="6" className="status-msg">Fetching SkillsMind Data...</td></tr>
+                  ) : activeTab === "students" ? (
+                    filteredUsers.map((user) => (
+                      <tr key={user._id}>
+                        <td><div className="info-cell"><strong>{user.name}</strong><span>{user.email}</span></div></td>
+                        <td><span className="badge">{user.role}</span></td>
+                        <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-GB') : '06 Jan 2026'}</td>
+                        <td><button className="btn-reject" onClick={() => openDeleteModal(user._id)}><FaTrash /></button></td>
+                      </tr>
+                    ))
+                  ) : (
+                    filteredProfiles.map((p) => (
+                      <tr key={p._id}>
+                        <td><div className="info-cell"><strong>{p.firstName} {p.lastName}</strong></div></td>
+                        <td><span className="badge-course">{p.interest}</span></td>
+                        <td><div className="info-cell"><strong>{p.gender}</strong><span>{p.dob}</span></div></td>
+                        <td><div className="info-cell"><strong>{p.institute}</strong><span>{p.passingYear}</span></div></td>
+                        <td><div className="info-cell"><strong>{p.mobile}</strong><span>{p.city}</span></div></td>
+                        <td><button className="btn-reject" onClick={() => openDeleteModal(p._id)}><FaTrash /></button></td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+    }
+  };
+
   return (
     <div className="sm-dashboard-root">
       
-      {/* ADMIN MOBILE MENU TOGGLE BUTTON - UNIQUE CLASS NAME (FIXED) */}
+      {/* ADMIN MOBILE MENU TOGGLE BUTTON */}
       <button 
         className="admin-mobile-menu-toggle"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -252,7 +341,7 @@ const AdminDashboard = () => {
         {mobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
       </button>
 
-      {/* ADMIN MOBILE OVERLAY - UNIQUE CLASS NAME (FIXED) */}
+      {/* ADMIN MOBILE OVERLAY */}
       {mobileMenuOpen && <div className="admin-mobile-overlay" onClick={() => setMobileMenuOpen(false)}></div>}
 
       {/* PROFESSIONAL DELETE MODAL */}
@@ -324,6 +413,11 @@ const AdminDashboard = () => {
               <FaCalendarCheck /> Attendance
             </button>
 
+            {/* 🔥 WEBINAR MANAGEMENT TAB - NEW */}
+            <button className={`sm-tab-btn ${activeTab === 'webinar' ? 'active' : ''}`} onClick={() => handleTabClick('webinar')}>
+              <FaCalendarAlt /> Webinar Management
+            </button>
+
             {/* Dynamic System Dropdown */}
             <div className="sm-dropdown-container">
               <button 
@@ -387,87 +481,7 @@ const AdminDashboard = () => {
         </header>
 
         <section className="sm-page-content">
-          {activeTab === 'addCourse' ? (
-            <AddCourse />
-          ) : activeTab === 'registration' ? (
-            <RegistrationData />
-          ) : activeTab === 'payments' ? (
-            <PaymentApprovals />
-          ) : activeTab === 'assignments' ? (
-            <AssignmentManager />
-          ) : activeTab === 'quizzes' ? (
-            <QuizManager onViewReport={viewQuizReport} />
-          ) : activeTab === 'quizReport' ? (
-            <QuizReport 
-              quizId={selectedQuizId} 
-              onBack={backToQuizzes}
-            />
-          ) : activeTab === 'schedules' ? (
-            <ScheduleManager />
-          ) : activeTab === 'attendance' ? (
-            <AttendanceManager />
-          ) : activeTab === 'dynamic' ? (
-            renderDynamicContent()
-          ) : (
-            <>
-              <div className="sm-content-header">
-                <h2>{activeTab === 'students' ? "Registered Dashboard Users" : "Profile Submissions"}</h2>
-                <div className="sm-export-btns">
-                   <button className="btn-excel" onClick={downloadExcel}><FaFileExcel /> Excel</button>
-                   <button className="btn-pdf" onClick={downloadPDF}><FaFilePdf /> PDF</button>
-                </div>
-              </div>
-
-              <div className="sm-data-card">
-                <table className="sm-table">
-                  <thead>
-                    {activeTab === 'students' ? (
-                      <tr>
-                        <th>User Details</th>
-                        <th>User Role</th>
-                        <th>Join Date</th>
-                        <th>Actions</th>
-                      </tr>
-                    ) : (
-                      <tr>
-                        <th>Full Name</th>
-                        <th>Interest</th>
-                        <th>Gender & DOB</th>
-                        <th>Institute</th>
-                        <th>Contact</th>
-                        <th>Actions</th>
-                      </tr>
-                    )}
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr><td colSpan="6" className="status-msg">Fetching SkillsMind Data...</td></tr>
-                    ) : activeTab === "students" ? (
-                      filteredUsers.map((user) => (
-                        <tr key={user._id}>
-                          <td><div className="info-cell"><strong>{user.name}</strong><span>{user.email}</span></div></td>
-                          <td><span className="badge">{user.role}</span></td>
-                          <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-GB') : '06 Jan 2026'}</td>
-                          <td><button className="btn-reject" onClick={() => openDeleteModal(user._id)}><FaTrash /></button></td>
-                        </tr>
-                      ))
-                    ) : (
-                      filteredProfiles.map((p) => (
-                        <tr key={p._id}>
-                          <td><div className="info-cell"><strong>{p.firstName} {p.lastName}</strong></div></td>
-                          <td><span className="badge-course">{p.interest}</span></td>
-                          <td><div className="info-cell"><strong>{p.gender}</strong><span>{p.dob}</span></div></td>
-                          <td><div className="info-cell"><strong>{p.institute}</strong><span>{p.passingYear}</span></div></td>
-                          <td><div className="info-cell"><strong>{p.mobile}</strong><span>{p.city}</span></div></td>
-                          <td><button className="btn-reject" onClick={() => openDeleteModal(p._id)}><FaTrash /></button></td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+          {renderContent()}
         </section>
       </main>
     </div>
