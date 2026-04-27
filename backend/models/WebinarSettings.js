@@ -36,6 +36,11 @@ const webinarSettingsSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    // ✅ ADD THIS IMAGE FIELD
+    image: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: Date,
         default: Date.now

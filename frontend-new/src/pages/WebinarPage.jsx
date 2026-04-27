@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Video, X, CheckCircle, AlertCircle, Search, BookOpen, ChevronRight, MapPin, Mail, Phone, UserRound, Cake, Briefcase, GraduationCap, Award, Sparkles, Play, Shield, Star, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, User, Video, X, CheckCircle, AlertCircle, Search, BookOpen, ChevronRight, MapPin, Mail, Phone, UserRound, Cake, Briefcase, GraduationCap, Award, Sparkles, Play, Shield, Star, TrendingUp, Instagram, MessageCircle, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import './WebinarPage.css';
@@ -16,6 +16,15 @@ const WebinarPage = () => {
   const [message, setMessage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formStep, setFormStep] = useState(1);
+
+  // Social Media Links
+  const socialLinks = {
+    instagram: "https://www.instagram.com/skillsmind_official/?hl=en",
+    whatsappChannel: "https://whatsapp.com/channel/0029Vb8Gwwi2Jl89rRlgkr1E",
+    whatsappNumber: "923116735509",
+  };
+
+  const whatsappMessage = "Hello SkillsMind! I'm interested in the Webinar. Please guide me about the registration process. Thank you!";
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -114,41 +123,30 @@ const WebinarPage = () => {
     setFormStep(1);
   };
 
-  // ✅ FIXED: Convert date of birth to proper format for backend
   const formatDateForBackend = (dateString) => {
     if (!dateString) return null;
-    
     let formattedDate = dateString.trim();
-    
-    // If already in YYYY-MM-DD format (from date input)
     if (formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
       return formattedDate;
     }
-    
-    // Handle DD/MM/YYYY format
     if (formattedDate.includes('/')) {
       const parts = formattedDate.split('/');
       if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
     }
-    
-    // Handle DD.MM.YYYY format
     if (formattedDate.includes('.')) {
       const parts = formattedDate.split('.');
       if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
     }
-    
-    // Handle DD MM YYYY format (with spaces)
     if (formattedDate.includes(' ')) {
       const parts = formattedDate.split(' ');
       if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
     }
-    
     return formattedDate;
   };
 
@@ -164,7 +162,6 @@ const WebinarPage = () => {
     setMessage(null);
 
     try {
-      // ✅ FIX: Format date of birth properly
       const formattedDateOfBirth = formatDateForBackend(formData.dateOfBirth);
       
       const payload = {
@@ -181,8 +178,6 @@ const WebinarPage = () => {
         qualification: formData.qualification || '',
         profession: formData.profession || ''
       };
-
-      console.log('Sending payload:', payload);
 
       const response = await fetch(`${API_URL}/api/webinar/register`, {
         method: 'POST',
@@ -234,33 +229,73 @@ const WebinarPage = () => {
           <div className="gradient-orb orb-1"></div>
           <div className="gradient-orb orb-2"></div>
         </div>
-        <div className="hero-content-wrapper">
-          <div className="hero-badge">
-            <Sparkles size={14} />
-            <span>Live Learning Sessions</span>
+        
+        <div className="hero-main-wrapper">
+          <div className="hero-left-content">
+            <div className="hero-badge">
+              <Sparkles size={14} />
+              <span>Live Learning Sessions</span>
+            </div>
+            <h1 className="hero-title">
+              Free <span className="gradient-text">Webinars</span>
+            </h1>
+            <p className="hero-subtitle">
+              Join our free webinars and learn from industry experts. 
+              Get certified and boost your career with SkillsMind.
+            </p>
+            <div className="hero-stats">
+              <div className="stat">
+                <Award size={16} />
+                <span>10,000+ Students</span>
+              </div>
+              <div className="stat">
+                <Play size={16} />
+                <span>50+ Webinars</span>
+              </div>
+              <div className="stat">
+                <Star size={16} />
+                <span>4.9 Rating</span>
+              </div>
+            </div>
           </div>
-          <h1 className="hero-title">
-            Free <span className="gradient-text">Webinars</span>
-          </h1>
-          <p className="hero-subtitle">
-            Join our free webinars and learn from industry experts. 
-            Get certified and boost your career with SkillsMind.
-          </p>
-          <div className="hero-stats">
-            <div className="stat">
-              <Award size={16} />
-              <span>10,000+ Students</span>
-            </div>
-            <div className="stat">
-              <Play size={16} />
-              <span>50+ Webinars</span>
-            </div>
-            <div className="stat">
-              <Star size={16} />
-              <span>4.9 Rating</span>
+          
+          <div className="hero-right-social">
+            <div className="social-icons-container">
+              <h4>Follow Us</h4>
+              <div className="social-icons-row">
+                <a 
+                  href={`https://wa.me/${socialLinks.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hero-social-icon whatsapp"
+                  title="Chat on WhatsApp"
+                >
+                  <MessageCircle size={22} />
+                </a>
+                <a 
+                  href={socialLinks.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hero-social-icon instagram"
+                  title="Follow on Instagram"
+                >
+                  <Instagram size={22} />
+                </a>
+                <a 
+                  href={socialLinks.whatsappChannel}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hero-social-icon channel"
+                  title="Join WhatsApp Channel"
+                >
+                  <Send size={22} />
+                </a>
+              </div>
+              <p className="social-follow-text">Join our community</p>
             </div>
           </div>
         </div>
+        
         <div className="hero-wave">
           <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
             <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="white"></path>
@@ -272,7 +307,6 @@ const WebinarPage = () => {
       <section className="webinar-main">
         <div className="container">
           
-          {/* Premium Search Bar */}
           <div className="premium-toolbar">
             <div className="search-wrapper">
               <Search size={18} />
@@ -290,7 +324,6 @@ const WebinarPage = () => {
             </div>
           </div>
 
-          {/* Premium Webinars Grid */}
           {filteredWebinars.length === 0 ? (
             <div className="premium-empty">
               <Video size={48} />
@@ -306,13 +339,26 @@ const WebinarPage = () => {
                     <span className="card-badge premium-badge">FREE</span>
                     {index === 0 && <span className="trending-badge"><TrendingUp size={10} /> Trending</span>}
                   </div>
+                  
+                  {/* ✅ IMAGE DISPLAY - YAHAN SE IMAGE SHOW HOGI */}
+                  <div className="card-image">
+                    {webinar.image && webinar.image !== '' ? (
+                      <img src={webinar.image} alt={webinar.title} />
+                    ) : (
+                      <div className="card-image-placeholder">
+                        <Video size={32} />
+                        <span>Webinar</span>
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="card-content">
                     <div className="course-tag">
                       <BookOpen size={12} />
                       <span>{webinar.courseName}</span>
                     </div>
                     <h3>{webinar.title}</h3>
-                    <p>{webinar.description?.substring(0, 100)}...</p>
+                    <p className="card-description">{webinar.description || "Join this exciting webinar to learn new skills and boost your career."}</p>
                     
                     <div className="card-meta">
                       <div className="meta-chip">
@@ -321,11 +367,11 @@ const WebinarPage = () => {
                       </div>
                       <div className="meta-chip">
                         <Clock size={12} />
-                        <span>{webinar.time}</span>
+                        <span>{webinar.time || '7:00 PM'}</span>
                       </div>
                       <div className="meta-chip">
                         <User size={12} />
-                        <span>{webinar.instructor}</span>
+                        <span>{webinar.instructor || 'SkillsMind Expert'}</span>
                       </div>
                     </div>
 
@@ -349,7 +395,7 @@ const WebinarPage = () => {
         </div>
       </section>
 
-      {/* Premium Registration Modal - FIXED */}
+      {/* Registration Modal */}
       {showForm && selectedWebinar && (
         <>
           <div className="premium-modal-overlay" onClick={closeModal}></div>
@@ -387,56 +433,29 @@ const WebinarPage = () => {
                     
                     <div className="form-group-premium">
                       <label><UserRound size={14} /> Full Name <span className="required-star">*</span></label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        placeholder="Enter your full name"
-                        required
-                      />
+                      <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="Enter your full name" required />
                     </div>
                     
                     <div className="form-group-premium">
                       <label><Mail size={14} /> Email Address <span className="required-star">*</span></label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="Enter your email address"
-                        required
-                      />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Enter your email address" required />
                     </div>
                     
                     <div className="form-group-premium">
                       <label><Phone size={14} /> Phone Number <span className="required-star">*</span></label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="Enter your phone number"
-                        required
-                      />
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Enter your phone number" required />
                     </div>
                     
                     <div className="form-group-premium">
                       <label><MapPin size={14} /> City</label>
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        placeholder="Enter your city"
-                      />
+                      <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="Enter your city" />
                     </div>
                     
                     <div className="webinar-details-card">
                       <Shield size={16} />
                       <div>
                         <strong>Webinar Details</strong>
-                        <p>{selectedWebinar.startDate ? new Date(selectedWebinar.startDate).toLocaleDateString() : 'TBA'} • {selectedWebinar.time} • Online</p>
+                        <p>{selectedWebinar.startDate ? new Date(selectedWebinar.startDate).toLocaleDateString() : 'TBA'} • {selectedWebinar.time || '7:00 PM'} • Online</p>
                       </div>
                     </div>
                     
@@ -459,16 +478,8 @@ const WebinarPage = () => {
                     <div className="form-row-2-premium">
                       <div className="form-group-premium">
                         <label><Cake size={14} /> Age</label>
-                        <input
-                          type="number"
-                          name="age"
-                          value={formData.age}
-                          onChange={handleInputChange}
-                          placeholder="Your age"
-                          inputMode="numeric"
-                        />
+                        <input type="number" name="age" value={formData.age} onChange={handleInputChange} placeholder="Your age" inputMode="numeric" />
                       </div>
-                      
                       <div className="form-group-premium">
                         <label><UserRound size={14} /> Gender</label>
                         <select name="gender" value={formData.gender} onChange={handleInputChange}>
@@ -480,52 +491,25 @@ const WebinarPage = () => {
                       </div>
                     </div>
                     
-                    {/* ✅ FIXED: Changed to type="date" for proper format */}
                     <div className="form-group-premium">
                       <label><Calendar size={14} /> Date of Birth</label>
-                      <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
-                        onChange={handleInputChange}
-                      />
+                      <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} />
                     </div>
                     
                     <div className="form-group-premium">
                       <label><GraduationCap size={14} /> Qualification</label>
-                      <input
-                        type="text"
-                        name="qualification"
-                        value={formData.qualification}
-                        onChange={handleInputChange}
-                        placeholder="e.g., Bachelor's, Master's, Intermediate"
-                      />
+                      <input type="text" name="qualification" value={formData.qualification} onChange={handleInputChange} placeholder="e.g., Bachelor's, Master's, Intermediate" />
                     </div>
                     
                     <div className="form-group-premium">
                       <label><Briefcase size={14} /> Profession</label>
-                      <input
-                        type="text"
-                        name="profession"
-                        value={formData.profession}
-                        onChange={handleInputChange}
-                        placeholder="e.g., Student, Teacher, Developer"
-                      />
+                      <input type="text" name="profession" value={formData.profession} onChange={handleInputChange} placeholder="e.g., Student, Teacher, Developer" />
                     </div>
                     
                     <div className="form-buttons-premium">
-                      <button type="button" className="back-btn-premium" onClick={prevStep}>
-                        ← Back
-                      </button>
+                      <button type="button" className="back-btn-premium" onClick={prevStep}>← Back</button>
                       <button type="submit" className="submit-btn-premium" disabled={submitting}>
-                        {submitting ? (
-                          <>
-                            <div className="spinner-small"></div>
-                            Processing...
-                          </>
-                        ) : (
-                          'Complete Registration →'
-                        )}
+                        {submitting ? <><div className="spinner-small"></div> Processing...</> : 'Complete Registration →'}
                       </button>
                     </div>
                   </>

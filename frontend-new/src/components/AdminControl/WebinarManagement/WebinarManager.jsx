@@ -5,7 +5,7 @@ import {
   FaToggleOn, FaToggleOff, FaPlus, FaClock, FaInfoCircle, 
   FaLink, FaSearch, FaBook, FaChevronDown, FaChevronUp,
   FaDownload, FaUserTie, FaCertificate, FaVideo, FaEdit,
-  FaEye, FaEyeSlash, FaList
+  FaEye, FaEyeSlash, FaList, FaImage, FaUpload
 } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import './WebinarManager.css';
@@ -18,6 +18,7 @@ const WebinarManager = () => {
   const [webinars, setWebinars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWebinar, setSelectedWebinar] = useState(null);
@@ -37,7 +38,8 @@ const WebinarManager = () => {
     meetingLink: '',
     instructor: 'SkillsMind Expert Team',
     certificateProvided: true,
-    recordingAvailable: true
+    recordingAvailable: true,
+    image: ''
   });
 
   const token = localStorage.getItem('token');
@@ -68,7 +70,6 @@ const WebinarManager = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
-      console.log("📡 Webinars API Response:", data);
       if (data.success) {
         setWebinars(data.webinars || []);
       }
@@ -79,40 +80,85 @@ const WebinarManager = () => {
     }
   };
 
-  // 🔥 FIXED: Proper viewRegistrations function
+  // ✅ Handle image upload via Cloudinary
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size should be less than 2MB');
+      return;
+    }
+    
+    setUploadingImage(true);
+    
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        // Upload to Cloudinary via your backend
+        const response = await fetch(`${API_URL}/api/upload/cloudinary`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ image: reader.result })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          setSettings({ ...settings, image: data.url });
+          toast.success('Image uploaded successfully!');
+        } else {
+          toast.error(data.message || 'Upload failed');
+        }
+        setUploadingImage(false);
+      };
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+      setUploadingImage(false);
+    }
+  };
+  
+  // Remove image
+  const removeImage = () => {
+    setSettings({ ...settings, image: '' });
+    toast.success('Image removed');
+  };
+
   const viewRegistrations = async (webinar) => {
-    console.log("📋 Viewing registrations for:", webinar.title);
-    console.log("📋 Webinar ID:", webinar._id);
-    
     setSelectedWebinar(webinar);
-    
-    // Try to get registrations from the webinar object first
     let regs = webinar.registrations || [];
     
     if (regs.length > 0) {
-      console.log("✅ Using existing registrations:", regs.length);
       setRegistrations(regs);
       setActiveTab('registrations');
       return;
     }
     
-    console.log("🔄 Fetching registrations from API...");
     try {
       const response = await fetch(`${API_URL}/api/webinar/registrations/${webinar._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
-      console.log("📡 API Response:", data);
       
       if (data.success && data.registrations) {
-        console.log("✅ Fetched registrations:", data.registrations.length);
         setRegistrations(data.registrations);
       } else {
-        console.log("⚠️ No registrations found");
         setRegistrations([]);
       }
     } catch (error) {
-      console.error("❌ Error fetching registrations:", error);
+      console.error("Error fetching registrations:", error);
       setRegistrations([]);
     }
     
@@ -133,7 +179,8 @@ const WebinarManager = () => {
       meetingLink: webinar.meetingLink || '',
       instructor: webinar.instructor || 'SkillsMind Expert Team',
       certificateProvided: webinar.certificateProvided !== false,
-      recordingAvailable: webinar.recordingAvailable !== false
+      recordingAvailable: webinar.recordingAvailable !== false,
+      image: webinar.image || ''
     });
     setActiveTab('edit');
   };
@@ -152,7 +199,8 @@ const WebinarManager = () => {
       meetingLink: '',
       instructor: 'SkillsMind Expert Team',
       certificateProvided: true,
-      recordingAvailable: true
+      recordingAvailable: true,
+      image: ''
     });
     setActiveTab('create');
   };
@@ -215,7 +263,8 @@ const WebinarManager = () => {
           meetingLink: webinar.meetingLink,
           instructor: webinar.instructor,
           certificateProvided: webinar.certificateProvided,
-          recordingAvailable: webinar.recordingAvailable
+          recordingAvailable: webinar.recordingAvailable,
+          image: webinar.image || ''
         })
       });
       const data = await response.json();
@@ -431,10 +480,19 @@ const WebinarManager = () => {
           ) : (
             <div className="webinars-table-wrapper">
               <table className="webinars-table">
-                <thead><tr><th>Course</th><th>Title</th><th>Date & Time</th><th>Registrations</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead>
+                  <tr><th>Image</th><th>Course</th><th>Title</th><th>Date & Time</th><th>Registrations</th><th>Status</th><th>Actions</th></tr>
+                </thead>
                 <tbody>
                   {filteredWebinars.map(webinar => (
                     <tr key={webinar._id}>
+                      <td>
+                        {webinar.image ? (
+                          <img src={webinar.image} alt={webinar.title} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }} />
+                        ) : (
+                          <div style={{ width: '40px', height: '40px', background: '#e2e8f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaImage color="#94a3b8" /></div>
+                        )}
+                      </td>
                       <td><strong>{webinar.courseName}</strong></td>
                       <td>{webinar.title}</td>
                       <td>{webinar.startDate ? new Date(webinar.startDate).toLocaleDateString() : 'TBA'}<br /><small>{webinar.time}</small></td>
@@ -456,7 +514,41 @@ const WebinarManager = () => {
           <div className="card"><h3>Select Course</h3><div className="course-select-wrapper"><select value={selectedCourse?._id || ''} onChange={(e) => { const course = courses.find(c => c._id === e.target.value); setSelectedCourse(course); }} className="course-select"><option value="">-- Select a course --</option>{courses.map(course => (<option key={course._id} value={course._id}>{course.title}</option>))}</select></div></div>
           {selectedCourse && (
             <>
-              <div className="card status-card"><div className="status-left"><h3>Webinar Status</h3><p>Turn ON to display on course page</p></div><button className={`status-toggle ${settings.isActive ? 'active' : 'inactive'}`} onClick={() => setSettings({ ...settings, isActive: !settings.isActive })}>{settings.isActive ? <FaToggleOn size={40} /> : <FaToggleOff size={40} />}<span>{settings.isActive ? 'Active' : 'Inactive'}</span></button></div>
+              <div className="card status-card"><div className="status-left"><h3>Webinar Status</h3><p>Turn ON to display on student page</p></div><button className={`status-toggle ${settings.isActive ? 'active' : 'inactive'}`} onClick={() => setSettings({ ...settings, isActive: !settings.isActive })}>{settings.isActive ? <FaToggleOn size={40} /> : <FaToggleOff size={40} />}<span>{settings.isActive ? 'Active' : 'Inactive'}</span></button></div>
+              
+              {/* ✅ NEW: Image Upload Section */}
+              <div className="card">
+                <h3><FaImage /> Webinar Image/Thumbnail</h3>
+                <div className="form-group">
+                  <label>Upload Image (Optional - Will show on student page)</label>
+                  <div className="image-upload-area">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                      id="webinar-image-upload"
+                    />
+                    <label htmlFor="webinar-image-upload" className="upload-btn">
+                      <FaUpload /> {uploadingImage ? 'Uploading...' : 'Choose Image'}
+                    </label>
+                    {settings.image && (
+                      <button type="button" className="remove-image-btn" onClick={removeImage}>
+                        <FaTrash /> Remove
+                      </button>
+                    )}
+                  </div>
+                  {uploadingImage && <p className="upload-status">Uploading to Cloudinary...</p>}
+                  {settings.image && (
+                    <div className="image-preview">
+                      <img src={settings.image} alt="Webinar thumbnail" />
+                      <p className="image-url">URL: {settings.image.substring(0, 60)}...</p>
+                    </div>
+                  )}
+                  <p className="help-text">Recommended size: 400x250px. Max 2MB. JPG, PNG, or GIF.</p>
+                </div>
+              </div>
+              
               <div className="card"><h3><FaInfoCircle /> Basic Information</h3><div className="form-group"><label>Webinar Title</label><input type="text" name="title" value={settings.title} onChange={handleSettingChange} /></div><div className="form-group"><label>Description</label><textarea name="description" value={settings.description} onChange={handleSettingChange} rows="3" /></div><div className="form-group"><label><FaUserTie /> Instructor</label><input type="text" name="instructor" value={settings.instructor} onChange={handleSettingChange} /></div></div>
               <div className="card"><h3><FaClock /> Schedule</h3><div className="row-3"><div className="form-group"><label>Start Date</label><input type="date" name="startDate" value={settings.startDate} onChange={handleSettingChange} /></div><div className="form-group"><label>End Date</label><input type="date" name="endDate" value={settings.endDate} onChange={handleSettingChange} /></div><div className="form-group"><label>Time</label><input type="text" name="time" value={settings.time} onChange={handleSettingChange} /></div></div></div>
               <div className="card"><h3>Topics</h3>{settings.topics.map((topic, idx) => (<div key={idx} className="topic-row"><input type="text" value={topic} onChange={(e) => handleTopicChange(idx, e.target.value)} /><button className="remove" onClick={() => removeTopic(idx)}><FaTrash /></button></div>))}<button className="add-topic" onClick={addTopic}><FaPlus /> Add Topic</button></div>
@@ -493,11 +585,7 @@ const WebinarManager = () => {
             <div className="table-wrapper">
               <table className="registrations-table">
                 <thead>
-                  <tr>
-                    <th>#</th><th>Full Name</th><th>Email</th><th>Phone</th><th>City</th>
-                    <th>Age</th><th>Gender</th><th>Qualification</th><th>Profession</th>
-                    <th>Registered On</th><th>IP Address</th><th>Action</th>
-                  </tr>
+                  <tr><th>#</th><th>Full Name</th><th>Email</th><th>Phone</th><th>City</th><th>Age</th><th>Gender</th><th>Qualification</th><th>Profession</th><th>Registered On</th><th>IP Address</th><th>Action</th></tr>
                 </thead>
                 <tbody>
                   {filteredRegistrations.map((reg, idx) => (
