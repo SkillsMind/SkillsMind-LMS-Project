@@ -219,34 +219,47 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', time: new Date().toISOString() });
 });
 
-// Root
-app.get('/', (req, res) => {
-    res.send("SkillsMind Backend Running!");
-});
-
 // ==========================================
-// 🔥🔥🔥 REACT ROUTER FIX - IMPORTANT FOR WEBINAR PAGE 🔥🔥🔥
+// 🔥🔥🔥 STRONGEST REACT ROUTER FIX 🔥🔥🔥
 // ==========================================
 
-// Serve frontend build files (production)
 const frontendDistPath = path.join(__dirname, '../frontend-new/dist');
-if (fs.existsSync(frontendDistPath)) {
-    console.log('✅ Frontend build found, serving static files');
+const indexPath = path.join(frontendDistPath, 'index.html');
+
+// Check if frontend build exists
+if (fs.existsSync(frontendDistPath) && fs.existsSync(indexPath)) {
+    console.log('✅ Frontend build found at:', frontendDistPath);
+    
+    // Serve all static files from frontend dist
     app.use(express.static(frontendDistPath));
     
-    // ✅ FIXED: Use '/*' instead of '*' for Express 5.x
-    app.get(/^\/(?!api|health|stats).*/, (req, res) => {
-        // Skip API routes - don't interfere with them
-        if (req.path.startsWith('/api/') || req.path === '/health' || req.path === '/stats') {
+    // CATCH-ALL ROUTE - This is the MAGIC for React Router
+    // All non-API requests will get index.html
+    app.get('*', (req, res) => {
+        // Skip API routes - let them work normally
+        if (req.path.startsWith('/api/')) {
+            return res.status(404).json({ success: false, message: 'API endpoint not found' });
+        }
+        
+        // Skip health and stats
+        if (req.path === '/health' || req.path === '/stats') {
             return;
         }
-        // Send React's index.html for all other routes (like /webinar, /login, etc.)
-        res.sendFile(path.join(frontendDistPath, 'index.html'));
+        
+        // For everything else (/, /webinar, /login, etc.) - send React app
+        res.sendFile(indexPath);
     });
+    
+    console.log('✅ React Router catch-all route enabled');
+    console.log('   Routes like /webinar will now work!');
 } else {
-    console.log('⚠️ Frontend build not found at:', frontendDistPath);
-    console.log('   Make sure to run: cd frontend-new && npm run build');
-    console.log('   Webinar page will not work properly without this!');
+    console.log('❌❌❌ CRITICAL: Frontend build NOT found!');
+    console.log('    Expected path:', frontendDistPath);
+    console.log('    Expected file:', indexPath);
+    console.log('    SOLUTION: Run these commands:');
+    console.log('    cd frontend-new');
+    console.log('    npm run build');
+    console.log('    Then redeploy!');
 }
 
 // Socket.IO
@@ -273,6 +286,7 @@ mongoose.connect(process.env.MONGO_URI)
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📱 Webinar page available at: http://localhost:${PORT}/webinar`);
     });
   })
   .catch((err) => {
