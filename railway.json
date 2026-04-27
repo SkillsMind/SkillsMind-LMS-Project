@@ -1,0 +1,18 @@
+{
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@railway/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend-new/dist/index.html"
+    }
+  ]
+}
