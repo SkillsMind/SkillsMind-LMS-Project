@@ -1103,4 +1103,181 @@ input[type="number"] {
   .hero-title {
     text-align: center;
   }
+}/* ==================== SUCCESS POPUP CARD ==================== */
+.success-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 999999;
+  animation: fadeIn 0.3s ease;
+}
+
+.success-popup-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999999;
+  width: 90%;
+  max-width: 480px;
+  animation: modalSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.success-popup-card {
+  background: white;
+  border-radius: 28px;
+  padding: 32px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+}
+
+.success-popup-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #64748b;
+}
+
+.success-popup-close:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.success-popup-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.success-popup-icon svg {
+  color: white;
+}
+
+.success-popup-card h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.success-greeting {
+  font-size: 16px;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.success-greeting strong {
+  color: #DC2626;
+}
+
+.success-message {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.success-email-box {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.success-email-box svg {
+  color: #10B981;
+  flex-shrink: 0;
+}
+
+.success-email-box span {
+  font-size: 13px;
+  color: #334155;
+  word-break: break-all;
+}
+
+.success-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.success-btn-primary {
+  flex: 2;
+  background: #DC2626;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.success-btn-primary:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+.success-btn-secondary {
+  flex: 1;
+  background: #f1f5f9;
+  color: #334155;
+  border: none;
+  padding: 14px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.success-btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.success-note {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 16px;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }

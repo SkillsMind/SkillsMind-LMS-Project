@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Video, X, CheckCircle, AlertCircle, Search, BookOpen, ChevronRight, MapPin, Mail, Phone, UserRound, Cake, Briefcase, GraduationCap, Award, Sparkles, Play, Shield, Star, TrendingUp, Instagram, MessageCircle, Send } from 'lucide-react';
+import { Calendar, Clock, User, Video, X, CheckCircle, AlertCircle, Search, BookOpen, ChevronRight, MapPin, Mail, Phone, UserRound, Cake, Briefcase, GraduationCap, Award, Sparkles, Play, Shield, Star, TrendingUp, Instagram, MessageCircle, Send, MailCheck, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import './WebinarPage.css';
@@ -15,6 +15,12 @@ const WebinarPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formStep, setFormStep] = useState(1);
+  
+  // Success Popup State
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [registeredName, setRegisteredName] = useState('');
+  const [registeredCourse, setRegisteredCourse] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Social Media Links
   const socialLinks = {
@@ -102,6 +108,11 @@ const WebinarPage = () => {
     document.body.style.overflow = 'auto';
   };
 
+  const closeSuccessPopup = () => {
+    setShowSuccessPopup(false);
+    document.body.style.overflow = 'auto';
+  };
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -184,19 +195,17 @@ const WebinarPage = () => {
       const data = await response.json();
       
       if (data.success) {
-        toast.success('Registration Successful! Check your email for webinar details.', {
-          duration: 5000,
-          position: 'top-center',
-          style: {
-            background: '#10B981',
-            color: 'white',
-            fontWeight: 'bold',
-          }
-        });
+        // Close registration modal
+        closeModal();
         
-        setTimeout(() => {
-          closeModal();
-        }, 2000);
+        // Store registration info for popup
+        setRegisteredName(formData.fullName);
+        setRegisteredCourse(selectedWebinar.title);
+        setRegisteredEmail(formData.email);
+        
+        // Show custom success popup
+        setShowSuccessPopup(true);
+        document.body.style.overflow = 'hidden';
       } else {
         toast.error(data.message || 'Registration failed', {
           duration: 4000,
@@ -212,6 +221,10 @@ const WebinarPage = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const openGmail = () => {
+    window.open(`https://mail.google.com/mail/u/0/#search/${registeredEmail}`, '_blank');
   };
 
   const filteredWebinars = webinars.filter(webinar =>
@@ -518,6 +531,54 @@ const WebinarPage = () => {
                   </>
                 )}
               </form>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ✅ CUSTOM SUCCESS POPUP CARD */}
+      {showSuccessPopup && (
+        <>
+          <div className="success-popup-overlay" onClick={closeSuccessPopup}></div>
+          <div className="success-popup-container">
+            <div className="success-popup-card">
+              <button className="success-popup-close" onClick={closeSuccessPopup}>
+                <X size={20} />
+              </button>
+              
+              <div className="success-popup-icon">
+                <CheckCircle size={56} />
+              </div>
+              
+              <h2>Registration Submitted!</h2>
+              
+              <p className="success-greeting">
+                Thank you, <strong>{registeredName}</strong>!
+              </p>
+              
+              <p className="success-message">
+                Your registration for <strong>{registeredCourse}</strong> has been successfully submitted.
+                Please check your email for webinar details and access link.
+              </p>
+              
+              <div className="success-email-box">
+                <MailCheck size={18} />
+                <span>Confirmation email sent to: {registeredEmail}</span>
+              </div>
+              
+              <div className="success-buttons">
+                <button className="success-btn-primary" onClick={openGmail}>
+                  <Mail size={16} />
+                  Check Your Email
+                </button>
+                <button className="success-btn-secondary" onClick={closeSuccessPopup}>
+                  Close
+                </button>
+              </div>
+              
+              <p className="success-note">
+                If you don't see the email in your inbox, please check your spam folder.
+              </p>
             </div>
           </div>
         </>
