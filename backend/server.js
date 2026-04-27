@@ -224,6 +224,31 @@ app.get('/', (req, res) => {
     res.send("SkillsMind Backend Running!");
 });
 
+// ==========================================
+// 🔥🔥🔥 REACT ROUTER FIX - IMPORTANT FOR WEBINAR PAGE 🔥🔥🔥
+// ==========================================
+
+// Serve frontend build files (production)
+const frontendDistPath = path.join(__dirname, '../frontend-new/dist');
+if (fs.existsSync(frontendDistPath)) {
+    console.log('✅ Frontend build found, serving static files');
+    app.use(express.static(frontendDistPath));
+    
+    // ✅ FIXED: Use '/*' instead of '*' for Express 5.x
+    app.get(/^\/(?!api|health|stats).*/, (req, res) => {
+        // Skip API routes - don't interfere with them
+        if (req.path.startsWith('/api/') || req.path === '/health' || req.path === '/stats') {
+            return;
+        }
+        // Send React's index.html for all other routes (like /webinar, /login, etc.)
+        res.sendFile(path.join(frontendDistPath, 'index.html'));
+    });
+} else {
+    console.log('⚠️ Frontend build not found at:', frontendDistPath);
+    console.log('   Make sure to run: cd frontend-new && npm run build');
+    console.log('   Webinar page will not work properly without this!');
+}
+
 // Socket.IO
 io.on('connection', (socket) => {
     console.log('⚡ Client connected:', socket.id);
