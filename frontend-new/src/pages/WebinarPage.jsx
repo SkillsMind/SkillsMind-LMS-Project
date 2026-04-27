@@ -13,7 +13,6 @@ const WebinarPage = () => {
   const [selectedWebinar, setSelectedWebinar] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formStep, setFormStep] = useState(1);
 
@@ -66,7 +65,6 @@ const WebinarPage = () => {
   const handleRegisterClick = (webinar) => {
     setSelectedWebinar(webinar);
     setFormStep(1);
-    setMessage(null);
     setShowForm(true);
     document.body.style.overflow = 'hidden';
     
@@ -102,7 +100,6 @@ const WebinarPage = () => {
     setSelectedWebinar(null);
     setFormStep(1);
     document.body.style.overflow = 'auto';
-    setMessage(null);
   };
 
   const handleInputChange = (e) => {
@@ -159,7 +156,6 @@ const WebinarPage = () => {
     }
     
     setSubmitting(true);
-    setMessage(null);
 
     try {
       const formattedDateOfBirth = formatDateForBackend(formData.dateOfBirth);
@@ -188,16 +184,31 @@ const WebinarPage = () => {
       const data = await response.json();
       
       if (data.success) {
-        setMessage({ type: 'success', text: '🎉 Registration successful! Check your email for webinar link.' });
+        toast.success('Registration Successful! Check your email for webinar details.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: '#10B981',
+            color: 'white',
+            fontWeight: 'bold',
+          }
+        });
+        
         setTimeout(() => {
           closeModal();
         }, 2000);
       } else {
-        setMessage({ type: 'error', text: data.message || 'Registration failed' });
+        toast.error(data.message || 'Registration failed', {
+          duration: 4000,
+          position: 'top-center'
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setMessage({ type: 'error', text: 'Server error. Please try again.' });
+      toast.error('Server error. Please try again.', {
+        duration: 4000,
+        position: 'top-center'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -340,7 +351,6 @@ const WebinarPage = () => {
                     {index === 0 && <span className="trending-badge"><TrendingUp size={10} /> Trending</span>}
                   </div>
                   
-                  {/* ✅ IMAGE DISPLAY - YAHAN SE IMAGE SHOW HOGI */}
                   <div className="card-image">
                     {webinar.image && webinar.image !== '' ? (
                       <img src={webinar.image} alt={webinar.title} />
@@ -410,13 +420,6 @@ const WebinarPage = () => {
                 <h3>{selectedWebinar.title}</h3>
                 <p className="course-name">{selectedWebinar.courseName}</p>
               </div>
-
-              {message && (
-                <div className={`modal-message-premium ${message.type}`}>
-                  {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                  <span>{message.text}</span>
-                </div>
-              )}
 
               <form onSubmit={handleSubmit} className="premium-form">
                 {formStep === 1 ? (
