@@ -188,6 +188,17 @@ try {
 }
 
 // ==========================================
+// 🔥🔥🔥 UPLOAD ROUTES FOR IMAGES 🔥🔥🔥
+// ==========================================
+try {
+    const uploadRoutes = require('./routes/uploadRoutes');
+    app.use('/api/upload', uploadRoutes);
+    console.log('✅ Upload Routes loaded (Cloudinary)');
+} catch (err) {
+    console.warn(`⚠️ Upload Routes disabled: ${err.message}`);
+}
+
+// ==========================================
 // 🔥🔥🔥 WEBINAR SYSTEM ROUTES 🔥🔥🔥
 // ==========================================
 try {
