@@ -69,7 +69,7 @@ router.get('/course/:courseId', async (req, res) => {
 });
 
 // ==========================================
-// 4. POST - Register for webinar (UPDATED with more fields)
+// 4. POST - Register for webinar
 // ==========================================
 router.post('/register', async (req, res) => {
     try {
@@ -86,7 +86,6 @@ router.post('/register', async (req, res) => {
             });
         }
         
-        // Find webinar if webinarId not provided
         let webinar;
         if (webinarId) {
             webinar = await WebinarSettings.findById(webinarId);
@@ -101,7 +100,6 @@ router.post('/register', async (req, res) => {
             });
         }
         
-        // Check for existing registration
         const existing = await WebinarRegistration.findOne({ 
             webinarId: webinar._id,
             email: email.toLowerCase() 
@@ -144,7 +142,7 @@ router.post('/register', async (req, res) => {
 });
 
 // ==========================================
-// 5. POST - Save webinar settings (Admin)
+// 5. POST - Save webinar settings (Admin) - ✅ FIXED WITH IMAGE
 // ==========================================
 router.post('/save', auth, async (req, res) => {
     try {
@@ -153,7 +151,13 @@ router.post('/save', auth, async (req, res) => {
             return res.status(403).json({ success: false, message: 'Access denied' });
         }
         
-        const { courseId, courseName, isActive, title, description, startDate, endDate, time, topics, meetingLink, instructor, certificateProvided, recordingAvailable } = req.body;
+        // ✅ ADDED 'image' in destructuring
+        const { 
+            courseId, courseName, isActive, title, description, 
+            startDate, endDate, time, topics, meetingLink, 
+            instructor, certificateProvided, recordingAvailable,
+            image  // ✅ YEH LINE ADD KI HAI
+        } = req.body;
         
         let webinar = await WebinarSettings.findOne({ courseId });
         
@@ -169,6 +173,7 @@ router.post('/save', auth, async (req, res) => {
             webinar.instructor = instructor;
             webinar.certificateProvided = certificateProvided;
             webinar.recordingAvailable = recordingAvailable;
+            webinar.image = image || '';  // ✅ YEH LINE ADD KI HAI
             webinar.updatedAt = new Date();
         } else {
             webinar = new WebinarSettings({
@@ -184,7 +189,8 @@ router.post('/save', auth, async (req, res) => {
                 meetingLink,
                 instructor,
                 certificateProvided,
-                recordingAvailable
+                recordingAvailable,
+                image: image || ''  // ✅ YEH LINE ADD KI HAI
             });
         }
         
@@ -209,7 +215,6 @@ router.get('/all', auth, async (req, res) => {
         
         const webinars = await WebinarSettings.find().sort({ createdAt: -1 });
         
-        // Get registrations for each webinar
         const webinarsWithRegistrations = await Promise.all(webinars.map(async (webinar) => {
             const registrations = await WebinarRegistration.find({ webinarId: webinar._id }).sort({ registeredAt: -1 });
             return {
@@ -253,9 +258,7 @@ router.delete('/delete/:id', auth, async (req, res) => {
             return res.status(403).json({ success: false, message: 'Access denied' });
         }
         
-        // Delete all registrations first
         await WebinarRegistration.deleteMany({ webinarId: req.params.id });
-        // Delete webinar
         await WebinarSettings.findByIdAndDelete(req.params.id);
         
         res.json({ success: true, message: 'Webinar deleted' });
