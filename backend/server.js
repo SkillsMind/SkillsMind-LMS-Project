@@ -246,7 +246,7 @@ if (fs.existsSync(frontendDistPath) && fs.existsSync(indexPath)) {
     
     // CATCH-ALL ROUTE - This is the MAGIC for React Router
     // All non-API requests will get index.html
-    app.get('*', (req, res) => {
+    app.get(/^\/(?!api|health|stats).*/, (req, res) => {
         // Skip API routes - let them work normally
         if (req.path.startsWith('/api/')) {
             return res.status(404).json({ success: false, message: 'API endpoint not found' });
