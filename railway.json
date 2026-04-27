@@ -1,4 +1,14 @@
 {
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@railway/node"
+    },
+    {
+      "src": "frontend-new/dist",
+      "use": "@railway/static"
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -6,8 +16,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend-new/dist/index.html",
-      "status": 200
+      "dest": "/frontend-new/dist/index.html"
     }
   ]
 }

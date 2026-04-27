@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// ✅ SIRF YEH LINE CHANGE KI HAI (BrowserRouter → HashRouter)
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // i18n Import
 import './i18n';
@@ -59,6 +60,11 @@ import Quizzes from './components/StudentDashboard/Pages/Quizzes';
 import Results from './components/StudentDashboard/Pages/Results';
 import Schedule from './components/StudentDashboard/Pages/Schedule';
 
+// ============================================
+// 🔥🔥🔥 WEBINAR PAGE IMPORT (From Pages Folder) 🔥🔥🔥
+// ============================================
+import WebinarPage from './pages/WebinarPage';
+
 // 3. CSS Imports
 import './App.css';
 
@@ -112,6 +118,9 @@ function App() {
 
           {/* News & Events Page Route */}
           <Route path="/news" element={<NewsEvents />} />
+
+          {/* 🔥🔥🔥 WEBINAR PAGE ROUTE 🔥🔥🔥 */}
+          <Route path="/webinar" element={<WebinarPage />} />
 
           {/* Profile & Enrollment Routes (Protected) */}
           <Route 
