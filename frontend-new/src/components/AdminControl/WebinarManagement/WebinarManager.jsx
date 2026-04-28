@@ -80,46 +80,94 @@ const WebinarManager = () => {
     }
   };
 
-  // ✅ Handle image upload - NO RESTRICTIONS AT ALL
+  // ✅ Image compression function
+  const compressImage = (file, maxWidth = 1200, quality = 0.7) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize if too large
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob with compression
+          canvas.toBlob((blob) => {
+            const compressedReader = new FileReader();
+            compressedReader.readAsDataURL(blob);
+            compressedReader.onloadend = () => {
+              resolve(compressedReader.result);
+            };
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  // ✅ Handle image upload with compression
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Only check if it's an image file
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
     
-    // NO SIZE LIMIT - NO DIMENSION LIMIT
-    
     setUploadingImage(true);
     
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = async () => {
-        const response = await fetch(`${API_URL}/api/upload/cloudinary`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ image: reader.result })
+      let imageData;
+      
+      // Compress if file is larger than 1MB
+      if (file.size > 1 * 1024 * 1024) {
+        toast.loading('Compressing image...', { duration: 1000 });
+        imageData = await compressImage(file, 1200, 0.7);
+      } else {
+        // Convert to base64 directly for small files
+        const reader = new FileReader();
+        imageData = await new Promise((resolve) => {
+          reader.readAsDataURL(file);
+          reader.onloadend = () => resolve(reader.result);
         });
-        
-        const data = await response.json();
-        if (data.success) {
-          setSettings({ ...settings, image: data.url });
-          toast.success('Image uploaded successfully!');
-        } else {
-          toast.error(data.message || 'Upload failed');
-        }
-        setUploadingImage(false);
-      };
+      }
+      
+      const response = await fetch(`${API_URL}/api/upload/cloudinary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ image: imageData })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setSettings({ ...settings, image: data.url });
+        toast.success('Image uploaded successfully!');
+      } else {
+        toast.error(data.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload image');
+    } finally {
       setUploadingImage(false);
     }
   };
@@ -510,7 +558,7 @@ const WebinarManager = () => {
             <>
               <div className="card status-card"><div className="status-left"><h3>Webinar Status</h3><p>Turn ON to display on student page</p></div><button className={`status-toggle ${settings.isActive ? 'active' : 'inactive'}`} onClick={() => setSettings({ ...settings, isActive: !settings.isActive })}>{settings.isActive ? <FaToggleOn size={40} /> : <FaToggleOff size={40} />}<span>{settings.isActive ? 'Active' : 'Inactive'}</span></button></div>
               
-              {/* Image Upload Section - No Restrictions */}
+              {/* Image Upload Section */}
               <div className="card">
                 <h3><FaImage /> Webinar Image/Thumbnail</h3>
                 <div className="form-group">
@@ -535,10 +583,10 @@ const WebinarManager = () => {
                   {uploadingImage && <p className="upload-status">Uploading to Cloudinary...</p>}
                   {settings.image && (
                     <div className="image-preview">
-                      <img src={settings.image} alt="Webinar thumbnail" />
+                      <img src={settings.image} alt="Webinar thumbnail" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
                     </div>
                   )}
-                  <p className="help-text">Any image format and size is supported. No restrictions.</p>
+                  <p className="help-text">Any image format and size is supported. Large images will be automatically compressed.</p>
                 </div>
               </div>
               
