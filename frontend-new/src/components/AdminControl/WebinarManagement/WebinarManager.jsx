@@ -80,31 +80,25 @@ const WebinarManager = () => {
     }
   };
 
-  // ✅ Handle image upload via Cloudinary
+  // ✅ Handle image upload - NO RESTRICTIONS AT ALL
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Check file type
+    // Only check if it's an image file
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
     
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size should be less than 2MB');
-      return;
-    }
+    // NO SIZE LIMIT - NO DIMENSION LIMIT
     
     setUploadingImage(true);
     
     try {
-      // Convert to base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onloadend = async () => {
-        // Upload to Cloudinary via your backend
         const response = await fetch(`${API_URL}/api/upload/cloudinary`, {
           method: 'POST',
           headers: {
@@ -516,7 +510,7 @@ const WebinarManager = () => {
             <>
               <div className="card status-card"><div className="status-left"><h3>Webinar Status</h3><p>Turn ON to display on student page</p></div><button className={`status-toggle ${settings.isActive ? 'active' : 'inactive'}`} onClick={() => setSettings({ ...settings, isActive: !settings.isActive })}>{settings.isActive ? <FaToggleOn size={40} /> : <FaToggleOff size={40} />}<span>{settings.isActive ? 'Active' : 'Inactive'}</span></button></div>
               
-              {/* ✅ NEW: Image Upload Section */}
+              {/* Image Upload Section - No Restrictions */}
               <div className="card">
                 <h3><FaImage /> Webinar Image/Thumbnail</h3>
                 <div className="form-group">
@@ -542,10 +536,9 @@ const WebinarManager = () => {
                   {settings.image && (
                     <div className="image-preview">
                       <img src={settings.image} alt="Webinar thumbnail" />
-                      <p className="image-url">URL: {settings.image.substring(0, 60)}...</p>
                     </div>
                   )}
-                  <p className="help-text">Recommended size: 400x250px. Max 2MB. JPG, PNG, or GIF.</p>
+                  <p className="help-text">Any image format and size is supported. No restrictions.</p>
                 </div>
               </div>
               

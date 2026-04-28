@@ -10,7 +10,7 @@ cloudinary.config({
     api_secret: 'Ou-sJU2lPbrK4dpKGxeh9eKcD-c'
 });
 
-// Upload image route for webinars
+// Upload image route for webinars - NO RESTRICTIONS
 router.post('/cloudinary', auth, async (req, res) => {
     try {
         const { image } = req.body;
@@ -22,18 +22,16 @@ router.post('/cloudinary', auth, async (req, res) => {
             });
         }
         
-        console.log('📤 Uploading image to Cloudinary...');
+        console.log('Uploading image to Cloudinary...');
         
-        // Upload to Cloudinary
+        // ✅ NO RESTRICTIONS - Upload as is, no transformation, no quality limits
         const result = await cloudinary.uploader.upload(image, {
-            folder: 'webinars',
-            transformation: [
-                { width: 400, height: 250, crop: 'fill' },
-                { quality: 'auto:good' }
-            ]
+            folder: 'webinars'
+            // ❌ NO transformation: { width: 400, height: 250, crop: 'fill' }
+            // ❌ NO quality restrictions
         });
         
-        console.log('✅ Image uploaded:', result.secure_url);
+        console.log('Image uploaded:', result.secure_url);
         
         res.json({ 
             success: true, 
@@ -41,7 +39,7 @@ router.post('/cloudinary', auth, async (req, res) => {
             public_id: result.public_id
         });
     } catch (error) {
-        console.error('❌ Cloudinary upload error:', error.message);
+        console.error('Cloudinary upload error:', error.message);
         res.status(500).json({ 
             success: false, 
             message: error.message || 'Upload failed' 
