@@ -6,7 +6,7 @@ import {
   FaPlusCircle, FaCreditCard, FaUserGraduate,
   FaTasks, FaCalendarCheck, FaQuestionCircle,
   FaChartBar, FaCalendarAlt, FaChevronDown, FaLink, FaBullhorn, FaBriefcase,
-  FaBars, FaTimes
+  FaBars, FaTimes, FaBook
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx'; 
@@ -27,6 +27,9 @@ import ScheduleManager from './ScheduleManagement/ScheduleManager';
 import ImportantLinks from './ImportantLinks/ImportantLinks';
 import NoticeBoard from './NoticeBoard/NoticeBoard';
 import JobsInternships from './JobsInternships/JobsInternships';
+
+// 🔥 HELPING MATERIAL IMPORT
+import HelpingMaterial from './HelpingMaterial/HelpingMaterial';
 
 // 🔥 WEBINAR MANAGEMENT IMPORT
 import WebinarManager from './WebinarManagement/WebinarManager';
@@ -231,10 +234,13 @@ const AdminDashboard = () => {
     (p.city || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // 🔥 UPDATED: renderDynamicContent with Helping Material
   const renderDynamicContent = () => {
     switch(activeDynamicTab) {
       case 'importantLinks':
         return <ImportantLinks />;
+      case 'helpingMaterial':
+        return <HelpingMaterial />;
       case 'noticeBoard':
         return <NoticeBoard />;
       case 'jobsInternships':
@@ -413,7 +419,7 @@ const AdminDashboard = () => {
               <FaCalendarCheck /> Attendance
             </button>
 
-            {/* 🔥 WEBINAR MANAGEMENT TAB - NEW */}
+            {/* WEBINAR MANAGEMENT TAB */}
             <button className={`sm-tab-btn ${activeTab === 'webinar' ? 'active' : ''}`} onClick={() => handleTabClick('webinar')}>
               <FaCalendarAlt /> Webinar Management
             </button>
@@ -437,6 +443,15 @@ const AdminDashboard = () => {
                   >
                     <FaLink /> Important Links
                   </button>
+                  
+                  {/* 🔥 HELPING MATERIAL BUTTON - NEW */}
+                  <button 
+                    className={`sm-dropdown-item ${activeDynamicTab === 'helpingMaterial' ? 'active' : ''}`}
+                    onClick={() => handleDynamicTabClick('helpingMaterial')}
+                  >
+                    <FaBook /> Helping Material
+                  </button>
+                  
                   <button 
                     className={`sm-dropdown-item ${activeDynamicTab === 'noticeBoard' ? 'active' : ''}`}
                     onClick={() => handleDynamicTabClick('noticeBoard')}

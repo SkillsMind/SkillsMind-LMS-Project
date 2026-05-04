@@ -10,10 +10,10 @@
   "dependencies": {
     "@getbrevo/brevo": "^5.0.3",
     "@google/generative-ai": "^0.24.1",
-    "axios": "^1.15.0",
+    "axios": "^1.16.0",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
-    "cloudinary": "^2.9.0",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -22,8 +22,11 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-http-backend": "^3.0.2",
     "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "mongoose": "^9.1.6",
     "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.13",
     "pdf-parse": "^2.4.5",
     "puppeteer": "^24.37.5",
@@ -31,9 +34,9 @@
     "react-router-dom": "^7.14.0",
     "react-toastify": "^11.0.5",
     "recharts": "^3.7.0",
-    "resend": "^6.10.0",
+    "resend": "^6.12.2",
     "socket.io": "^4.8.3",
     "streamifier": "^0.1.1",
-    "sweetalert2": "^11.26.17"
+    "sweetalert2": "^11.26.24"
   }
 }

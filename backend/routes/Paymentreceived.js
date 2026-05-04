@@ -51,7 +51,7 @@ router.get('/all-payments', async (req, res) => {
     }
 });
 
-// B. Update Status (Approve/Reject)
+// B. Update Status (Approve/Reject) - WITH REFERRAL REWARD
 router.put('/update-status/:id', async (req, res) => {
     const { status, rejectionReason } = req.body;
     console.log(`🔄 PUT /update-status/${req.params.id} - Status: ${status}`);
@@ -120,6 +120,28 @@ router.put('/update-status/:id', async (req, res) => {
                             $inc: { enrolledStudents: 1 }
                         }
                     );
+                    
+                    // 🔥🔥🔥 REFERRAL REWARD CODE 🔥🔥🔥
+                    try {
+                        const Referral = require('../models/Referral');
+                        const referral = await Referral.findOne({ 'referredFriends.friendEmail': updated.studentEmail });
+                        
+                        if (referral) {
+                            const friendIndex = referral.referredFriends.findIndex(f => f.friendEmail === updated.studentEmail);
+                            
+                            if (friendIndex !== -1 && referral.referredFriends[friendIndex].status === 'signed_up') {
+                                referral.referredFriends[friendIndex].status = 'enrolled';
+                                referral.referredFriends[friendIndex].enrolledAt = new Date();
+                                referral.referredFriends[friendIndex].courseEnrolled = updated.courseId;
+                                
+                                referral.successfulReferrals += 1;
+                                await referral.save();
+                                console.log(`🎉 REFERRAL REWARD: ${updated.studentEmail} enrolled. Referrer earned discount!`);
+                            }
+                        }
+                    } catch (refError) {
+                        console.error('Referral reward error (non-critical):', refError.message);
+                    }
                     
                     enrollmentMessage = ' & Access Granted';
                     console.log(`✅ PAYMENT APPROVED: ${student.email} for ${updated.courseName}`);

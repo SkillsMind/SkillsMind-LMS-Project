@@ -1,0 +1,845 @@
+/* ============================================
+   HELPING MATERIALS PAGE - IMPROVED UI
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.hmp-container {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ============================================
+   NAVIGATION BAR
+   ============================================ */
+
+.hmp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hmp-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hmp-back-btn:hover {
+  background: #000B29;
+  color: white;
+  transform: translateX(-3px);
+}
+
+.hmp-nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.hmp-nav-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(227, 6, 19, 0.1);
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #E30613;
+}
+
+/* ============================================
+   HERO BANNER
+   ============================================ */
+
+.hmp-hero-banner {
+  background: linear-gradient(135deg, #000B29 0%, #001a4d 100%);
+  margin: 0;
+  padding: 40px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hmp-hero-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: rgba(227, 6, 19, 0.1);
+  border-radius: 50%;
+}
+
+.hmp-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.hmp-banner-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.hmp-banner-text h1 {
+  color: white;
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.hmp-banner-text p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  margin: 0;
+}
+
+.hmp-banner-stats {
+  display: flex;
+  gap: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 40px;
+}
+
+/* ============================================
+   SEARCH BAR
+   ============================================ */
+
+.hmp-search-bar {
+  max-width: 1400px;
+  margin: -20px auto 0;
+  padding: 0 32px;
+  display: flex;
+  gap: 16px;
+  position: relative;
+  z-index: 10;
+}
+
+.hmp-search-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 60px;
+  padding: 0 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.hmp-search-icon {
+  color: #94a3b8;
+}
+
+.hmp-search-input {
+  flex: 1;
+  padding: 16px 16px;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  outline: none;
+}
+
+.hmp-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 60px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hmp-filter-toggle:hover {
+  border-color: #000B29;
+  background: #f8fafc;
+}
+
+.hmp-filter-toggle.active {
+  border-color: #E30613;
+  color: #E30613;
+}
+
+.filter-arrow {
+  transition: transform 0.2s;
+}
+
+.filter-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   FILTER PANEL
+   ============================================ */
+
+.hmp-filter-panel {
+  max-width: 1400px;
+  margin: 16px auto 0;
+  padding: 20px 32px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.hmp-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.hmp-filter-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hmp-filter-group select {
+  padding: 10px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.hmp-filter-group select:focus {
+  outline: none;
+  border-color: #E30613;
+}
+
+.hmp-clear-filters {
+  padding: 10px 20px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hmp-clear-filters:hover {
+  background: #E30613;
+  color: white;
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+
+.hmp-content {
+  max-width: 1400px;
+  margin: 32px auto;
+  padding: 0 32px;
+}
+
+.hmp-results-info {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ============================================
+   MATERIALS GRID
+   ============================================ */
+
+.hmp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+.hmp-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.hmp-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12);
+  border-color: #cbd5e1;
+}
+
+.hmp-card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.hmp-card-header {
+  padding: 20px 20px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hmp-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.hmp-card-type {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border-radius: 30px;
+  color: #475569;
+  letter-spacing: 0.5px;
+}
+
+.hmp-card-body {
+  padding: 0 20px 16px;
+}
+
+.hmp-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000B29;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.hmp-card-topic {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #E30613;
+  background: rgba(227, 6, 19, 0.06);
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin: 10px 0;
+}
+
+.hmp-card-description {
+  font-size: 13px;
+  color: #64748b;
+  margin: 8px 0 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hmp-card-meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.hmp-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hmp-card-footer {
+  padding: 16px 20px 20px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fafbfc;
+}
+
+.hmp-card-course {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #000B29;
+  background: white;
+  padding: 6px 14px;
+  border-radius: 30px;
+  border: 1px solid #e2e8f0;
+}
+
+.hmp-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.hmp-btn-view, .hmp-btn-drive {
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.hmp-btn-view {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.hmp-btn-view:hover {
+  background: #2563eb;
+  color: white;
+  transform: scale(1.02);
+}
+
+.hmp-btn-drive {
+  background: #000B29;
+  color: white;
+}
+
+.hmp-btn-drive:hover {
+  background: #E30613;
+  transform: scale(1.02);
+}
+
+.hmp-btn-drive:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.hmp-empty {
+  text-align: center;
+  padding: 80px 40px;
+  background: #f8fafc;
+  border-radius: 24px;
+  border: 2px dashed #e2e8f0;
+}
+
+.hmp-empty-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.hmp-empty h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000B29;
+  margin-bottom: 8px;
+}
+
+.hmp-empty p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.hmp-error {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 16px 24px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+  display: flex;
+  gap: 12px;
+  color: #dc2626;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.hmp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 20px;
+}
+
+.hmp-spinner {
+  width: 54px;
+  height: 54px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #E30613;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.hmp-loading h3 {
+  font-size: 18px;
+  color: #000B29;
+}
+
+.hmp-loading p {
+  color: #64748b;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.hmp-footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 32px 40px;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ============================================
+   PREVIEW MODAL
+   ============================================ */
+
+.hmp-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+}
+
+.hmp-preview-content {
+  background: white;
+  width: 90%;
+  max-width: 1000px;
+  height: 85vh;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.hmp-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #000B29;
+  color: white;
+}
+
+.hmp-preview-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-icon {
+  font-size: 24px;
+}
+
+.hmp-preview-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.hmp-preview-close:hover {
+  background: #E30613;
+  transform: rotate(90deg);
+}
+
+.hmp-preview-body {
+  flex: 1;
+  overflow: auto;
+  background: #f8fafc;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hmp-preview-iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+}
+
+.hmp-preview-footer {
+  padding: 16px 24px;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.preview-info {
+  flex: 1;
+}
+
+.preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.preview-description {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .hmp-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .hmp-nav {
+    padding: 12px 20px;
+  }
+  
+  .hmp-back-btn span {
+    display: none;
+  }
+  
+  .hmp-back-btn {
+    padding: 10px;
+  }
+  
+  .hmp-hero-banner {
+    padding: 30px 20px;
+  }
+  
+  .hmp-banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .hmp-banner-text h1 {
+    font-size: 26px;
+  }
+  
+  .hmp-banner-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  
+  .banner-stat {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+  
+  .hmp-search-bar {
+    flex-direction: column;
+    padding: 0 20px;
+    margin-top: -30px;
+  }
+  
+  .hmp-filter-toggle {
+    justify-content: center;
+    padding: 12px;
+  }
+  
+  .hmp-filter-panel {
+    padding: 20px;
+    flex-direction: column;
+  }
+  
+  .hmp-filter-group {
+    width: 100%;
+  }
+  
+  .hmp-content {
+    padding: 0 20px;
+    margin: 24px auto;
+  }
+  
+  .hmp-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .hmp-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .hmp-card-actions {
+    justify-content: center;
+  }
+  
+  .hmp-preview-content {
+    width: 95%;
+    height: 90vh;
+  }
+  
+  .hmp-preview-iframe {
+    min-height: 300px;
+  }
+  
+  .hmp-preview-footer {
+    flex-direction: column;
+  }
+  
+  .preview-info {
+    text-align: center;
+  }
+  
+  .preview-meta {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hmp-hero-banner {
+    padding: 24px 16px;
+  }
+  
+  .hmp-banner-text h1 {
+    font-size: 22px;
+  }
+  
+  .hmp-banner-text p {
+    font-size: 13px;
+  }
+  
+  .hmp-banner-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .hmp-banner-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .hmp-card-header {
+    padding: 16px 16px 8px;
+  }
+  
+  .hmp-card-body {
+    padding: 0 16px 12px;
+  }
+  
+  .hmp-card-footer {
+    padding: 12px 16px 16px;
+  }
+  
+  .hmp-preview-iframe {
+    min-height: 250px;
+  }
+}

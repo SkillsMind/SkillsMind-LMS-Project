@@ -20,7 +20,7 @@ async function sendOTPEmail(toEmail, userName, otpCode) {
         console.log('📧 Sending OTP via Resend to:', toEmail);
         
         const response = await axios.post('https://api.resend.com/emails', {
-            from: 'SkillsMind <noreply@skillsmind.online>', // ✅ CHANGED: Apna domain use kiya
+            from: 'SkillsMind <noreply@skillsmind.online>',
             to: [toEmail],
             subject: 'Your SkillsMind OTP Code',
             html: `
@@ -74,7 +74,7 @@ async function sendResetEmail(toEmail, userName, otpCode) {
         console.log('📧 Sending reset OTP via Resend to:', toEmail);
         
         const response = await axios.post('https://api.resend.com/emails', {
-            from: 'SkillsMind Support <noreply@skillsmind.online>', // ✅ CHANGED: Apna domain use kiya
+            from: 'SkillsMind Support <noreply@skillsmind.online>',
             to: [toEmail],
             subject: 'SkillsMind | Password Reset Request',
             html: `
@@ -129,7 +129,7 @@ async function sendWelcomeEmail(toEmail, userName) {
         console.log('📧 Sending welcome email via Resend to:', toEmail);
         
         const response = await axios.post('https://api.resend.com/emails', {
-            from: 'SkillsMind <noreply@skillsmind.online>', // ✅ CHANGED: Apna domain use kiya
+            from: 'SkillsMind <noreply@skillsmind.online>',
             to: [toEmail],
             subject: `Welcome to SkillsMind, ${userName}! 🎉`,
             html: `
@@ -178,7 +178,7 @@ async function sendWelcomeEmail(toEmail, userName) {
 }
 
 // ==========================================
-// ROUTES (Same as before)
+// ROUTES
 // ==========================================
 
 router.post('/send-otp', async (req, res) => {
@@ -350,9 +350,12 @@ router.post('/google-login', async (req, res) => {
     }
 });
 
+// ==========================================
+// 🔥 UPDATED REGISTER ROUTE WITH REFERRAL CODE CREATION
+// ==========================================
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, referralCode } = req.body;
         const cleanEmail = email.trim().toLowerCase();
 
         const salt = await bcrypt.genSalt(10);
@@ -367,6 +370,51 @@ router.post('/register', async (req, res) => {
             console.log("Welcome email failed (non-critical):", e.message);
         });
         
+        // 🔥🔥🔥 CREATE REFERRAL CODE FOR NEW USER 🔥🔥🔥
+        try {
+            const Referral = require('../models/Referral');
+            const namePart = name.substring(0, 3).toUpperCase();
+            const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const newReferralCode = `${namePart}${randomPart}`;
+            
+            const newReferral = new Referral({
+                referrerId: user._id,
+                referralCode: newReferralCode,
+                referredFriends: []
+            });
+            
+            await newReferral.save();
+            console.log(`✅ Referral code created for new user: ${newReferralCode}`);
+        } catch (refErr) {
+            console.error('Referral creation error (non-critical):', refErr.message);
+        }
+        
+        // 🔥🔥🔥 TRACK IF USER SIGNED UP VIA REFERRAL 🔥🔥🔥
+        if (referralCode) {
+            try {
+                const Referral = require('../models/Referral');
+                const referral = await Referral.findOne({ referralCode: referralCode.toUpperCase() });
+                
+                if (referral) {
+                    const existingFriend = referral.referredFriends.find(f => f.friendEmail === cleanEmail);
+                    
+                    if (!existingFriend) {
+                        referral.referredFriends.push({
+                            friendEmail: cleanEmail,
+                            friendName: name,
+                            status: 'signed_up',
+                            signedUpAt: new Date()
+                        });
+                        referral.totalReferrals = referral.referredFriends.length;
+                        await referral.save();
+                        console.log(`✅ Referral tracked: ${name} signed up using ${referralCode}`);
+                    }
+                }
+            } catch (refError) {
+                console.error('Referral tracking error (non-critical):', refError.message);
+            }
+        }
+        
         res.status(201).json({ success: true, message: "SkillsMind registration successful!" });
     } catch (err) { 
         console.error("Register Error:", err);
@@ -374,6 +422,9 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// ==========================================
+// 🔥 UPDATED LOGIN ROUTE WITH REFERRAL CODE CREATION FOR EXISTING USERS
+// ==========================================
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -382,6 +433,29 @@ router.post('/login', async (req, res) => {
         
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ success: false, message: "Invalid Credentials" });
+        
+        // 🔥🔥🔥 CREATE REFERRAL CODE IF DOESN'T EXIST (FOR EXISTING USERS) 🔥🔥🔥
+        try {
+            const Referral = require('../models/Referral');
+            let existingReferral = await Referral.findOne({ referrerId: user._id });
+            
+            if (!existingReferral) {
+                const namePart = user.name.substring(0, 3).toUpperCase();
+                const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+                const newReferralCode = `${namePart}${randomPart}`;
+                
+                const newReferral = new Referral({
+                    referrerId: user._id,
+                    referralCode: newReferralCode,
+                    referredFriends: []
+                });
+                
+                await newReferral.save();
+                console.log(`✅ Referral code created for existing user: ${newReferralCode}`);
+            }
+        } catch (refErr) {
+            console.error('Referral creation error (non-critical):', refErr.message);
+        }
         
         const profile = await StudentProfile.findOne({ user: user.id });
         

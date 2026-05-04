@@ -1401,4 +1401,567 @@ html, body {
     font-size: 9px;
     gap: 4px;
   }
+}/* ==========================================
+   REAL-TIME DATE & TIME BAR
+   ========================================== */
+.realtime-datetime-bar {
+  background: linear-gradient(135deg, #000B29 0%, #001a4d 100%);
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.datetime-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #FFFFFF;
+}
+
+.datetime-text {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.datetime-separator {
+  color: rgba(255,255,255,0.5);
+  margin: 0 2px;
+}
+
+.datetime-time {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.datetime-center .greeting-text {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.15);
+  padding: 5px 15px;
+  border-radius: 30px;
+}
+
+.datetime-right .location-badge {
+  background: rgba(255,255,255,0.15);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ==========================================
+   QUICK TIPS SECTION (MOVED UNDER QUICK ACCESS)
+   ========================================== */
+.quick-tips-section {
+  margin-top: 24px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  padding: 20px;
+}
+
+.quick-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.tip-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-left-width: 4px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tip-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  background: var(--white);
+  border-color: var(--gray-200);
+}
+
+.tip-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.tip-content {
+  flex: 1;
+}
+
+.tip-content h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.tip-content p {
+  font-size: 11px;
+  color: var(--gray-500);
+  line-height: 1.4;
+}
+
+/* ==========================================
+   CALENDAR WIDGET - ENHANCED
+   ========================================== */
+.current-month-header {
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.today-highlight {
+  background: linear-gradient(135deg, #000B29 0%, #001a4d 100%);
+  color: white;
+}
+
+.today-highlight .event-info h4,
+.today-highlight .event-info p {
+  color: white;
+}
+
+.today-highlight .event-time .time,
+.today-highlight .event-time .label {
+  color: white;
+}
+
+/* ==========================================
+   TOOL BADGE (for notification counts)
+   ========================================== */
+.tool-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* ==========================================
+   NEW TAG STYLES
+   ========================================== */
+.new-tag {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 8px;
+  background: var(--red-light);
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+
+/* ==========================================
+   COURSE PROGRESS BAR
+   ========================================== */
+.course-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.course-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ==========================================
+   COMPLETION BADGE
+   ========================================== */
+.completion-badge {
+  background: var(--green-light);
+  color: var(--green);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 12px;
+}
+
+/* ==========================================
+   NOTIFICATION ITEM TIME
+   ========================================== */
+.item-time {
+  font-size: 10px;
+  color: var(--gray-400);
+  margin-top: 4px;
+}
+
+/* ==========================================
+   RETRY BUTTON
+   ========================================== */
+.retry-btn {
+  margin-top: 16px;
+  padding: 10px 24px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  background: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   RESPONSIVE FOR NEW FEATURES
+   ========================================== */
+@media (max-width: 1200px) {
+  .quick-tips-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .realtime-datetime-bar {
+    flex-direction: column;
+    text-align: center;
+    padding: 10px 16px;
+  }
+  
+  .quick-tips-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .realtime-datetime-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .quick-tips-section {
+    padding: 16px;
+  }
+  
+  .quick-tips-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .tip-card {
+    padding: 12px;
+  }
+  
+  .tip-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .tip-content h4 {
+    font-size: 13px;
+  }
+  
+  .tip-content p {
+    font-size: 10px;
+  }
+  
+  .datetime-text, 
+  .datetime-time,
+  .datetime-center .greeting-text {
+    font-size: 12px;
+  }
+  
+  .completion-badge {
+    margin-left: 8px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-tips-section {
+    padding: 12px;
+  }
+  
+  .tip-card {
+    gap: 10px;
+  }
+  
+  .tip-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .tip-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .tip-content h4 {
+    font-size: 12px;
+  }
+  
+  .datetime-left {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .datetime-center .greeting-text {
+    font-size: 11px;
+    padding: 4px 12px;
+  }
+  
+  .location-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+}
+
+/* ==========================================
+   ADDITIONAL UTILITY CLASSES
+   ========================================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-3 {
+  margin-top: 16px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-3 {
+  margin-bottom: 16px;
+}
+
+/* ==========================================
+   HOVER EFFECTS ENHANCEMENT
+   ========================================== */
+.tip-card,
+.record-card,
+.tool-card,
+.notice-row,
+.course-chip,
+.info-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tip-card:active,
+.record-card:active,
+.tool-card:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================
+   SCROLLBAR CUSTOMIZATION
+   ========================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}/* ==========================================
+   UPDATED QUICK TIPS CARDS - SHARP CORNERS
+   ========================================== */
+
+.quick-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.tip-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-left-width: 4px;
+  border-radius: 0px;  /* SHARP CORNERS */
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.tip-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  background: var(--white);
+  border-color: var(--gray-200);
+}
+
+.tip-card.has-unseen {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.tip-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0px;  /* SHARP CORNERS */
+  flex-shrink: 0;
+}
+
+.tip-content {
+  flex: 1;
+}
+
+.tip-content h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tip-content p {
+  font-size: 11px;
+  color: var(--gray-500);
+  line-height: 1.4;
+}
+
+.tip-arrow {
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  color: var(--gray-400);
+}
+
+.tip-card:hover .tip-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+/* Unseen Badge */
+.unseen-badge {
+  background: #8B5CF6;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 0px;  /* SHARP CORNERS */
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.7; transform: scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .quick-tips-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .quick-tips-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .tip-card {
+    padding: 12px;
+  }
+  
+  .tip-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .tip-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .tip-content h4 {
+    font-size: 13px;
+  }
+  
+  .tip-content p {
+    font-size: 10px;
+  }
+  
+  .unseen-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+  }
+}
+
+/* Helping Materials specific styles in notice board */
+.helping-material-unseen {
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 3px solid #8B5CF6;
+}
+
+.helping-material-unseen .notice-text h4 {
+  color: #8B5CF6;
+}
+
+.unseen-dot {
+  width: 8px;
+  height: 8px;
+  background: #8B5CF6;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 8px;
+  animation: pulse 1.5s infinite;
 }

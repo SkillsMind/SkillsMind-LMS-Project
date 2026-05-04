@@ -110,7 +110,10 @@ const safeRoute = (routePath, routeName) => {
     }
 };
 
-// --- ROUTES ---
+// ==========================================
+// 🔥🔥🔥 ROUTES - WITH HELPING MATERIAL 🔥🔥🔥
+// ==========================================
+
 app.use('/api/auth', safeRoute('./routes/auth', 'Auth'));
 app.use('/api/student-profile', safeRoute('./routes/profile', 'Profile'));
 app.use('/api/profile', safeRoute('./routes/profile', 'Profile'));
@@ -132,47 +135,97 @@ app.use('/api/zoom', safeRoute('./routes/zoom', 'Zoom'));
 app.use('/api/attendance-new', safeRoute('./routes/attendance', 'Attendance New'));
 app.use('/api/contact', safeRoute('./routes/contact', 'Contact'));
 
-// Important Links
+// ==========================================
+// 🔥 IMPORTANT LINKS ROUTES
+// ==========================================
 try {
     app.use('/api/important-links', require('./routes/importantLinks'));
     console.log('✅ Important Links loaded');
 } catch (err) {
-    app.use('/api/important-links', (req, res) => res.status(503).json({ success: false }));
+    console.warn(`⚠️ Important Links disabled: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Important Links unavailable' });
+    });
+    app.use('/api/important-links', dummyRouter);
 }
 
-// Notices
+// ==========================================
+// 🔥🔥🔥 HELPING MATERIAL ROUTES 🔥🔥🔥
+// ==========================================
+try {
+    app.use('/api/helping-materials', require('./routes/helpingMaterials'));
+    console.log('✅✅✅ Helping Materials Routes loaded successfully!');
+} catch (err) {
+    console.error(`❌❌❌ Helping Materials Routes failed to load: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Helping Materials system unavailable' });
+    });
+    app.use('/api/helping-materials', dummyRouter);
+}
+
+// ==========================================
+// 🔥🔥🔥 HELPING MATERIAL UPLOAD ROUTE (NEW) 🔥🔥🔥
+// ==========================================
+try {
+    app.use('/api/helping-materials/upload', require('./routes/uploadHelpingMaterial'));
+    console.log('✅✅✅ Helping Material Upload Route loaded successfully!');
+} catch (err) {
+    console.error(`❌❌❌ Helping Material Upload Route failed: ${err.message}`);
+}
+
+// ==========================================
+// NOTICES ROUTES
+// ==========================================
 try {
     app.use('/api/notices', require('./routes/notices'));
     console.log('✅ Notices loaded');
 } catch (err) {
-    app.use('/api/notices', (req, res) => res.status(503).json({ success: false }));
+    console.warn(`⚠️ Notices disabled: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Notices unavailable' });
+    });
+    app.use('/api/notices', dummyRouter);
 }
 
-// Jobs
+// ==========================================
+// JOBS ROUTES
+// ==========================================
 try {
     app.use('/api/jobs', require('./routes/jobs'));
     console.log('✅ Jobs loaded');
 } catch (err) {
-    app.use('/api/jobs', (req, res) => res.status(503).json({ success: false }));
+    console.warn(`⚠️ Jobs disabled: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Jobs unavailable' });
+    });
+    app.use('/api/jobs', dummyRouter);
 }
 
-// AI Routes
+// ==========================================
+// AI ROUTES
+// ==========================================
 try {
     app.use('/api/ai', require('./routes/aiAssistant'));
     console.log('✅ AI loaded');
 } catch (err) {
-    app.use('/api/ai', (req, res) => res.json({ success: false }));
+    console.warn(`⚠️ AI disabled: ${err.message}`);
+    app.use('/api/ai', (req, res) => res.json({ success: false, message: 'AI unavailable' }));
 }
 
 try {
     app.use('/api/ai-grading', require('./routes/aiGradingRoutes'));
     console.log('✅ AI Grading loaded');
 } catch (err) {
-    app.use('/api/ai-grading', (req, res) => res.json({ success: false }));
+    console.warn(`⚠️ AI Grading disabled: ${err.message}`);
+    app.use('/api/ai-grading', (req, res) => res.json({ success: false, message: 'AI Grading unavailable' }));
 }
 
 // ==========================================
-// 🔥 NEW: REFERRAL SYSTEM ROUTES 🔥
+// 🔥 REFERRAL SYSTEM ROUTES 🔥
 // ==========================================
 try {
     const referralRoutes = require('./routes/referralRoutes');
@@ -188,7 +241,7 @@ try {
 }
 
 // ==========================================
-// 🔥🔥🔥 UPLOAD ROUTES FOR IMAGES 🔥🔥🔥
+// 🔥 UPLOAD ROUTES FOR IMAGES (Cloudinary) 🔥
 // ==========================================
 try {
     const uploadRoutes = require('./routes/uploadRoutes');
@@ -196,10 +249,15 @@ try {
     console.log('✅ Upload Routes loaded (Cloudinary)');
 } catch (err) {
     console.warn(`⚠️ Upload Routes disabled: ${err.message}`);
+    const dummyRouter = express.Router();
+    dummyRouter.use((req, res) => {
+        res.status(503).json({ success: false, message: 'Upload system unavailable' });
+    });
+    app.use('/api/upload', dummyRouter);
 }
 
 // ==========================================
-// 🔥🔥🔥 WEBINAR SYSTEM ROUTES 🔥🔥🔥
+// 🔥 WEBINAR SYSTEM ROUTES 🔥
 // ==========================================
 try {
     const webinarRoutes = require('./routes/webinarRoutes');
@@ -214,7 +272,9 @@ try {
     app.use('/api/webinar', dummyRouter);
 }
 
-// Stats API
+// ==========================================
+// STATS API
+// ==========================================
 app.get('/api/stats', async (req, res) => {
     try {
         const totalRegistered = await mongoose.connection.collection('users').countDocuments();
@@ -225,13 +285,15 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-// Health Check
+// ==========================================
+// HEALTH CHECK
+// ==========================================
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', time: new Date().toISOString() });
 });
 
 // ==========================================
-// 🔥🔥🔥 STRONGEST REACT ROUTER FIX 🔥🔥🔥
+// 🔥🔥🔥 REACT ROUTER FIX (For Production) 🔥🔥🔥
 // ==========================================
 
 const frontendDistPath = path.join(__dirname, '../frontend-new/dist');
@@ -273,7 +335,9 @@ if (fs.existsSync(frontendDistPath) && fs.existsSync(indexPath)) {
     console.log('    Then redeploy!');
 }
 
-// Socket.IO
+// ==========================================
+// SOCKET.IO CONNECTIONS
+// ==========================================
 io.on('connection', (socket) => {
     console.log('⚡ Client connected:', socket.id);
     
@@ -290,17 +354,27 @@ io.on('connection', (socket) => {
     });
 });
 
-// Database & Server Start
+// ==========================================
+// DATABASE & SERVER START
+// ==========================================
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ Database connected");
+    console.log("📊 MongoDB connection established");
+    
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📱 Webinar page available at: http://localhost:${PORT}/webinar`);
+      console.log(`📍 Local: http://localhost:${PORT}`);
+      console.log(`📱 Webinar page: http://localhost:${PORT}/webinar`);
+      console.log(`📚 Helping Materials API: http://localhost:${PORT}/api/helping-materials`);
+      console.log(`📤 Helping Materials Upload: http://localhost:${PORT}/api/helping-materials/upload`);
+      console.log(`🔗 Important Links API: http://localhost:${PORT}/api/important-links`);
+      console.log(`✅ All systems operational!`);
     });
   })
   .catch((err) => {
-    console.error("❌ Database error:", err);
+    console.error("❌ Database connection error:", err);
+    console.error("Please check your MONGO_URI in .env file");
     process.exit(1);
   });

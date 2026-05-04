@@ -1,0 +1,333 @@
+/* Helping Materials Student Page */
+.hmp-container {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.hmp-nav {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 100;
+}
+
+.hmp-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hmp-nav-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #000B29;
+}
+
+.hmp-hero {
+  padding: 40px 32px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.hmp-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(0, 11, 41, 0.08);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #000B29;
+  margin-bottom: 12px;
+}
+
+.hmp-hero h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #000B29;
+  margin: 0 0 8px 0;
+}
+
+.hmp-hero p {
+  color: #64748b;
+  margin: 0;
+}
+
+.hmp-hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-radius: 16px;
+}
+
+.hmp-stat {
+  text-align: center;
+}
+
+.hmp-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #000B29;
+  display: block;
+}
+
+.hmp-stat span:last-child {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.hmp-stat-divider {
+  width: 1px;
+  height: 30px;
+  background: #e2e8f0;
+}
+
+.hmp-filters {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hmp-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 40px;
+  border: 1px solid #e2e8f0;
+}
+
+.hmp-search input {
+  border: none;
+  background: transparent;
+  padding: 8px 0;
+  width: 240px;
+}
+
+.hmp-search input:focus {
+  outline: none;
+}
+
+.hmp-filter-group {
+  display: flex;
+  gap: 12px;
+}
+
+.hmp-filter-group select {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 40px;
+  background: white;
+  font-size: 13px;
+}
+
+.hmp-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px 40px;
+}
+
+.hmp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+.hmp-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.hmp-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.1);
+}
+
+.hmp-card-header {
+  padding: 20px 20px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hmp-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.hmp-card-type {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border-radius: 20px;
+}
+
+.hmp-card-body {
+  padding: 0 20px 16px;
+}
+
+.hmp-card-body h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #000B29;
+  margin: 0 0 8px 0;
+}
+
+.hmp-card-topic {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #E30613;
+  background: rgba(227, 6, 19, 0.05);
+  padding: 6px 12px;
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.hmp-card-body p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.hmp-card-footer {
+  padding: 16px 20px 20px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hmp-card-course {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #000B29;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.hmp-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hmp-btn-view, .hmp-btn-download {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.hmp-btn-view {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.hmp-btn-view:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.hmp-btn-download {
+  background: #000B29;
+  color: white;
+}
+
+.hmp-btn-download:hover {
+  background: #E30613;
+}
+
+.hmp-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f8fafc;
+  border-radius: 20px;
+}
+
+.hmp-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.hmp-empty h3 {
+  font-size: 18px;
+  color: #000B29;
+  margin-bottom: 8px;
+}
+
+.hmp-loading {
+  text-align: center;
+  padding: 80px;
+}
+
+.hmp-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #E30613;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .hmp-hero { padding: 24px 20px; flex-direction: column; align-items: flex-start; gap: 20px; }
+  .hmp-hero h1 { font-size: 28px; }
+  .hmp-filters { padding: 0 20px 20px; flex-direction: column; }
+  .hmp-search input { width: 100%; }
+  .hmp-content { padding: 0 20px 32px; }
+  .hmp-grid { grid-template-columns: 1fr; }
+}

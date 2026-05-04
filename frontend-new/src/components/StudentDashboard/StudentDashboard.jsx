@@ -28,6 +28,7 @@ import Timeline from './Pages/Timeline';
 import AnnouncementsPage from './Pages/AnnouncementsPage';
 import ImportantLinksPage from './Pages/ImportantLinksPage';
 import OpportunitiesPage from './Pages/OpportunitiesPage';
+import HelpingMaterialsPage from './Pages/HelpingMaterialsPage';  // ✅ ADDED
 
 // Import Features
 import SkillTree from './Features/SkillTree';
@@ -44,8 +45,14 @@ import MentorBooking from './Features/MentorBooking';
 // Assignment Builder Import
 import AssignmentBuilder from './Pages/AssignmentBuilder';
 
-// ✅ SETTINGS PAGE IMPORT
+// Settings Page Import
 import Settings from './Pages/Settings';
+
+// 🔥🔥🔥 QUICK TIPS PAGES IMPORTS (from Student folder) 🔥🔥🔥
+import StudyBreak from './Pages/Student/StudyBreak';
+import DailyGoal from './Pages/Student/DailyGoal';
+import LearningPath from './Pages/Student/LearningPath';
+import ReferFriend from './Pages/Student/ReferFriend';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -55,14 +62,12 @@ const StudentDashboard = () => {
   const [studentName, setStudentName] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // 🔥🔥🔥 FIXED - User ID bhi lo, sirf email nahi 🔥🔥🔥
   const studentEmail = localStorage.getItem('studentEmail');
   const userId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
 
   useEffect(() => {
     const checkAccess = async () => {
-      // 🔥 Dono check karo - email aur userId
       if (!studentEmail || !userId || !token) { 
         navigate('/login'); 
         return; 
@@ -71,21 +76,18 @@ const StudentDashboard = () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         
-        // 🔥🔥🔥 FIXED - Pehle Enrollment API se check karo 🔥🔥🔥
         const enrollRes = await axios.get(`${API_URL}/api/enroll/check-enrollment/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         console.log('StudentDashboard - Enrollment Check:', enrollRes.data);
         
-        // 🔥 Agar LiveEnrollment mein courses hain, toh allow karo
         if (enrollRes.data.success && enrollRes.data.enrolledCourses && enrollRes.data.enrolledCourses.length > 0) {
           setStudentName(enrollRes.data.enrolledCourses[0]?.studentName || "Student");
           setLoading(false);
           return;
         }
         
-        // 🔥 Fallback - Agar LiveEnrollment empty hai, toh Payment se check karo
         console.log('⚠️ No LiveEnrollment, checking Payment API...');
         const paymentRes = await axios.get(`${API_URL}/api/payments/my-status/${studentEmail}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -99,7 +101,6 @@ const StudentDashboard = () => {
           return;
         }
         
-        // 🔥 Dono mein nahi mila, toh MyLearning pe bhejo
         navigate('/my-learning');
         
       } catch (err) {
@@ -111,7 +112,7 @@ const StudentDashboard = () => {
     checkAccess();
   }, [studentEmail, userId, token, navigate]);
 
-  // ======== FULL WHITE BACKGROUND + HIDE NAVBARS ========
+  // FULL WHITE BACKGROUND + HIDE NAVBARS
   useEffect(() => {
     const navbar = document.querySelector('.skillsmind-nav');
     const stickySidebar = document.querySelector('.sticky-sidebar');
@@ -187,7 +188,6 @@ const StudentDashboard = () => {
     );
   }
 
-  // ======== TOPBAR NAVIGATION HANDLER ========
   const handleTopbarNavigate = (page) => {
     console.log('Topbar navigation:', page);
     
@@ -206,13 +206,11 @@ const StudentDashboard = () => {
     }
   };
 
-  // ======== LOGOUT HANDLER ========
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
   };
 
-  // ======== SIDEBAR NAVIGATION HANDLER ========
   const handleSidebarNavigate = (tabId) => {
     console.log('Sidebar navigation:', tabId);
     setActiveTab(tabId);
@@ -245,6 +243,10 @@ const StudentDashboard = () => {
       case 'assignment-builder': return <AssignmentBuilder {...props} />;
       case 'announcements': return <AnnouncementsPage {...props} />;
       case 'important-links': return <ImportantLinksPage {...props} />;
+      
+      // ✅ ADDED - HELPING MATERIALS CASE
+      case 'helping-materials': return <HelpingMaterialsPage {...props} />;
+      
       case 'opportunities': return <OpportunitiesPage {...props} />;
       case 'skilltree': return <SkillTree {...props} />;
       case 'focusmode': return <FocusMode {...props} />;
@@ -256,6 +258,11 @@ const StudentDashboard = () => {
       case 'challenges': return <DailyChallenges {...props} />;
       case 'resources': return <ResourceExchange {...props} />;
       case 'mentors': return <MentorBooking {...props} />;
+      case 'study-break': return <StudyBreak {...props} />;
+      case 'daily-goal': return <DailyGoal {...props} />;
+      case 'learning-path': return <LearningPath {...props} />;
+      case 'refer-friend': return <ReferFriend {...props} />;
+      
       default: return <DashboardHome {...props} />;
     }
   };
