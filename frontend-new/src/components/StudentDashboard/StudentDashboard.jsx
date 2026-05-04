@@ -28,7 +28,7 @@ import Timeline from './Pages/Timeline';
 import AnnouncementsPage from './Pages/AnnouncementsPage';
 import ImportantLinksPage from './Pages/ImportantLinksPage';
 import OpportunitiesPage from './Pages/OpportunitiesPage';
-import HelpingMaterialsPage from './Pages/HelpingMaterialsPage';  // ✅ ADDED
+import HelpingMaterialsPage from './Pages/HelpingMaterialsPage';
 
 // Import Features
 import SkillTree from './Features/SkillTree';
@@ -48,11 +48,11 @@ import AssignmentBuilder from './Pages/AssignmentBuilder';
 // Settings Page Import
 import Settings from './Pages/Settings';
 
-// 🔥🔥🔥 QUICK TIPS PAGES IMPORTS (from Student folder) 🔥🔥🔥
-import StudyBreak from './Pages/Student/StudyBreak';
-import DailyGoal from './Pages/Student/DailyGoal';
-import LearningPath from './Pages/Student/LearningPath';
-import ReferFriend from './Pages/Student/ReferFriend';
+// 🔥🔥🔥 QUICK TIPS PAGES IMPORTS (SMALL 's' - FOLDER NAME IS 'student') 🔥🔥🔥
+import StudyBreak from './Pages/student/StudyBreak';
+import DailyGoal from './Pages/student/DailyGoal';
+import LearningPath from './Pages/student/LearningPath';
+import ReferFriend from './Pages/student/ReferFriend';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -243,10 +243,7 @@ const StudentDashboard = () => {
       case 'assignment-builder': return <AssignmentBuilder {...props} />;
       case 'announcements': return <AnnouncementsPage {...props} />;
       case 'important-links': return <ImportantLinksPage {...props} />;
-      
-      // ✅ ADDED - HELPING MATERIALS CASE
       case 'helping-materials': return <HelpingMaterialsPage {...props} />;
-      
       case 'opportunities': return <OpportunitiesPage {...props} />;
       case 'skilltree': return <SkillTree {...props} />;
       case 'focusmode': return <FocusMode {...props} />;
